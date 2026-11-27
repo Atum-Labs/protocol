@@ -541,16 +541,20 @@ describe("verifyVP: rejection paths", () => {
       return { signed: signed as unknown as Record<string, unknown>, holder };
     }
 
+    // The second credential's type is reserved, so it walks every check;
+    // an unreserved one is passed through unchecked instead.
+    const reservedSecond = (holder: string) => ({ ...happyOpts(holder), reservedVCTypes: ["Unrelated"] });
+
     it("rejects a null issuanceDate on the second credential", async () => {
       const { signed, holder } = await signWithSecond(null);
-      await expect(verifyVP(signed, happyOpts(holder))).rejects.toThrow(
+      await expect(verifyVP(signed, reservedSecond(holder))).rejects.toThrow(
         /missing or non-string field "issuanceDate"/
       );
     });
 
     it("verifies the same envelope with a valid issuanceDate on the second credential (control)", async () => {
       const { signed, holder } = await signWithSecond("2026-01-01T00:00:00Z");
-      const result = await verifyVP(signed, happyOpts(holder));
+      const result = await verifyVP(signed, reservedSecond(holder));
       expect(result.attestedClaims).toHaveLength(2);
     });
   });
@@ -858,7 +862,10 @@ describe("verifyVP: alternate issuer + multi-VC shapes", () => {
       created: FIXTURE_CREATED,
     });
     const res = await verifyVP(signed as unknown as Record<string, unknown>, happyOpts(holder));
-    expect(res.attestedClaims).toHaveLength(2);
+    // The generic credential declares no reserved type, so it is passed
+    // through rather than attested.
+    expect(res.attestedClaims).toHaveLength(1);
+    expect(res.passThroughClaims).toHaveLength(1);
   });
 });
 

@@ -10,6 +10,7 @@
 //	  - ed25519-go-vp.json
 //	  - secp256k1-go-vp-null-issuance-date.json  (negative: VerifyVP must refuse)
 //	  - ed25519-go-vp-null-issuance-date.json    (negative: VerifyVP must refuse)
+//	  - {secp256k1,ed25519}-go-vp-pass-through.json (a third-party VC a reserved set passes through)
 //
 //	VC-proof side:
 //	  - secp256k1-go-vc-proof.json
@@ -113,6 +114,15 @@ func main() {
 	if err := genEd25519VP(outDir, "ed25519-go-vp-null-issuance-date.json", nil); err != nil {
 		die("ed25519 VP, null issuanceDate: %v", err)
 	}
+	// Pass-through fixtures: the pinned Known-to-Atum credential plus a
+	// third-party credential from an unlisted issuer that a verifier with
+	// a reserved set must pass through unchecked.
+	if err := genPassThroughVP(outDir, "secp256k1-go-vp-pass-through.json", ldverification.ProofTypeSecp256k1Recovery2020); err != nil {
+		die("secp256k1 VP, pass-through: %v", err)
+	}
+	if err := genPassThroughVP(outDir, "ed25519-go-vp-pass-through.json", ldverification.ProofTypeEd25519Signature2020); err != nil {
+		die("ed25519 VP, pass-through: %v", err)
+	}
 	if err := genSecp256k1PREVP(outDir); err != nil {
 		die("secp256k1 PRE VP: %v", err)
 	}
@@ -136,7 +146,7 @@ func main() {
 	if err := genJWKSidecars(outDir); err != nil {
 		die("JWK sidecars: %v", err)
 	}
-	fmt.Printf("wrote %d fixtures to %s\n", 13+2*len(knownToAtumV2Fixtures), outDir)
+	fmt.Printf("wrote %d fixtures to %s\n", 15+2*len(knownToAtumV2Fixtures), outDir)
 }
 
 func genSecp256k1(outDir string) error {
@@ -724,6 +734,103 @@ func pinnedVCsFor(holder, cryptosuite string, issuanceDate any) ([]json.RawMessa
 		return nil, fmt.Errorf("marshal VC: %w", err)
 	}
 	return []json.RawMessage{raw}, nil
+}
+
+// The third-party credential in the pass-through fixtures. Its issuer is on
+// no trust list and resolves nowhere, it expired before the conformance
+// clock, and its subject is another account, so it fails every per-VC
+// check; its type is an absolute IRI so both JSON-LD libraries expand it
+// the same way. A verifier whose reserved set excludes that type must pass
+// it through unchecked. MUST exactly mirror the TS generator's
+// pinnedThirdPartyVC.
+const (
+	pinnedThirdPartyVCID      = "urn:uuid:8d3f6a2c-1b4e-4f7a-9c2d-5e6f7a8b9c0d"
+	pinnedThirdPartyIssuer    = "did:web:unlisted-issuer.example"
+	pinnedThirdPartyType      = "https://example.org/credentials#PartnerAttestationCredential"
+	pinnedThirdPartySubject   = "did:pkh:eip155:1:0x00000000000000000000000000000000000000aa"
+	pinnedThirdPartyIssued    = "2026-01-02T00:00:00Z"
+	pinnedThirdPartyExpiresAt = "2026-02-01T00:00:00Z"
+)
+
+func pinnedThirdPartyVC(cryptosuite string) (json.RawMessage, error) {
+	vc := map[string]any{
+		"@context": []any{
+			ldverification.W3CVCV1ContextURL,
+			"https://schemas.atum.xyz/credentials/known-to-atum/v1",
+		},
+		"id":             pinnedThirdPartyVCID,
+		"type":           []any{"VerifiableCredential", pinnedThirdPartyType},
+		"issuer":         pinnedThirdPartyIssuer,
+		"issuanceDate":   pinnedThirdPartyIssued,
+		"expirationDate": pinnedThirdPartyExpiresAt,
+		"credentialSubject": map[string]any{
+			"id":   pinnedThirdPartySubject,
+			"role": "partner",
+		},
+		"proof": map[string]any{
+			"type":               cryptosuite,
+			"created":            pinnedThirdPartyIssued,
+			"verificationMethod": pinnedThirdPartyIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+	return json.Marshal(vc)
+}
+
+// genPassThroughVP signs an envelope carrying the pinned Known-to-Atum
+// credential followed by the third-party credential, with the same keys,
+// holders and pinned bindings as genSecp256k1VP / genEd25519VP.
+func genPassThroughVP(outDir, name, cryptosuite string) error {
+	third, err := pinnedThirdPartyVC(cryptosuite)
+	if err != nil {
+		return fmt.Errorf("marshal third-party VC: %w", err)
+	}
+	var signed []byte
+	switch cryptosuite {
+	case ldverification.ProofTypeSecp256k1Recovery2020:
+		keyBytes, err := hex.DecodeString(hardhatPrivKeyHex)
+		if err != nil {
+			return fmt.Errorf("decode privkey: %w", err)
+		}
+		priv, err := crypto.ToECDSA(keyBytes)
+		if err != nil {
+			return fmt.Errorf("ToECDSA: %w", err)
+		}
+		holder := "did:pkh:eip155:1:" + strings.ToLower(crypto.PubkeyToAddress(priv.PublicKey).Hex())
+		vcs, err := pinnedVCsFor(holder, cryptosuite, pinnedVCIssuanceDate)
+		if err != nil {
+			return err
+		}
+		signed, err = ldverification.SignVPWithCreatedString(append(vcs, third), priv, ldverification.SignVPOptions{
+			Holder:             holder,
+			VerificationMethod: holder + "#blockchainAccountId",
+			Challenge:          pinnedVPChallenge,
+			Domain:             pinnedVPDomain,
+		}, pinnedCreated)
+		if err != nil {
+			return fmt.Errorf("SignVP: %w", err)
+		}
+	case ldverification.ProofTypeEd25519Signature2020:
+		var seed [32]byte
+		priv := ed25519.NewKeyFromSeed(seed[:])
+		holder := "did:pkh:solana:devnet:" + base58.Encode(priv.Public().(ed25519.PublicKey))
+		vcs, err := pinnedVCsFor(holder, cryptosuite, pinnedVCIssuanceDate)
+		if err != nil {
+			return err
+		}
+		signed, err = ldverification.SignVPEd25519WithCreatedString(append(vcs, third), priv, ldverification.SignVPEd25519Options{
+			Holder:             holder,
+			VerificationMethod: holder + "#blockchainAccountId",
+			Challenge:          pinnedVPChallenge,
+			Domain:             pinnedVPDomain,
+		}, pinnedCreated)
+		if err != nil {
+			return fmt.Errorf("SignVPEd25519: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported cryptosuite %q", cryptosuite)
+	}
+	return os.WriteFile(filepath.Join(outDir, name), append(signed, '\n'), 0o644)
 }
 
 // resolveOutDir walks up from the binary's current working directory to

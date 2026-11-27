@@ -155,6 +155,30 @@ type VerifyVPOptions struct {
 	// check — the verifier still runs date + issuer checks.
 	RequiredVCTypes []string
 
+	// ReservedVCTypes lists the credential types only trusted issuers may
+	// issue. A VC that declares one of them, or one of RequiredVCTypes,
+	// walks every per-VC check: subject-holder binding, date window,
+	// issuer trust (IsIssuerTrusted) and, when VerifyVCProofs is wired,
+	// its own proof against its issuer's published key. A VC claiming a
+	// reserved type from an issuer outside the trust list is therefore
+	// refused exactly as before.
+	//
+	// Any other VC is the counterparties' to judge, not the verifier's: a
+	// presentation carries it to the parties who decide whom they trust as
+	// an issuer. Such a VC is passed through untouched. It gets no
+	// issuer-trust check, no issuer resolution or proof verification, no
+	// subject-holder binding and no date-window check. It is returned
+	// byte-identical in VPResult.PassThroughClaims, never in
+	// AttestedClaims, and it never satisfies RequiredVCTypes. The holder's
+	// signature over the whole presentation still covers it.
+	//
+	// The reserved set is ReservedVCTypes together with RequiredVCTypes, so
+	// a type the caller requires is always verified. Unset, it is
+	// RequiredVCTypes alone. When both are empty there is no reserved set
+	// and every VC walks every check, as before this field existed.
+	// HolderIssuedVCTypes keeps its own carve-out either way.
+	ReservedVCTypes []string
+
 	// HolderIssuedVCTypes lists VC types the verifier accepts as
 	// HOLDER-ISSUED: credentials the VP's holder mints under its own
 	// did:pkh key about a THIRD PARTY (e.g. the originator's
@@ -315,6 +339,15 @@ type VPResult struct {
 	// NOT include (the VC-signature gate closes the VC-signature gap).
 	AttestedClaims []json.RawMessage
 
+	// PassThroughClaims holds the verbatim wire JSON of each VC the
+	// verifier passed through unchecked because it declares none of the
+	// reserved types (see VerifyVPOptions.ReservedVCTypes), in envelope
+	// order. Nothing about these VCs was verified beyond the holder's
+	// signature over the presentation: they are for the counterparties,
+	// who decide whom they trust as an issuer. Nil when there is no
+	// reserved set or every VC declares a reserved type.
+	PassThroughClaims []json.RawMessage
+
 	// IssuerTrustObservations records each VC whose issuer DID was
 	// outside the trust allow-list AND whose IsIssuerTrusted callback
 	// returned enforced=false (the audit / permissive postures at the
@@ -339,8 +372,9 @@ type VPResult struct {
 // the perimeter without re-deriving them from the attested-claims slice.
 type IssuerTrustObservation struct {
 	// VCIndex is the position of the VC within envelope.verifiableCredential
-	// that produced this observation. 0-based; matches the index in
-	// AttestedClaims for the same VC.
+	// that produced this observation. 0-based. It matches the index in
+	// AttestedClaims for the same VC only when no VC was passed through
+	// (see VerifyVPOptions.ReservedVCTypes).
 	VCIndex int
 	// IssuerDID is the bare DID string extracted from the VC's `issuer`
 	// field (string or {id: ...} object form per W3C VC spec).
@@ -579,7 +613,7 @@ func verifyVPSecp256k1(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []j
 	}
 
 	var issuerTrustObservations []IssuerTrustObservation
-	attested, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
+	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
 	if err != nil {
 		return VPResult{}, err
 	}
@@ -591,6 +625,7 @@ func verifyVPSecp256k1(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []j
 		DIDNetwork:              didNetwork(envelope.Holder),
 		Created:                 created,
 		AttestedClaims:          attested,
+		PassThroughClaims:       passThrough,
 		IssuerTrustObservations: issuerTrustObservations,
 	}, nil
 }
@@ -664,7 +699,7 @@ func verifyVPEd25519(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []jso
 	}
 
 	var issuerTrustObservations []IssuerTrustObservation
-	attested, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
+	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
 	if err != nil {
 		return VPResult{}, err
 	}
@@ -676,6 +711,7 @@ func verifyVPEd25519(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []jso
 		DIDNetwork:              didNetwork(envelope.Holder),
 		Created:                 created,
 		AttestedClaims:          attested,
+		PassThroughClaims:       passThrough,
 		IssuerTrustObservations: issuerTrustObservations,
 	}, nil
 }
@@ -695,67 +731,84 @@ func vpProofContext(rawProof map[string]any, suiteCtxURL string) any {
 }
 
 // verifyVCPolicies applies the per-VC checks: date window, trust
-// anchors, and RequiredVCTypes. Returns
-// the raw wire JSON of each VC that passed all checks (NOT a re-marshal
-// — see rawVCs param doc) and a non-nil error when no VC satisfies a
-// non-empty RequiredVCTypes (the bid was supposed to carry a credential
-// of a particular type and didn't).
+// anchors, and RequiredVCTypes. Returns the raw wire JSON of each VC that
+// passed all checks, the raw wire JSON of each VC it passed through
+// unchecked (both NOT re-marshals — see rawVCs param doc), and a non-nil
+// error when a checked VC fails or no VC satisfies a non-empty
+// RequiredVCTypes (the bid was supposed to carry a credential of a
+// particular type and didn't).
 //
 // rawVCs MUST be the verbatim wire JSON of each VC, parallel-indexed to
-// vcs. The verifier returns these bytes to callers via AttestedClaims;
-// a re-marshal would re-order map keys non-deterministically and break
-// "the attested bytes match the wire bytes" — a contract callers can
-// rely on for audit logging or signature-chain anchoring downstream.
+// vcs. The verifier returns these bytes to callers via AttestedClaims and
+// PassThroughClaims; a re-marshal would re-order map keys
+// non-deterministically and break "the returned bytes match the wire
+// bytes" — a contract callers can rely on for audit logging,
+// signature-chain anchoring, or forwarding downstream.
 //
-// TWO-TIER POLICY MODEL:
+// RESERVED AND PASS-THROUGH VCs:
+//
+// The reserved set is VerifyVPOptions.ReservedVCTypes together with
+// RequiredVCTypes (see reservedVCTypes). When it is non-empty, a VC that
+// declares none of its types, and isn't holder-issued, is passed through:
+// it is the counterparties' to judge, so it gets no check here at all and
+// is returned in PassThroughClaims. Every other VC is checked as below.
+// When the reserved set is empty, every VC is checked, as before.
+//
+// TWO-TIER POLICY MODEL (for the checked VCs):
 //
 // The asymmetry between the date-window / issuer-trust checks (which
 // reject the whole envelope on any single-VC failure) and the
 // required-type check (which passes when at least one VC matches) is
 // intentional and load-bearing. They answer different questions:
 //
-//   - per-VC VALIDITY tier (date window, issuer trust): every VC the
-//     producer chose to include in the envelope MUST be individually
+//   - per-VC VALIDITY tier (date window, issuer trust): every checked VC
+//     the producer chose to include in the envelope MUST be individually
 //     valid. Including a VC is a producer's explicit assertion of
 //     intent to present it — the verifier doesn't get to drop VCs it
-//     finds inconvenient. The legitimate-bid-with-an-expired-unrelated-
-//     VC scenario is a producer bug, not a verifier asymmetry.
+//     finds inconvenient.
 //
 //   - per-policy POLICY tier (required-type): the verifier's operator
 //     declares "at least one VC of type X must be present." That's a
-//     coverage check, not a per-VC predicate.
+//     coverage check, not a per-VC predicate, and only a checked VC can
+//     satisfy it.
 //
-// AttestedClaims returns every VC that was examined (i.e. the full
-// input set when all VALIDITY checks pass), NOT just the required-type
-// matches. Callers that need the required-type-matching subset filter
-// downstream — the contract here is "the set of VCs this verifier
-// examined and accepted as valid."
+// AttestedClaims returns every checked VC (i.e. every checked VC when all
+// VALIDITY checks pass), NOT just the required-type matches. Callers that
+// need the required-type-matching subset filter downstream — the contract
+// here is "the set of VCs this verifier examined and accepted as valid."
+// Pass-through VCs are never in it, so claim extraction over
+// AttestedClaims never reads a credential nothing verified.
 //
-// SCOPE NOTE: this does NOT verify each VC's own cryptographic proof
-// block. The MVP threat model accepts trusted-issuer-DID string match
-// as the gate; cryptographic VC verification runs in a separate pass
-// (see VerifyVCProof).
+// SCOPE NOTE: the first pass does NOT verify each VC's own cryptographic
+// proof block. When VerifyVCProofs is wired, a second pass verifies every
+// checked VC's proof (see VerifyVCProof); pass-through VCs are never
+// resolved or verified.
 //
 // `observations` is an append-only accumulator the caller owns; it
-// receives an entry for each VC whose IsIssuerTrusted callback returned
-// allowed=false AND enforced=false (audit / permissive at the caller).
-// The accumulator is populated even when verifyVCPolicies succeeds, so
-// VerifyVP can surface the signal via VPResult.IssuerTrustObservations
-// on a passing envelope.
-func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, opts VerifyVPOptions, observations *[]IssuerTrustObservation) ([]json.RawMessage, error) {
+// receives an entry for each checked VC whose IsIssuerTrusted callback
+// returned allowed=false AND enforced=false (audit / permissive at the
+// caller). The accumulator is populated even when verifyVCPolicies
+// succeeds, so VerifyVP can surface the signal via
+// VPResult.IssuerTrustObservations on a passing envelope.
+func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, opts VerifyVPOptions, observations *[]IssuerTrustObservation) ([]json.RawMessage, []json.RawMessage, error) {
 	if len(vcs) == 0 {
 		// envelope schema enforces minItems: 1, so this is defense in
 		// depth — keeps the rejection path local rather than relying on
 		// the upstream unmarshal having caught it.
-		return nil, fmt.Errorf("envelope.verifiableCredential is empty: %w", ErrMalformedQuote)
+		return nil, nil, fmt.Errorf("envelope.verifiableCredential is empty: %w", ErrMalformedQuote)
 	}
 	if len(rawVCs) != len(vcs) {
 		// Sentinel: VerifyVP MUST pass the parallel raw slice. This is
 		// a programmer error, not a malformed-input error.
-		return nil, fmt.Errorf("internal: rawVCs len %d does not match typed VCs len %d", len(rawVCs), len(vcs))
+		return nil, nil, fmt.Errorf("internal: rawVCs len %d does not match typed VCs len %d", len(rawVCs), len(vcs))
 	}
 
+	reserved := reservedVCTypes(opts)
 	attested := make([]json.RawMessage, 0, len(vcs))
+	var passThrough []json.RawMessage
+	// checked[i] reports whether vcs[i] walked the policy checks; the
+	// proof pass below runs only over those.
+	checked := make([]bool, len(vcs))
 	matchedRequiredType := len(opts.RequiredVCTypes) == 0
 
 	// Two-pass loop so issuer-trust observations from earlier VCs
@@ -765,14 +818,14 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 	// error, observations slice never reaches the caller. The caller's
 	// audit-mode counterfactual dashboard silently undercounts.
 	//
-	// Pass 1: every VC's date-window + issuer-trust observation, plus
-	// the required-type tally. Errors short-circuit here because a
+	// Pass 1: every checked VC's date-window + issuer-trust observation,
+	// plus the required-type tally. Errors short-circuit here because a
 	// failing date-window means the VC is structurally invalid; no
 	// useful observations to accumulate beyond that point.
 	//
-	// Pass 2: every VC's cryptographic proof check. Runs only when
-	// VerifyVCProofs is wired. Errors short-circuit; the observations
-	// from pass 1 stay populated.
+	// Pass 2: every checked VC's cryptographic proof check. Runs only
+	// when VerifyVCProofs is wired. Errors short-circuit; the
+	// observations from pass 1 stay populated.
 	for i, vc := range vcs {
 		// Holder-issued carve-out. A VC whose type intersects
 		// HolderIssuedVCTypes swaps the subject-holder binding + issuer-
@@ -783,6 +836,18 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 		// still walks the standard policy path and gets rejected there.
 		holderIssued := vcTypeIntersects(vc, opts.HolderIssuedVCTypes)
 
+		// Pass-through. A VC that declares no reserved type, and isn't
+		// holder-issued, is for the counterparties to judge: no check
+		// here, and it never reaches AttestedClaims or the coverage gate.
+		// A VC declaring any reserved type is checked, so one claiming a
+		// reserved type from an untrusted issuer is still refused.
+		if !holderIssued && len(reserved) > 0 && !vcTypeIntersects(vc, reserved) {
+			// Preserve verbatim wire bytes — see the rawVCs param doc.
+			passThrough = append(passThrough, rawVCs[i])
+			continue
+		}
+		checked[i] = true
+
 		if holderIssued {
 			// Issuer MUST be the holder — forgery-shaped violation,
 			// rejected in ALL modes (never mode-gated). checkHolderIssuedVC
@@ -792,7 +857,7 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 			// skipped issuer-trust gate and self-satisfy RequiredVCTypes /
 			// the KYC-status read.
 			if err := checkHolderIssuedVC(vc, opts.ExpectedHolder, opts.HolderIssuedVCTypes); err != nil {
-				return nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
+				return nil, nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
 			}
 		} else {
 			// Subject-holder is the cheapest check (single did:pkh segment
@@ -801,11 +866,11 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 			// fires first to keep the rejection reason informative under
 			// multi-violation attacks.
 			if err := checkVCSubjectMatchesHolder(vc, opts.ExpectedHolder); err != nil {
-				return nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
+				return nil, nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
 			}
 		}
 		if err := checkVCDateWindow(vc, opts.Now); err != nil {
-			return nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
+			return nil, nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
 		}
 		if !holderIssued {
 			// Issuer trust is a did:web trust-anchor concept; the holder-
@@ -814,18 +879,18 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 			// gate above already ran in all modes.
 			observation, err := checkVCIssuerTrust(vc, opts.IsIssuerTrusted)
 			if err != nil {
-				return nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
+				return nil, nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
 			}
 			if observation != nil {
 				observation.VCIndex = i
 				*observations = append(*observations, *observation)
 			}
 			// RequiredVCTypes is a COVERAGE gate: "a TRUSTED-issuer VC of
-			// type X is present." Only non-holder-issued VCs can satisfy it
-			// — a holder-issued (did:pkh self-attested) VC skips the
-			// issuer-trust gate, so counting it here would let an operator
-			// who lists a carved type in required_vc_types self-satisfy the
-			// coverage gate with a self-signed credential.
+			// type X is present." Only non-holder-issued checked VCs can
+			// satisfy it — a holder-issued (did:pkh self-attested) VC skips
+			// the issuer-trust gate, so counting it here would let an
+			// operator who lists a carved type in required_vc_types
+			// self-satisfy the coverage gate with a self-signed credential.
 			if !matchedRequiredType && vcSatisfiesRequiredTypes(vc, opts.RequiredVCTypes) {
 				matchedRequiredType = true
 			}
@@ -841,6 +906,12 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 			ctx = context.Background()
 		}
 		for i, vc := range vcs {
+			if !checked[i] {
+				// A pass-through VC's issuer is never resolved: resolving
+				// an arbitrary issuer's DID would let any presenter make
+				// the verifier fetch a host of its choosing.
+				continue
+			}
 			// Pass the raw wire bytes alongside
 			// the typed VC. extractVCProof reads the wire form so a
 			// binding-vs-wire shape drift (e.g. the typed
@@ -855,15 +926,31 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 				Context:   ctx,
 				HolderDID: opts.ExpectedHolder,
 			}); err != nil {
-				return nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
+				return nil, nil, fmt.Errorf("verifiableCredential[%d]: %w", i, err)
 			}
 		}
 	}
 
 	if !matchedRequiredType {
-		return nil, fmt.Errorf("no VC declared all RequiredVCTypes %v: %w", opts.RequiredVCTypes, ErrVPMissingRequiredVCType)
+		return nil, nil, fmt.Errorf("no VC declared all RequiredVCTypes %v: %w", opts.RequiredVCTypes, ErrVPMissingRequiredVCType)
 	}
-	return attested, nil
+	return attested, passThrough, nil
+}
+
+// reservedVCTypes is the set of credential types only trusted issuers may
+// issue: ReservedVCTypes together with RequiredVCTypes, so a required type
+// is always verified. Empty when both are, which checks every VC.
+func reservedVCTypes(opts VerifyVPOptions) []string {
+	if len(opts.ReservedVCTypes) == 0 {
+		return opts.RequiredVCTypes
+	}
+	reserved := slices.Clone(opts.ReservedVCTypes)
+	for _, t := range opts.RequiredVCTypes {
+		if !slices.Contains(reserved, t) {
+			reserved = append(reserved, t)
+		}
+	}
+	return reserved
 }
 
 func checkVCDateWindow(vc fqe.VerifiableCredential, now time.Time) error {

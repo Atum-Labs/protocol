@@ -238,6 +238,50 @@ describe("conformance: VP with a null credential issuanceDate is refused", () =>
   });
 });
 
+// Mirror of the Go canonical's TestConformance_VPPassThroughThirdPartyCredential.
+// Each fixture carries the pinned Known-to-Atum credential followed by a
+// third-party credential from an unlisted issuer that fails every per-VC
+// check. With Known-to-Atum required (so reserved) and issuer trust strict on
+// the pinned issuer, every fixture verifies and the third-party credential
+// comes back in passThroughClaims; with no reserved set it is refused.
+describe("conformance: an unreserved third-party credential is passed through", () => {
+  const holderSecp = `did:pkh:eip155:1:${HARDHAT_ACCOUNT_0}`;
+  const holderEd =
+    "did:pkh:solana:devnet:4zvwRjXUKGfvwnParsHAS3HuSVzV5cA4McphgmoCtajS";
+  const fixtures: ReadonlyArray<readonly [string, string]> = [
+    ["secp256k1-go-vp-pass-through.json", holderSecp],
+    ["secp256k1-ts-vp-pass-through.json", holderSecp],
+    ["ed25519-go-vp-pass-through.json", holderEd],
+    ["ed25519-ts-vp-pass-through.json", holderEd],
+  ];
+
+  for (const [file, holder] of fixtures) {
+    it(`${file}: verifies, with the third-party credential passed through`, async () => {
+      const text = readFixture(file).toString("utf-8");
+      const vcs = (JSON.parse(text) as { verifiableCredential: Record<string, unknown>[] })
+        .verifiableCredential;
+      expect(vcs).toHaveLength(2);
+
+      const opts: VerifyVPOptions = {
+        ...vpHappyOpts(holder),
+        requiredVCTypes: ["KnownToAtumVerifiableCredential"],
+        isIssuerTrusted: (d: string) => ({ allowed: d === "did:web:atumlabs.xyz", enforced: true }),
+      };
+      const res = await verifyVP(text, opts);
+      expect(res.attestedClaims).toEqual([vcs[0]]);
+      expect(res.passThroughClaims).toEqual([vcs[1]]);
+
+      await expect(verifyVP(text, { ...opts, requiredVCTypes: undefined })).rejects.toThrow();
+    });
+  }
+
+  it("ed25519-go-vp-pass-through.json === ed25519-ts-vp-pass-through.json", () => {
+    const goSigned = readFixture("ed25519-go-vp-pass-through.json");
+    const tsSigned = readFixture("ed25519-ts-vp-pass-through.json");
+    expect(goSigned.equals(tsSigned)).toBe(true);
+  });
+});
+
 // PRE-side conformance — the declarationType-set path. The
 // fixtures are PaymentRequestEnvelopes (type
 // ["VerifiablePresentation","PaymentRequestEnvelope"], signed under the PRE

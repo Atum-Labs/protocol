@@ -744,7 +744,12 @@ func TestVerifyVP_MixedValidVCs_RejectsWhenAnySingleVCInvalid(t *testing.T) {
 		ExtraVCs: []map[string]any{extraExpired},
 	})
 
-	_, err := VerifyVP(envelope, happyOpts(holder))
+	// The extra VC's type is reserved, so it walks the VALIDITY tier. An
+	// unreserved one is passed through unchecked instead (see
+	// TestVerifyVP_UnreservedVC_PassedThroughUnchecked).
+	opts := happyOpts(holder)
+	opts.ReservedVCTypes = []string{"UnrelatedExpired"}
+	_, err := VerifyVP(envelope, opts)
 	if err == nil {
 		t.Fatal("VerifyVP accepted a mixed-validity envelope — VALIDITY tier should reject when any single VC fails")
 	}
@@ -852,7 +857,10 @@ func TestVerifyVP_NullIssuanceDateOnSecondVC_Refused(t *testing.T) {
 		ExtraVCs: []map[string]any{extra},
 	})
 
-	_, err := VerifyVP(envelope, happyOpts(holder))
+	// Reserved, so the second VC is checked rather than passed through.
+	opts := happyOpts(holder)
+	opts.ReservedVCTypes = []string{"Unrelated"}
+	_, err := VerifyVP(envelope, opts)
 	if err == nil {
 		t.Fatal("VerifyVP accepted an envelope whose second VC has a null issuanceDate")
 	}
@@ -1306,7 +1314,11 @@ func TestVerifyVP_RejectsSubjectHolderMismatch_MultiVC_OneMatchesOneDoesnt(t *te
 		ExtraVCs: []map[string]any{extraVC},
 	})
 
-	_, err := VerifyVP(envelope, happyOpts(holder))
+	// Reserved, so the second VC's subject is bound to the holder rather
+	// than the VC being passed through.
+	opts := happyOpts(holder)
+	opts.ReservedVCTypes = []string{"KnownToAtumVC"}
+	_, err := VerifyVP(envelope, opts)
 	if err == nil {
 		t.Fatal("VerifyVP accepted a multi-VC envelope with one mismatched subject")
 	}

@@ -947,3 +947,65 @@ func prefix(b []byte, n int) string {
 	}
 	return string(b[:n]) + "..."
 }
+
+// passThroughVPFixtures carry the pinned Known-to-Atum credential followed
+// by a third-party credential from an unlisted issuer that fails every
+// per-VC check (expired, another account's subject, unresolvable issuer).
+var passThroughVPFixtures = []struct{ file, holder string }{
+	{"secp256k1-go-vp-pass-through.json", "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"},
+	{"secp256k1-ts-vp-pass-through.json", "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"},
+	{"ed25519-go-vp-pass-through.json", "did:pkh:solana:devnet:4zvwRjXUKGfvwnParsHAS3HuSVzV5cA4McphgmoCtajS"},
+	{"ed25519-ts-vp-pass-through.json", "did:pkh:solana:devnet:4zvwRjXUKGfvwnParsHAS3HuSVzV5cA4McphgmoCtajS"},
+}
+
+// TestConformance_VPPassThroughThirdPartyCredential: with Known-to-Atum
+// required (so reserved) and issuer trust strict on the pinned issuer,
+// every pass-through fixture, Go-signed and TS-signed, verifies; the
+// third-party credential comes back byte-identical in PassThroughClaims.
+// With no reserved set the same envelope is refused, as before the option.
+// The TS conformance suite asserts the same verdicts.
+func TestConformance_VPPassThroughThirdPartyCredential(t *testing.T) {
+	for _, f := range passThroughVPFixtures {
+		t.Run(f.file, func(t *testing.T) {
+			signed := readFixture(t, f.file)
+			var env struct {
+				VerifiableCredential []json.RawMessage `json:"verifiableCredential"`
+			}
+			if err := json.Unmarshal(signed, &env); err != nil {
+				t.Fatalf("parse %s: %v", f.file, err)
+			}
+			if len(env.VerifiableCredential) != 2 {
+				t.Fatalf("%s carries %d credentials, want 2", f.file, len(env.VerifiableCredential))
+			}
+
+			opts := vpHappyOpts(t, f.holder)
+			opts.RequiredVCTypes = []string{"KnownToAtumVerifiableCredential"}
+			opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == "did:web:atumlabs.xyz", true }
+			res, err := VerifyVP(signed, opts)
+			if err != nil {
+				t.Fatalf("VerifyVP(%s) refused an unreserved third-party credential: %v", f.file, err)
+			}
+			if len(res.AttestedClaims) != 1 || !bytes.Equal(res.AttestedClaims[0], env.VerifiableCredential[0]) {
+				t.Fatalf("%s: AttestedClaims = %d entries, want exactly the Known-to-Atum credential", f.file, len(res.AttestedClaims))
+			}
+			if len(res.PassThroughClaims) != 1 || !bytes.Equal(res.PassThroughClaims[0], env.VerifiableCredential[1]) {
+				t.Fatalf("%s: PassThroughClaims = %d entries, want the third-party credential byte-identical", f.file, len(res.PassThroughClaims))
+			}
+
+			opts.RequiredVCTypes = nil
+			if _, err := VerifyVP(signed, opts); err == nil {
+				t.Fatalf("VerifyVP(%s) accepted the third-party credential with no reserved set", f.file)
+			}
+		})
+	}
+}
+
+// TestConformance_Ed25519PassThroughVPFixturesAreByteIdentical: the
+// pass-through pair is RFC 8032 deterministic like the others.
+func TestConformance_Ed25519PassThroughVPFixturesAreByteIdentical(t *testing.T) {
+	goSigned := readFixture(t, "ed25519-go-vp-pass-through.json")
+	tsSigned := readFixture(t, "ed25519-ts-vp-pass-through.json")
+	if !bytes.Equal(goSigned, tsSigned) {
+		t.Fatalf("ed25519 pass-through VP fixtures differ between Go and TS signers")
+	}
+}

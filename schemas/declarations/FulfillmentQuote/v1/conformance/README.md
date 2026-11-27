@@ -53,6 +53,25 @@ byte-identical like the others.
 | `ed25519-go-vp-null-issuance-date.json` | `Ed25519Signature2020` | Go (`SignVPEd25519`) |
 | `ed25519-ts-vp-null-issuance-date.json` | `Ed25519Signature2020` | TS (`signVPEd25519`) |
 
+## Pass-through FulfillmentQuoteEnvelope fixtures
+
+The envelopes above with a second, third-party credential after the pinned one.
+Its issuer is on no trust list and resolves nowhere, it expired before the
+conformance clock, and its subject is another account, so it fails every per-VC
+check; its type is an absolute IRI, so both JSON-LD libraries expand it the same
+way. With the pinned credential's type required (and so reserved) and issuer
+trust strict on the pinned issuer, both verifiers accept every fixture and return
+the third-party credential, unchecked, in their pass-through claims. With no
+reserved set both refuse it, as before reserved types existed. The ed25519 pair
+is byte-identical like the others.
+
+| File | Cryptosuite | Signed by |
+|---|---|---|
+| `secp256k1-go-vp-pass-through.json` | `EcdsaSecp256k1RecoverySignature2020` | Go (`SignVP`) |
+| `secp256k1-ts-vp-pass-through.json` | `EcdsaSecp256k1RecoverySignature2020` | TS (`signVP`) |
+| `ed25519-go-vp-pass-through.json` | `Ed25519Signature2020` | Go (`SignVPEd25519`) |
+| `ed25519-ts-vp-pass-through.json` | `Ed25519Signature2020` | TS (`signVPEd25519`) |
+
 ## PaymentRequestEnvelope fixtures
 
 The same VP signer/verifier, exercised through the **envelope-context-overlay

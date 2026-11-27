@@ -11,6 +11,7 @@
 //     - ed25519-ts-vp.json
 //     - secp256k1-ts-vp-null-issuance-date.json  (negative: verifyVP must refuse)
 //     - ed25519-ts-vp-null-issuance-date.json    (negative: verifyVP must refuse)
+//     - {secp256k1,ed25519}-ts-vp-pass-through.json (a third-party VC a reserved set passes through)
 //
 //   VC-proof side:
 //     - secp256k1-ts-vc-proof.json
@@ -120,6 +121,11 @@ async function main() {
   // verifiers on both sides must refuse the credential.
   await genSecp256k1VP("secp256k1-ts-vp-null-issuance-date.json", null);
   await genEd25519VP("ed25519-ts-vp-null-issuance-date.json", null);
+  // Pass-through fixtures: the pinned Known-to-Atum credential plus a
+  // third-party credential from an unlisted issuer that a verifier with a
+  // reserved set must pass through unchecked.
+  await genSecp256k1VP("secp256k1-ts-vp-pass-through.json", PINNED_VC_ISSUANCE_DATE, true);
+  await genEd25519VP("ed25519-ts-vp-pass-through.json", PINNED_VC_ISSUANCE_DATE, true);
   await genSecp256k1PREVP();
   await genEd25519PREVP();
   await genSecp256k1TypedPREVP();
@@ -128,7 +134,7 @@ async function main() {
   for (const f of KNOWN_TO_ATUM_V2_FIXTURES) {
     await genKnownToAtumV2VCProofs(f);
   }
-  console.log(`wrote ${11 + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`);
+  console.log(`wrote ${13 + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`);
 }
 
 async function genSecp256k1() {
@@ -188,11 +194,13 @@ async function genEd25519() {
 
 // issuanceDate is the embedded credential's issuanceDate (null writes JSON
 // null).
-async function genSecp256k1VP(fileName, issuanceDate) {
+async function genSecp256k1VP(fileName, issuanceDate, withThirdParty = false) {
   const wallet = new Wallet(HARDHAT_PRIVKEY);
   const holder = `did:pkh:eip155:1:${wallet.address.toLowerCase()}`;
 
-  const signed = await signVP(pinnedVCsFor(holder, "EcdsaSecp256k1RecoverySignature2020", issuanceDate), HARDHAT_PRIVKEY, {
+  const vcs = pinnedVCsFor(holder, "EcdsaSecp256k1RecoverySignature2020", issuanceDate);
+  if (withThirdParty) vcs.push(pinnedThirdPartyVC("EcdsaSecp256k1RecoverySignature2020"));
+  const signed = await signVP(vcs, HARDHAT_PRIVKEY, {
     holder,
     verificationMethod: `${holder}#blockchainAccountId`,
     challenge: PINNED_VP_CHALLENGE,
@@ -205,8 +213,8 @@ async function genSecp256k1VP(fileName, issuanceDate) {
 }
 
 // issuanceDate is the embedded credential's issuanceDate (null writes JSON
-// null).
-async function genEd25519VP(fileName, issuanceDate) {
+// null). withThirdParty appends pinnedThirdPartyVC.
+async function genEd25519VP(fileName, issuanceDate, withThirdParty = false) {
   const seed = new Uint8Array(32);
   const keyPair = nacl.sign.keyPair.fromSeed(seed);
   const pub = keyPair.publicKey;
@@ -214,7 +222,9 @@ async function genEd25519VP(fileName, issuanceDate) {
   const pubBase58 = bs58.encode(pub);
   const holder = `did:pkh:solana:devnet:${pubBase58}`;
 
-  const signed = await signVPEd25519(pinnedVCsFor(holder, "Ed25519Signature2020", issuanceDate), priv, {
+  const vcs = pinnedVCsFor(holder, "Ed25519Signature2020", issuanceDate);
+  if (withThirdParty) vcs.push(pinnedThirdPartyVC("Ed25519Signature2020"));
+  const signed = await signVPEd25519(vcs, priv, {
     holder,
     verificationMethod: `${holder}#blockchainAccountId`,
     challenge: PINNED_VP_CHALLENGE,
@@ -432,6 +442,34 @@ function pinnedVCsFor(holder, cryptosuite, issuanceDate) {
       },
     },
   ];
+}
+
+// pinnedThirdPartyVC is the third-party credential in the pass-through
+// fixtures. Its issuer is on no trust list and resolves nowhere, it expired
+// before the conformance clock, and its subject is another account, so it
+// fails every per-VC check; its type is an absolute IRI so both JSON-LD
+// libraries expand it the same way. A verifier whose reserved set excludes
+// that type must pass it through unchecked. MUST exactly mirror the Go
+// generator's pinnedThirdPartyVC.
+function pinnedThirdPartyVC(cryptosuite) {
+  return {
+    "@context": [W3C_VC_V1_CONTEXT, KNOWN_TO_ATUM_V1_CONTEXT],
+    id: "urn:uuid:8d3f6a2c-1b4e-4f7a-9c2d-5e6f7a8b9c0d",
+    type: ["VerifiableCredential", "https://example.org/credentials#PartnerAttestationCredential"],
+    issuer: "did:web:unlisted-issuer.example",
+    issuanceDate: "2026-01-02T00:00:00Z",
+    expirationDate: "2026-02-01T00:00:00Z",
+    credentialSubject: {
+      id: "did:pkh:eip155:1:0x00000000000000000000000000000000000000aa",
+      role: "partner",
+    },
+    proof: {
+      type: cryptosuite,
+      created: "2026-01-02T00:00:00Z",
+      verificationMethod: "did:web:unlisted-issuer.example#key-1",
+      proofPurpose: "assertionMethod",
+    },
+  };
 }
 
 // sortKeysRecursively normalizes the JSON object so the on-disk output

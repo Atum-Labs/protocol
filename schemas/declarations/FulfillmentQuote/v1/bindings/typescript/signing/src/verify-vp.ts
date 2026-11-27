@@ -114,6 +114,25 @@ export interface VerifyVPOptions {
   // VC types at least one verified VC must declare. Empty disables the
   // type check.
   requiredVCTypes?: string[];
+  // Credential types only trusted issuers may issue. A VC declaring one of
+  // them, or one of requiredVCTypes, walks every per-VC check:
+  // subject-holder binding, date window, issuer trust and, when
+  // verifyVCProofs is supplied, its own proof. A VC claiming a reserved
+  // type from an issuer outside the trust list is refused as before.
+  //
+  // Any other VC is the counterparties' to judge: the presentation carries
+  // it to the parties who decide whom they trust as an issuer. It is passed
+  // through untouched (no issuer-trust check, no issuer resolution or proof
+  // verification, no subject-holder binding, no date-window check),
+  // returned in VPResult.passThroughClaims and never in attestedClaims, and
+  // it never satisfies requiredVCTypes. The holder's signature over the
+  // whole presentation still covers it.
+  //
+  // The reserved set is reservedVCTypes together with requiredVCTypes.
+  // Undefined or empty, it is requiredVCTypes alone; when both are empty
+  // every VC walks every check, as before. Mirror of Go
+  // VerifyVPOptions.ReservedVCTypes.
+  reservedVCTypes?: string[];
   // Cap on envelope.verifiableCredential length. Schema enforces
   // minItems: 1 but no maxItems; an attacker submitting a 10k-VC bid
   // would amplify URDNA2015 cost into a DoS. Zero or undefined disables
@@ -185,6 +204,12 @@ export interface VPResult {
   // resolver, every VC in this slice ALSO had its proof
   // cryptographically verified against the issuer's published key.
   attestedClaims: unknown[];
+  // VCs passed through unchecked because they declare none of the reserved
+  // types (see VerifyVPOptions.reservedVCTypes), in envelope order and as
+  // they arrived. Nothing about them was verified beyond the holder's
+  // signature over the presentation. Empty when there is no reserved set or
+  // every VC declares a reserved type. Mirror of Go VPResult.PassThroughClaims.
+  passThroughClaims: unknown[];
   // Count of VCs whose cryptographic proof was verified.
   // Zero indicates the verifyVCProofs path did not run (caller
   // opted out by leaving the resolver undefined). Non-zero is a
@@ -436,7 +461,7 @@ async function verifyVPSecp256k1(
   // which an attacker controls both sides of.
   signerMatchesHolderSecp256k1(recovered, holder);
 
-  const { accepted, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
+  const { accepted, passThrough, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
 
   return {
     holder: stripDIDFragment(holder),
@@ -446,6 +471,7 @@ async function verifyVPSecp256k1(
     didNetwork: parseDIDNetwork(holder),
     created,
     attestedClaims: accepted,
+    passThroughClaims: passThrough,
     vcProofsVerifiedCount,
   };
 }
@@ -500,7 +526,7 @@ async function verifyVPEd25519(
   // verificationMethod field, not the holder.
   signerMatchesHolderEd25519(pubkey, holder);
 
-  const { accepted, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
+  const { accepted, passThrough, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
 
   return {
     holder: stripDIDFragment(holder),
@@ -510,13 +536,21 @@ async function verifyVPEd25519(
     didNetwork: parseDIDNetwork(holder),
     created,
     attestedClaims: accepted,
+    passThroughClaims: passThrough,
     vcProofsVerifiedCount,
   };
 }
 
 // applyVCPolicies runs the per-VC checks from design doc §5 (date window),
 // §6 (trust anchors), and §8 (RequiredVCTypes). Returns the VCs that
-// passed; throws on any failure that makes the envelope unacceptable.
+// passed and the VCs it passed through unchecked; throws on any failure
+// that makes the envelope unacceptable.
+//
+// RESERVED AND PASS-THROUGH VCs: when the reserved set (reservedVCTypes
+// together with requiredVCTypes) is non-empty, a VC that declares none of
+// its types is passed through for the counterparties to judge, with no
+// check at all. The checks below apply to every other VC, and to every VC
+// when the reserved set is empty.
 //
 // TWO-TIER POLICY MODEL:
 //
@@ -549,17 +583,30 @@ async function applyVCPolicies(
   doc: Record<string, unknown>,
   options: VerifyVPOptions,
   holder: string
-): Promise<{ accepted: unknown[]; vcProofsVerifiedCount: number }> {
+): Promise<{ accepted: unknown[]; passThrough: unknown[]; vcProofsVerifiedCount: number }> {
   const vcs = doc.verifiableCredential;
   if (!Array.isArray(vcs) || vcs.length === 0) {
     throw new Error("verifyVP: envelope.verifiableCredential is missing or empty");
   }
 
+  const reserved = reservedVCTypes(options);
   let matchedRequired = !options.requiredVCTypes || options.requiredVCTypes.length === 0;
   const accepted: unknown[] = [];
+  const passThrough: unknown[] = [];
   let vcProofsVerifiedCount = 0;
   for (let i = 0; i < vcs.length; i++) {
     const vc = vcs[i] as Record<string, unknown>;
+    // Pass-through. A VC that declares no reserved type is for the
+    // counterparties to judge: no check here, and it never reaches
+    // attestedClaims or the coverage gate. A VC declaring any reserved
+    // type is checked, so one claiming a reserved type from an untrusted
+    // issuer is still refused. Its issuer is never resolved: resolving an
+    // arbitrary issuer's DID would let any presenter make the verifier
+    // fetch a host of its choosing. Mirror of the Go canonical.
+    if (reserved.length > 0 && !vcTypeIntersects(vc, reserved)) {
+      passThrough.push(vc);
+      continue;
+    }
     // Subject-holder is the cheapest check (single did:pkh segment
     // compare, no allocations, no callback) AND the most diagnostic
     // when an attacker is trying to attach a captured VC, so it fires
@@ -587,7 +634,31 @@ async function applyVCPolicies(
       `verifyVP: no VC declared all requiredVCTypes ${JSON.stringify(options.requiredVCTypes)}`
     );
   }
-  return { accepted, vcProofsVerifiedCount };
+  return { accepted, passThrough, vcProofsVerifiedCount };
+}
+
+// reservedVCTypes is the set of credential types only trusted issuers may
+// issue: reservedVCTypes together with requiredVCTypes, so a required type
+// is always verified. Empty when both are, which checks every VC. Mirror of
+// the Go canonical's reservedVCTypes.
+function reservedVCTypes(options: VerifyVPOptions): string[] {
+  const required = options.requiredVCTypes ?? [];
+  if (!options.reservedVCTypes || options.reservedVCTypes.length === 0) {
+    return required;
+  }
+  const reserved = [...options.reservedVCTypes];
+  for (const t of required) {
+    if (!reserved.includes(t)) reserved.push(t);
+  }
+  return reserved;
+}
+
+// vcTypeIntersects reports whether the VC's `type` array declares any of
+// `types`. Mirror of the Go canonical's vcTypeIntersects.
+function vcTypeIntersects(vc: Record<string, unknown>, types: string[]): boolean {
+  const have = vc.type;
+  if (!Array.isArray(have)) return false;
+  return have.some((t) => typeof t === "string" && types.includes(t));
 }
 
 // ZERO_INSTANT_MS is 0001-01-01T00:00:00Z, the instant Go's zero time.Time
