@@ -287,6 +287,25 @@ type VerifyVPOptions struct {
 	// files).
 	ExtraEnvelopeContexts map[string]any
 
+	// ExtraCredentialContexts supplies the JSON-LD contexts of credentials
+	// that are not Atum's, so a presentation can carry them to the
+	// counterparties: context URL → parsed context document (json.Unmarshal
+	// of the .jsonld file). The loader never fetches a context, so a
+	// credential whose @context names a URL that is neither bundled nor
+	// supplied here makes the whole presentation fail canonicalization. The
+	// caller supplies each document as content it holds and pins (for
+	// example a reviewed file in its repository), never as a URL to fetch.
+	//
+	// Overlaid on the per-call loader together with ExtraEnvelopeContexts,
+	// for the holder signature and for reserved-type matching. A key that
+	// equals a bundled context URL or an ExtraEnvelopeContexts key is
+	// refused before anything is verified, so a supplied context can never
+	// replace one of Atum's. A supplied context can't redefine a protected
+	// term of Atum's contexts either (expansion fails, and the credential
+	// is checked), and a term it defines that stands for a reserved type's
+	// IRI makes the credential reserved (see ReservedVCTypes).
+	ExtraCredentialContexts map[string]any
+
 	// AcceptPaymentRequestEnvelopeTypedProof also accepts a secp256k1 holder
 	// proof in the typed form a payer's wallet signs: a signature over the
 	// EIP-712 digest of PaymentRequestEnvelopeProof{proofHash, docHash}
@@ -427,6 +446,9 @@ func VerifyVP(envelopeJSON []byte, opts VerifyVPOptions) (result VPResult, err e
 	}
 	if opts.ExpectedHolder == "" {
 		return VPResult{}, fmt.Errorf("VerifyVPOptions.ExpectedHolder is required: %w", ErrMalformedProof)
+	}
+	if err := checkExtraCredentialContexts(opts); err != nil {
+		return VPResult{}, err
 	}
 
 	// Refused before any typed read. encoding/json matches a member name to a
@@ -965,12 +987,37 @@ func reservedVCTypes(opts VerifyVPOptions) []string {
 }
 
 // verifyLoader is the per-call document loader for verification: fqLoader
-// overlaid with the caller's ExtraEnvelopeContexts. The reserved-type
-// matcher expands credential types with the same loader the holder
-// signature is canonicalized with, so both read a credential's terms the
-// same way.
+// overlaid with the caller's ExtraEnvelopeContexts and
+// ExtraCredentialContexts. The reserved-type matcher expands credential
+// types with the same loader the holder signature is canonicalized with,
+// so both read a credential's terms the same way.
 func verifyLoader(opts VerifyVPOptions) *lddataintegrity.DocumentLoader {
-	return loaderWithExtraEnvelopeContexts(opts.ExtraEnvelopeContexts)
+	if len(opts.ExtraCredentialContexts) == 0 {
+		return loaderWithExtraEnvelopeContexts(opts.ExtraEnvelopeContexts)
+	}
+	merged := make(map[string]any, len(opts.ExtraEnvelopeContexts)+len(opts.ExtraCredentialContexts))
+	for url, ctx := range opts.ExtraEnvelopeContexts {
+		merged[url] = ctx
+	}
+	for url, ctx := range opts.ExtraCredentialContexts {
+		merged[url] = ctx
+	}
+	return loaderWithExtraEnvelopeContexts(merged)
+}
+
+// checkExtraCredentialContexts refuses a supplied credential context whose
+// URL is a bundled context or an ExtraEnvelopeContexts key: a supplied
+// context may add a vocabulary, never replace one of Atum's.
+func checkExtraCredentialContexts(opts VerifyVPOptions) error {
+	for url := range opts.ExtraCredentialContexts {
+		if _, err := fqLoader.LoadDocument(url); err == nil {
+			return fmt.Errorf("VerifyVPOptions.ExtraCredentialContexts: %q is a bundled context and can't be replaced: %w", url, ErrMalformedProof)
+		}
+		if _, ok := opts.ExtraEnvelopeContexts[url]; ok {
+			return fmt.Errorf("VerifyVPOptions.ExtraCredentialContexts: %q is also an ExtraEnvelopeContexts key: %w", url, ErrMalformedProof)
+		}
+	}
+	return nil
 }
 
 func checkVCDateWindow(vc fqe.VerifiableCredential, now time.Time) error {

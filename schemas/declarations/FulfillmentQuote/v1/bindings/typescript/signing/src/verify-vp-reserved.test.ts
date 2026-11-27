@@ -316,6 +316,121 @@ describe("verifyVP: reserved and pass-through credentials", () => {
   }
 });
 
+// Partner credentials under their own contexts (extraCredentialContexts).
+// Mirror of the Go canonical's partner-context tests.
+const PARTNER_CONTEXT_URL = "https://partner.example/credentials/v1";
+const PARTNER_MEMBERSHIP_CONTEXT_URL = "https://partner.example/membership/v1";
+const PARTNER_CONTEXT = {
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    pt: "https://partner.example/credentials/v1#",
+    PartnerAttestationCredential: "pt:PartnerAttestationCredential",
+    riskScore: "pt:riskScore",
+  },
+};
+const PARTNER_MEMBERSHIP_CONTEXT = {
+  "@context": { "@version": 1.1, PartnerMembershipCredential: KTA_TYPE_IRI },
+};
+
+function partnerVC(issuer: string, subject: string, ctxURL: string, type: string, expires: boolean): Record<string, unknown> {
+  const vc: Record<string, unknown> = {
+    "@context": [W3C_VC_V1_CONTEXT_URL, ctxURL],
+    id: "urn:uuid:7f1e2d3c-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+    type: ["VerifiableCredential", type],
+    issuer,
+    issuanceDate: "2026-01-02T00:00:00Z",
+    credentialSubject: { id: subject, riskScore: "low" },
+    proof: {
+      type: "EcdsaSecp256k1RecoverySignature2020",
+      created: "2026-01-02T00:00:00Z",
+      verificationMethod: `${issuer}#key-1`,
+      proofPurpose: "assertionMethod",
+    },
+  };
+  if (expires) vc.expirationDate = "2026-02-01T00:00:00Z";
+  return vc;
+}
+
+async function signWithContexts(
+  wallet: { privateKey: string },
+  holder: string,
+  vcs: Record<string, unknown>[],
+  contexts: Record<string, unknown>
+) {
+  const signed = await signVP(vcs as unknown as VerifiableCredential[], wallet.privateKey, {
+    holder,
+    verificationMethod: `${holder}#blockchainAccountId`,
+    challenge: FIXTURE_CHALLENGE,
+    domain: FIXTURE_DOMAIN,
+    created: FIXTURE_CREATED,
+    extraEnvelopeContexts: contexts,
+  });
+  return signed as unknown as Record<string, unknown>;
+}
+
+describe("verifyVP: partner credentials under their own contexts", () => {
+  it("passes a partner credential through with its context supplied, and refuses the presentation without it", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta, vmSet } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const partner = partnerVC(
+      THIRD_PARTY_ISSUER,
+      "did:pkh:eip155:1:0xdeadbeef00000000000000000000000000000002",
+      PARTNER_CONTEXT_URL,
+      "PartnerAttestationCredential",
+      true
+    );
+    const contexts = { [PARTNER_CONTEXT_URL]: PARTNER_CONTEXT };
+    const signed = await signWithContexts(wallet, holder, [kta, partner], contexts);
+
+    const opts = strictOpts(holder, { verifyVCProofs: new GuardResolver(vmSet), extraCredentialContexts: contexts });
+    const res = await verifyVP(signed, opts);
+    expect(res.passThroughClaims).toEqual([(signed.verifiableCredential as unknown[])[1]]);
+
+    await expect(verifyVP(signed, { ...opts, extraCredentialContexts: undefined })).rejects.toThrow();
+  });
+
+  it("checks a credential whose supplied context aliases the reserved type's IRI", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const aliased = partnerVC(IMPOSTOR, holder, PARTNER_MEMBERSHIP_CONTEXT_URL, "PartnerMembershipCredential", false);
+    const contexts = { [PARTNER_MEMBERSHIP_CONTEXT_URL]: PARTNER_MEMBERSHIP_CONTEXT };
+    const signed = await signWithContexts(wallet, holder, [kta, aliased], contexts);
+
+    await expect(verifyVP(signed, strictOpts(holder, { extraCredentialContexts: contexts }))).rejects.toThrow(
+      /verifiableCredential\[1\] issuer .* not in trust anchors/
+    );
+    const res = await verifyVP(
+      signed,
+      strictOpts(holder, {
+        extraCredentialContexts: contexts,
+        isIssuerTrusted: (d: string) => ({ allowed: d === TRUSTED_ISSUER || d === IMPOSTOR, enforced: true }),
+      })
+    );
+    expect(res.attestedClaims).toHaveLength(2);
+    expect(res.passThroughClaims).toHaveLength(0);
+  });
+
+  it("refuses a supplied context that would replace a bundled or envelope context", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const signed = await signPresentation(wallet, holder, [kta]);
+    await expect(
+      verifyVP(signed, strictOpts(holder, { extraCredentialContexts: { [KNOWN_TO_ATUM_V1_CONTEXT_URL]: PARTNER_MEMBERSHIP_CONTEXT } }))
+    ).rejects.toThrow(/extraCredentialContexts: .* is a bundled context/);
+    await expect(
+      verifyVP(
+        signed,
+        strictOpts(holder, {
+          extraEnvelopeContexts: { [PARTNER_CONTEXT_URL]: PARTNER_CONTEXT },
+          extraCredentialContexts: { [PARTNER_CONTEXT_URL]: PARTNER_CONTEXT },
+        })
+      )
+    ).rejects.toThrow(/extraCredentialContexts: .* is also an extraEnvelopeContexts key/);
+    await expect(verifyVP(signed, strictOpts(holder))).resolves.toBeDefined();
+  });
+});
+
 // For the explicitly reserved case the third-party credential is checked,
 // so its issuer may reach the resolver; it fails on its subject or dates
 // before that, but the resolver must not abort the test if it is asked.

@@ -30,7 +30,8 @@ import (
 //   - one of its types, expanded with JSON-LD exactly as it sits in the
 //     presentation (the presentation's @context, then the credential's
 //     own), is an IRI a reserved name expands to under Atum's bundled
-//     credential contexts, or ends in a reserved name;
+//     credential contexts, so a term in a supplied context that aliases a
+//     reserved IRI is caught;
 //   - its types cannot be resolved: expansion fails (an unknown context, a
 //     redefinition of one of Atum's protected terms), a type expands to
 //     something that is not an absolute IRI (an undefined short name, a
@@ -94,7 +95,7 @@ func (m *reservedTypeMatcher) reserved(types []string, rawVC json.RawMessage) bo
 		return true
 	}
 	for _, iri := range expanded {
-		if !isAbsoluteIRI(iri) || m.iris[iri] || m.lexical(iri) {
+		if !isAbsoluteIRI(iri) || m.iris[iri] {
 			return true
 		}
 	}

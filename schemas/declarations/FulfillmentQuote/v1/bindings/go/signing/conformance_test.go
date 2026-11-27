@@ -1063,3 +1063,88 @@ func TestConformance_VPReservedTypeSpellingsAreChecked(t *testing.T) {
 		}
 	}
 }
+
+// partnerContext reads a partner context document the conformance fixtures
+// were canonicalized with and returns it as ExtraCredentialContexts.
+func partnerContexts(t *testing.T, url, file string) map[string]any {
+	t.Helper()
+	var ctx any
+	if err := json.Unmarshal(readFixture(t, file), &ctx); err != nil {
+		t.Fatalf("parse %s: %v", file, err)
+	}
+	return map[string]any{url: ctx}
+}
+
+// TestConformance_VPPartnerContextCredentialPassesThrough: a partner
+// credential under its own context, from an unlisted issuer, expired and
+// about another account, passes through, byte-identical, when the verifier
+// is given that context; without it the presentation is refused, since the
+// loader never fetches a context. Go-signed and TS-signed alike; the TS
+// conformance suite asserts the same verdicts.
+func TestConformance_VPPartnerContextCredentialPassesThrough(t *testing.T) {
+	const holder = "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+	contexts := partnerContexts(t, "https://partner.example/credentials/v1", "partner-credentials-v1-context.jsonld")
+	for _, signer := range []string{"go", "ts"} {
+		file := "secp256k1-" + signer + "-vp-partner-context.json"
+		t.Run(file, func(t *testing.T) {
+			signed := readFixture(t, file)
+			var env struct {
+				VerifiableCredential []json.RawMessage `json:"verifiableCredential"`
+			}
+			if err := json.Unmarshal(signed, &env); err != nil || len(env.VerifiableCredential) != 2 {
+				t.Fatalf("parse %s: %v (%d credentials)", file, err, len(env.VerifiableCredential))
+			}
+			opts := vpHappyOpts(t, holder)
+			opts.RequiredVCTypes = []string{"KnownToAtumVerifiableCredential"}
+			opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == "did:web:atumlabs.xyz", true }
+			opts.ExtraCredentialContexts = contexts
+			res, err := VerifyVP(signed, opts)
+			if err != nil {
+				t.Fatalf("VerifyVP(%s) with the partner context: %v", file, err)
+			}
+			if len(res.AttestedClaims) != 1 || !bytes.Equal(res.AttestedClaims[0], env.VerifiableCredential[0]) {
+				t.Fatalf("%s: AttestedClaims = %d entries, want exactly the Known-to-Atum credential", file, len(res.AttestedClaims))
+			}
+			if len(res.PassThroughClaims) != 1 || !bytes.Equal(res.PassThroughClaims[0], env.VerifiableCredential[1]) {
+				t.Fatalf("%s: PassThroughClaims = %d entries, want the partner credential byte-identical", file, len(res.PassThroughClaims))
+			}
+			opts.ExtraCredentialContexts = nil
+			if _, err := VerifyVP(signed, opts); err == nil {
+				t.Fatalf("VerifyVP(%s) accepted the partner credential without its context", file)
+			}
+		})
+	}
+}
+
+// TestConformance_VPSuppliedContextAliasIsChecked: a partner context term
+// that stands for the reserved type's IRI makes the credential reserved:
+// with that context supplied it is refused on its unlisted issuer, and
+// trusting that issuer too makes it verify with both credentials checked.
+func TestConformance_VPSuppliedContextAliasIsChecked(t *testing.T) {
+	const holder = "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+	contexts := partnerContexts(t, "https://partner.example/membership/v1", "partner-membership-v1-context.jsonld")
+	for _, signer := range []string{"go", "ts"} {
+		file := "secp256k1-" + signer + "-vp-partner-alias.json"
+		t.Run(file, func(t *testing.T) {
+			signed := readFixture(t, file)
+			opts := vpHappyOpts(t, holder)
+			opts.RequiredVCTypes = []string{"KnownToAtumVerifiableCredential"}
+			opts.ExtraCredentialContexts = contexts
+			opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == "did:web:atumlabs.xyz", true }
+			_, err := VerifyVP(signed, opts)
+			if !errors.Is(err, ErrVPIssuerNotTrusted) || !strings.Contains(err.Error(), "verifiableCredential[1]") {
+				t.Fatalf("VerifyVP(%s): want ErrVPIssuerNotTrusted on verifiableCredential[1], got %v", file, err)
+			}
+			opts.IsIssuerTrusted = func(d string) (bool, bool) {
+				return d == "did:web:atumlabs.xyz" || d == "did:web:impersonator.example", true
+			}
+			res, err := VerifyVP(signed, opts)
+			if err != nil {
+				t.Fatalf("VerifyVP(%s) with both issuers trusted: %v", file, err)
+			}
+			if len(res.AttestedClaims) != 2 || len(res.PassThroughClaims) != 0 {
+				t.Fatalf("%s: %d attested and %d passed through, want both checked", file, len(res.AttestedClaims), len(res.PassThroughClaims))
+			}
+		})
+	}
+}

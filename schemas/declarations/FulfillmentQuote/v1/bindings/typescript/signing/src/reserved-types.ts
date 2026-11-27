@@ -18,7 +18,8 @@
 //   - one of its types, expanded with JSON-LD exactly as it sits in the
 //     presentation (the presentation's @context, then the credential's own),
 //     is an IRI a reserved name expands to under Atum's bundled credential
-//     contexts, or ends in a reserved name;
+//     contexts, so a term in a supplied context that aliases a reserved IRI
+//     is caught;
 //   - its types cannot be resolved: expansion fails, a type expands to
 //     something that is not an absolute IRI, or the expanded count differs
 //     from the declared count.
@@ -182,7 +183,7 @@ export async function newReservedTypeMatcher(
       if (!node) return true;
       const expanded = expandedTypeStrings(node);
       if (!expanded || expanded.length !== declared.length) return true;
-      return expanded.some((iri) => !isAbsoluteIRI(iri) || iris.has(iri) || lexical(iri));
+      return expanded.some((iri) => !isAbsoluteIRI(iri) || iris.has(iri));
     },
   };
 }

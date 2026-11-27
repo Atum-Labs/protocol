@@ -14,6 +14,10 @@
 //     - {secp256k1,ed25519}-ts-vp-pass-through.json (a third-party VC a reserved set passes through)
 //     - secp256k1-ts-vp-reserved-{iri,compact,compact-no-context,undefined}.json
 //       (a reserved type in another spelling, or a type nothing defines: checked)
+//     - secp256k1-ts-vp-partner-context.json (a partner credential under its own
+//       context, which passes through when the verifier is given that context)
+//     - secp256k1-ts-vp-partner-alias.json (a partner context term standing for
+//       the reserved type's IRI: checked)
 //
 //   VC-proof side:
 //     - secp256k1-ts-vc-proof.json
@@ -131,6 +135,18 @@ async function main() {
   for (const sp of RESERVED_SPELLINGS) {
     await genReservedSpellingVP(`secp256k1-ts-vp-reserved-${sp.name}.json`, sp.context, sp.types);
   }
+  await genPartnerVP(
+    "secp256k1-ts-vp-partner-context.json",
+    PARTNER_CONTEXT_URL,
+    PARTNER_CONTEXT_FILE,
+    partnerAttestationVC
+  );
+  await genPartnerVP(
+    "secp256k1-ts-vp-partner-alias.json",
+    PARTNER_MEMBERSHIP_CONTEXT_URL,
+    PARTNER_MEMBERSHIP_CONTEXT_FILE,
+    partnerMembershipVC
+  );
   await genSecp256k1PREVP();
   await genEd25519PREVP();
   await genSecp256k1TypedPREVP();
@@ -140,7 +156,7 @@ async function main() {
     await genKnownToAtumV2VCProofs(f);
   }
   console.log(
-    `wrote ${13 + RESERVED_SPELLINGS.length + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`
+    `wrote ${15 + RESERVED_SPELLINGS.length + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`
   );
 }
 
@@ -537,6 +553,80 @@ async function genReservedSpellingVP(fileName, context, types) {
     challenge: PINNED_VP_CHALLENGE,
     domain: PINNED_VP_DOMAIN,
     created: PINNED_CREATED,
+  });
+  writeFileSync(resolve(fixturesDir, fileName), JSON.stringify(sortKeysRecursively(signed)) + "\n");
+}
+
+// The partner-context fixtures carry a credential under a partner's own
+// JSON-LD context, which a verifier reads only when the caller supplies it
+// (verifyVP's extraCredentialContexts). The context documents are the two
+// *-context.json files beside the fixtures, read by both generators and both
+// conformance suites. MUST exactly mirror the Go generator.
+const PARTNER_CONTEXT_URL = "https://partner.example/credentials/v1";
+const PARTNER_CONTEXT_FILE = "partner-credentials-v1-context.jsonld";
+const PARTNER_MEMBERSHIP_CONTEXT_URL = "https://partner.example/membership/v1";
+const PARTNER_MEMBERSHIP_CONTEXT_FILE = "partner-membership-v1-context.jsonld";
+
+// A partner credential under its own context, from an issuer on no trust
+// list, expired before the conformance clock and about another account: a
+// verifier with that context supplied passes it through.
+function partnerAttestationVC() {
+  return {
+    "@context": [W3C_VC_V1_CONTEXT, PARTNER_CONTEXT_URL],
+    id: "urn:uuid:7f1e2d3c-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+    type: ["VerifiableCredential", "PartnerAttestationCredential"],
+    issuer: "did:web:unlisted-issuer.example",
+    issuanceDate: "2026-01-02T00:00:00Z",
+    expirationDate: "2026-02-01T00:00:00Z",
+    credentialSubject: {
+      id: "did:pkh:eip155:1:0x00000000000000000000000000000000000000aa",
+      riskScore: "low",
+    },
+    proof: {
+      type: "EcdsaSecp256k1RecoverySignature2020",
+      created: "2026-01-02T00:00:00Z",
+      verificationMethod: "did:web:unlisted-issuer.example#key-1",
+      proofPurpose: "assertionMethod",
+    },
+  };
+}
+
+// Typed with the partner membership context's term for the reserved type's
+// IRI, from an issuer on no trust list, about the holder and valid by date:
+// only the issuer check can refuse it.
+function partnerMembershipVC(holder) {
+  return {
+    "@context": [W3C_VC_V1_CONTEXT, PARTNER_MEMBERSHIP_CONTEXT_URL],
+    id: "urn:uuid:2b4d6f8a-1c3e-4a5b-9d7f-6e8c0a2b4d6f",
+    type: ["VerifiableCredential", "PartnerMembershipCredential"],
+    issuer: PINNED_SPELLED_VC_ISSUER,
+    issuanceDate: PINNED_VC_ISSUANCE_DATE,
+    credentialSubject: { id: holder },
+    proof: {
+      type: "EcdsaSecp256k1RecoverySignature2020",
+      created: PINNED_VC_ISSUANCE_DATE,
+      verificationMethod: `${PINNED_SPELLED_VC_ISSUER}#key-1`,
+      proofPurpose: "assertionMethod",
+    },
+  };
+}
+
+// genPartnerVP signs a secp256k1 envelope carrying the pinned Known-to-Atum
+// credential followed by build(holder), canonicalized with the partner context
+// read from contextFile.
+async function genPartnerVP(fileName, contextUrl, contextFile, build) {
+  const partnerCtx = JSON.parse(readFileSync(resolve(fixturesDir, contextFile), "utf-8"));
+  const wallet = new Wallet(HARDHAT_PRIVKEY);
+  const holder = `did:pkh:eip155:1:${wallet.address.toLowerCase()}`;
+  const vcs = pinnedVCsFor(holder, "EcdsaSecp256k1RecoverySignature2020", PINNED_VC_ISSUANCE_DATE);
+  vcs.push(build(holder));
+  const signed = await signVP(vcs, HARDHAT_PRIVKEY, {
+    holder,
+    verificationMethod: `${holder}#blockchainAccountId`,
+    challenge: PINNED_VP_CHALLENGE,
+    domain: PINNED_VP_DOMAIN,
+    created: PINNED_CREATED,
+    extraEnvelopeContexts: { [contextUrl]: partnerCtx },
   });
   writeFileSync(resolve(fixturesDir, fileName), JSON.stringify(sortKeysRecursively(signed)) + "\n");
 }

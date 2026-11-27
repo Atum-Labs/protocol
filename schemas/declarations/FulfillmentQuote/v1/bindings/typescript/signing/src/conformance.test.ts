@@ -326,6 +326,61 @@ describe("conformance: a reserved type in another spelling is checked", () => {
   }
 });
 
+// Mirror of the Go canonical's TestConformance_VPPartnerContextCredentialPassesThrough
+// and TestConformance_VPSuppliedContextAliasIsChecked. A partner credential
+// under its own context passes through when the verifier is given that
+// context, and the presentation is refused without it; a partner context term
+// standing for the reserved type's IRI makes the credential reserved.
+describe("conformance: partner credentials under their own contexts", () => {
+  const holder = `did:pkh:eip155:1:${HARDHAT_ACCOUNT_0}`;
+  const contexts = (url: string, file: string): Record<string, unknown> => ({
+    [url]: JSON.parse(readFixture(file).toString("utf-8")),
+  });
+  const pinnedOnly = (d: string) => ({ allowed: d === "did:web:atumlabs.xyz", enforced: true });
+
+  for (const signer of ["go", "ts"]) {
+    const file = `secp256k1-${signer}-vp-partner-context.json`;
+    it(`${file}: passes the partner credential through with its context, refused without it`, async () => {
+      const text = readFixture(file).toString("utf-8");
+      const vcs = (JSON.parse(text) as { verifiableCredential: Record<string, unknown>[] }).verifiableCredential;
+      const opts: VerifyVPOptions = {
+        ...vpHappyOpts(holder),
+        requiredVCTypes: ["KnownToAtumVerifiableCredential"],
+        isIssuerTrusted: pinnedOnly,
+        extraCredentialContexts: contexts("https://partner.example/credentials/v1", "partner-credentials-v1-context.jsonld"),
+      };
+      const res = await verifyVP(text, opts);
+      expect(res.attestedClaims).toEqual([vcs[0]]);
+      expect(res.passThroughClaims).toEqual([vcs[1]]);
+      await expect(verifyVP(text, { ...opts, extraCredentialContexts: undefined })).rejects.toThrow();
+    });
+  }
+
+  for (const signer of ["go", "ts"]) {
+    const file = `secp256k1-${signer}-vp-partner-alias.json`;
+    it(`${file}: a supplied term for the reserved type's IRI is checked`, async () => {
+      const text = readFixture(file).toString("utf-8");
+      const base: VerifyVPOptions = {
+        ...vpHappyOpts(holder),
+        requiredVCTypes: ["KnownToAtumVerifiableCredential"],
+        extraCredentialContexts: contexts("https://partner.example/membership/v1", "partner-membership-v1-context.jsonld"),
+      };
+      await expect(verifyVP(text, { ...base, isIssuerTrusted: pinnedOnly })).rejects.toThrow(
+        /verifiableCredential\[1\] issuer .* not in trust anchors/
+      );
+      const res = await verifyVP(text, {
+        ...base,
+        isIssuerTrusted: (d: string) => ({
+          allowed: d === "did:web:atumlabs.xyz" || d === "did:web:impersonator.example",
+          enforced: true,
+        }),
+      });
+      expect(res.attestedClaims).toHaveLength(2);
+      expect(res.passThroughClaims).toHaveLength(0);
+    });
+  }
+});
+
 // PRE-side conformance — the declarationType-set path. The
 // fixtures are PaymentRequestEnvelopes (type
 // ["VerifiablePresentation","PaymentRequestEnvelope"], signed under the PRE

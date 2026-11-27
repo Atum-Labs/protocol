@@ -13,6 +13,10 @@
 //	  - {secp256k1,ed25519}-go-vp-pass-through.json (a third-party VC a reserved set passes through)
 //	  - secp256k1-go-vp-reserved-{iri,compact,compact-no-context,undefined}.json
 //	    (a reserved type in another spelling, or a type nothing defines: checked)
+//	  - secp256k1-go-vp-partner-context.json (a partner credential under its own
+//	    context, which passes through when the verifier is given that context)
+//	  - secp256k1-go-vp-partner-alias.json (a partner context term standing for the
+//	    reserved type's IRI: checked)
 //
 //	VC-proof side:
 //	  - secp256k1-go-vc-proof.json
@@ -129,6 +133,12 @@ func main() {
 		if err := genReservedSpellingVP(outDir, "secp256k1-go-vp-reserved-"+sp.name+".json", sp.context, sp.types); err != nil {
 			die("secp256k1 VP, reserved spelling %s: %v", sp.name, err)
 		}
+	}
+	if err := genPartnerVP(outDir, "secp256k1-go-vp-partner-context.json", partnerContextURL, partnerContextFile, partnerAttestationVC); err != nil {
+		die("secp256k1 VP, partner context: %v", err)
+	}
+	if err := genPartnerVP(outDir, "secp256k1-go-vp-partner-alias.json", partnerMembershipContextURL, partnerMembershipContextFile, partnerMembershipVC); err != nil {
+		die("secp256k1 VP, partner alias: %v", err)
 	}
 	if err := genSecp256k1PREVP(outDir); err != nil {
 		die("secp256k1 PRE VP: %v", err)
@@ -908,6 +918,104 @@ func genReservedSpellingVP(outDir, name string, context, types []any) error {
 		VerificationMethod: holder + "#blockchainAccountId",
 		Challenge:          pinnedVPChallenge,
 		Domain:             pinnedVPDomain,
+	}, pinnedCreated)
+	if err != nil {
+		return fmt.Errorf("SignVP: %w", err)
+	}
+	return os.WriteFile(filepath.Join(outDir, name), append(signed, '\n'), 0o644)
+}
+
+// The partner-context fixtures carry a credential under a partner's own
+// JSON-LD context, which a verifier reads only when the caller supplies it
+// (VerifyVPOptions.ExtraCredentialContexts). The context documents are the
+// two *-context.jsonld files beside the fixtures, read by both generators and
+// both conformance suites. MUST exactly mirror the TS generator.
+const (
+	partnerContextURL            = "https://partner.example/credentials/v1"
+	partnerContextFile           = "partner-credentials-v1-context.jsonld"
+	partnerMembershipContextURL  = "https://partner.example/membership/v1"
+	partnerMembershipContextFile = "partner-membership-v1-context.jsonld"
+)
+
+// partnerAttestationVC is a partner credential under its own context, from
+// an issuer on no trust list, expired before the conformance clock and about
+// another account: a verifier with that context supplied passes it through.
+func partnerAttestationVC(string) map[string]any {
+	return map[string]any{
+		"@context":       []any{ldverification.W3CVCV1ContextURL, partnerContextURL},
+		"id":             "urn:uuid:7f1e2d3c-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+		"type":           []any{"VerifiableCredential", "PartnerAttestationCredential"},
+		"issuer":         pinnedThirdPartyIssuer,
+		"issuanceDate":   pinnedThirdPartyIssued,
+		"expirationDate": pinnedThirdPartyExpiresAt,
+		"credentialSubject": map[string]any{
+			"id":        pinnedThirdPartySubject,
+			"riskScore": "low",
+		},
+		"proof": map[string]any{
+			"type":               ldverification.ProofTypeSecp256k1Recovery2020,
+			"created":            pinnedThirdPartyIssued,
+			"verificationMethod": pinnedThirdPartyIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+}
+
+// partnerMembershipVC is typed with the partner membership context's term
+// for the reserved type's IRI, from an issuer on no trust list, about the
+// holder and valid by date: only the issuer check can refuse it.
+func partnerMembershipVC(holder string) map[string]any {
+	return map[string]any{
+		"@context":          []any{ldverification.W3CVCV1ContextURL, partnerMembershipContextURL},
+		"id":                "urn:uuid:2b4d6f8a-1c3e-4a5b-9d7f-6e8c0a2b4d6f",
+		"type":              []any{"VerifiableCredential", "PartnerMembershipCredential"},
+		"issuer":            pinnedSpelledVCIssuer,
+		"issuanceDate":      pinnedVCIssuanceDate,
+		"credentialSubject": map[string]any{"id": holder},
+		"proof": map[string]any{
+			"type":               ldverification.ProofTypeSecp256k1Recovery2020,
+			"created":            pinnedVCIssuanceDate,
+			"verificationMethod": pinnedSpelledVCIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+}
+
+// genPartnerVP signs a secp256k1 envelope carrying the pinned Known-to-Atum
+// credential followed by build(holder), canonicalized with the partner
+// context read from contextFile.
+func genPartnerVP(outDir, name, contextURL, contextFile string, build func(holder string) map[string]any) error {
+	raw, err := os.ReadFile(filepath.Join(outDir, contextFile))
+	if err != nil {
+		return fmt.Errorf("read %s: %w", contextFile, err)
+	}
+	var partnerCtx any
+	if err := json.Unmarshal(raw, &partnerCtx); err != nil {
+		return fmt.Errorf("parse %s: %w", contextFile, err)
+	}
+	keyBytes, err := hex.DecodeString(hardhatPrivKeyHex)
+	if err != nil {
+		return fmt.Errorf("decode privkey: %w", err)
+	}
+	priv, err := crypto.ToECDSA(keyBytes)
+	if err != nil {
+		return fmt.Errorf("ToECDSA: %w", err)
+	}
+	holder := "did:pkh:eip155:1:" + strings.ToLower(crypto.PubkeyToAddress(priv.PublicKey).Hex())
+	vcs, err := pinnedVCsFor(holder, ldverification.ProofTypeSecp256k1Recovery2020, pinnedVCIssuanceDate)
+	if err != nil {
+		return err
+	}
+	partner, err := json.Marshal(build(holder))
+	if err != nil {
+		return fmt.Errorf("marshal partner VC: %w", err)
+	}
+	signed, err := ldverification.SignVPWithCreatedString(append(vcs, partner), priv, ldverification.SignVPOptions{
+		Holder:                holder,
+		VerificationMethod:    holder + "#blockchainAccountId",
+		Challenge:             pinnedVPChallenge,
+		Domain:                pinnedVPDomain,
+		ExtraEnvelopeContexts: map[string]any{contextURL: partnerCtx},
 	}, pinnedCreated)
 	if err != nil {
 		return fmt.Errorf("SignVP: %w", err)

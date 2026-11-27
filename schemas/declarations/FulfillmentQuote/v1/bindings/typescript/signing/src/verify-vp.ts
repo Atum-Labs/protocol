@@ -178,6 +178,20 @@ export interface VerifyVPOptions {
   // no-network loader. REQUIRED when verifying an envelope whose context the
   // shared loader doesn't know. Mirror of Go VerifyVPOptions.ExtraEnvelopeContexts.
   extraEnvelopeContexts?: Record<string, unknown>;
+  // The JSON-LD contexts of credentials that are not Atum's, so a
+  // presentation can carry them to the counterparties: context URL → parsed
+  // context document. The loader never fetches a context, so a credential
+  // whose @context names a URL that is neither bundled nor supplied here makes
+  // the whole presentation fail canonicalization. The caller supplies each
+  // document as content it holds and pins, never as a URL to fetch.
+  //
+  // Overlaid on the per-call loader together with extraEnvelopeContexts, for
+  // the holder signature and for reserved-type matching. A key that equals a
+  // bundled context URL or an extraEnvelopeContexts key is refused before
+  // anything is verified, so a supplied context can never replace one of
+  // Atum's; a term it defines that stands for a reserved type's IRI makes the
+  // credential reserved. Mirror of Go VerifyVPOptions.ExtraCredentialContexts.
+  extraCredentialContexts?: Record<string, unknown>;
   // Also accept a secp256k1 holder proof in the typed form a payer's wallet signs: a signature
   // over the EIP-712 digest of PaymentRequestEnvelopeProof{proofHash, docHash}, the same two
   // hashes the raw form signs as keccak256(proofHash || docHash), so it binds the same challenge,
@@ -269,6 +283,7 @@ async function verifyVPInner(
   if (!options.expectedHolder) {
     throw new Error("verifyVP: options.expectedHolder is required");
   }
+  checkExtraCredentialContexts(options);
 
   // Refused before anything reads the envelope, as Go's VerifyVP refuses it.
   // A member named twice, exactly or under the case folding Go's encoding/json
@@ -438,7 +453,7 @@ async function verifyVPSecp256k1(
       domain: stringField(proof, "domain"),
     },
     keepVerifiableCredential: true,
-    extraEnvelopeContexts: options.extraEnvelopeContexts,
+    extraEnvelopeContexts: verifyContexts(options),
     proofContext: proof["@context"] ?? [
       options.envelopeContextUrl ?? FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
       SECP256K1_RECOVERY_CONTEXT_URL,
@@ -517,7 +532,7 @@ async function verifyVPEd25519(
       domain: stringField(proof, "domain"),
     },
     keepVerifiableCredential: true,
-    extraEnvelopeContexts: options.extraEnvelopeContexts,
+    extraEnvelopeContexts: verifyContexts(options),
     proofContext: proof["@context"] ?? [
       options.envelopeContextUrl ?? FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
       ED25519_2020_CONTEXT_URL,
@@ -668,14 +683,43 @@ function reservedVCTypes(options: VerifyVPOptions): string[] {
   return reserved;
 }
 
+// verifyContexts is the caller's extraEnvelopeContexts and
+// extraCredentialContexts together: what the per-call loader overlays.
+function verifyContexts(options: VerifyVPOptions): Record<string, unknown> | undefined {
+  const credential = options.extraCredentialContexts;
+  if (!credential || Object.keys(credential).length === 0) return options.extraEnvelopeContexts;
+  return { ...(options.extraEnvelopeContexts ?? {}), ...credential };
+}
+
 // verifyLoader is the per-call document loader for verification: the shared
-// loader overlaid with the caller's extraEnvelopeContexts. The reserved-type
-// matcher expands credential types with the same loader the holder signature
-// is canonicalized with. Mirror of the Go canonical's verifyLoader.
+// loader overlaid with verifyContexts. The reserved-type matcher expands
+// credential types with the same loader the holder signature is canonicalized
+// with. Mirror of the Go canonical's verifyLoader.
 function verifyLoader(options: VerifyVPOptions): typeof fqLoader {
-  const extra = options.extraEnvelopeContexts;
+  const extra = verifyContexts(options);
   if (!extra || Object.keys(extra).length === 0) return fqLoader;
   return fqLoader.withExtraContexts(extra as Parameters<typeof fqLoader.withExtraContexts>[0]);
+}
+
+// checkExtraCredentialContexts refuses a supplied credential context whose
+// URL is a bundled context or an extraEnvelopeContexts key: a supplied
+// context may add a vocabulary, never replace one of Atum's. Mirror of the Go
+// canonical's checkExtraCredentialContexts.
+function checkExtraCredentialContexts(options: VerifyVPOptions): void {
+  for (const url of Object.keys(options.extraCredentialContexts ?? {})) {
+    let bundled = true;
+    try {
+      fqLoader.load(url);
+    } catch {
+      bundled = false;
+    }
+    if (bundled) {
+      throw new Error(`verifyVP: extraCredentialContexts: ${JSON.stringify(url)} is a bundled context and can't be replaced`);
+    }
+    if (options.extraEnvelopeContexts && Object.prototype.hasOwnProperty.call(options.extraEnvelopeContexts, url)) {
+      throw new Error(`verifyVP: extraCredentialContexts: ${JSON.stringify(url)} is also an extraEnvelopeContexts key`);
+    }
+  }
 }
 
 // ZERO_INSTANT_MS is 0001-01-01T00:00:00Z, the instant Go's zero time.Time

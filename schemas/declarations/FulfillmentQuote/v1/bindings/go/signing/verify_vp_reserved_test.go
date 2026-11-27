@@ -3,6 +3,7 @@ package ldverification
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -401,5 +402,171 @@ func TestVerifyVP_PassThroughVC_RecordsNoAuditObservation(t *testing.T) {
 	}
 	if len(res.IssuerTrustObservations) != 1 || res.IssuerTrustObservations[0].VCIndex != 1 || res.IssuerTrustObservations[0].IssuerDID != impostor {
 		t.Fatalf("observations = %+v, want one for verifiableCredential[1] from %s", res.IssuerTrustObservations, impostor)
+	}
+}
+
+const (
+	partnerContextURL           = "https://partner.example/credentials/v1"
+	partnerMembershipContextURL = "https://partner.example/membership/v1"
+)
+
+// partnerContext defines a partner's own credential type and subject terms.
+func partnerContext() map[string]any {
+	return map[string]any{"@context": map[string]any{
+		"@version":                     1.1,
+		"@protected":                   true,
+		"pt":                           "https://partner.example/credentials/v1#",
+		"PartnerAttestationCredential": "pt:PartnerAttestationCredential",
+		"riskScore":                    "pt:riskScore",
+	}}
+}
+
+// partnerMembershipContext defines a term that stands for the Known-to-Atum
+// type's IRI under another name.
+func partnerMembershipContext() map[string]any {
+	return map[string]any{"@context": map[string]any{
+		"@version":                    1.1,
+		"PartnerMembershipCredential": knownToAtumTypeIRI,
+	}}
+}
+
+// partnerVCForTest is a credential under the partner's own context.
+func partnerVCForTest(t *testing.T, issuer, subject, ctxURL, typ string, expires bool) json.RawMessage {
+	t.Helper()
+	vc := map[string]any{
+		"@context":          []any{"https://www.w3.org/2018/credentials/v1", ctxURL},
+		"id":                "urn:uuid:7f1e2d3c-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+		"type":              []any{"VerifiableCredential", typ},
+		"issuer":            issuer,
+		"issuanceDate":      "2026-01-02T00:00:00Z",
+		"credentialSubject": map[string]any{"id": subject, "riskScore": "low"},
+		"proof": map[string]any{
+			"type":               ProofTypeSecp256k1Recovery2020,
+			"created":            "2026-01-02T00:00:00Z",
+			"verificationMethod": issuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+	if expires {
+		vc["expirationDate"] = "2026-02-01T00:00:00Z"
+	}
+	raw, err := json.Marshal(vc)
+	if err != nil {
+		t.Fatalf("marshal partner VC: %v", err)
+	}
+	return raw
+}
+
+func signVPWithContextsForTest(t *testing.T, holderPriv *ecdsa.PrivateKey, holderDID string, vcs []json.RawMessage, contexts map[string]any) []byte {
+	t.Helper()
+	envelope, err := SignVPWithCreatedString(vcs, holderPriv, SignVPOptions{
+		Holder:                holderDID,
+		VerificationMethod:    holderDID + "#blockchainAccountId",
+		Challenge:             "req-fixture-1",
+		Domain:                "did:web:settler.atum.network",
+		ExtraEnvelopeContexts: contexts,
+	}, "2026-05-20T00:00:00.000Z")
+	if err != nil {
+		t.Fatalf("SignVP: %v", err)
+	}
+	return envelope
+}
+
+// A partner credential under its own context, from an issuer that is
+// neither trusted nor resolvable, expired and about another account, passes
+// through when the caller supplies that context. Without it the loader
+// can't read the credential and the whole presentation is refused: the
+// loader never fetches a context.
+func TestVerifyVP_PartnerCredentialWithSuppliedContext_PassesThrough(t *testing.T) {
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+	partner := partnerVCForTest(t, thirdPartyIssuer, "did:pkh:eip155:1:0xdeadbeef00000000000000000000000000000002",
+		partnerContextURL, "PartnerAttestationCredential", true)
+	contexts := map[string]any{partnerContextURL: partnerContext()}
+	envelope := signVPWithContextsForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, partner}, contexts)
+
+	resolver := &mockResolver{issuerDID: reservedTrustedIssuer, vmSet: issuerVMSet(t, issuerPriv, reservedTrustedIssuer)}
+	opts := strictReservedOpts(t, holderDID, resolver)
+	opts.ExtraCredentialContexts = contexts
+	res, err := VerifyVP(envelope, opts)
+	if err != nil {
+		t.Fatalf("VerifyVP with the partner context supplied: %v", err)
+	}
+	if len(res.PassThroughClaims) != 1 || !bytes.Equal(res.PassThroughClaims[0], wireVC(t, envelope, 1)) {
+		t.Fatalf("PassThroughClaims = %d entries, want the partner credential byte-identical", len(res.PassThroughClaims))
+	}
+
+	opts.ExtraCredentialContexts = nil
+	if _, err := VerifyVP(envelope, opts); err == nil || !strings.Contains(err.Error(), partnerContextURL) {
+		t.Fatalf("VerifyVP without the partner context: want a refusal naming %s, got %v", partnerContextURL, err)
+	}
+}
+
+// A supplied context whose term stands for the Known-to-Atum type's IRI
+// makes that credential reserved: from an issuer outside the trust list it
+// is refused, and trusting that issuer too makes it verify with both
+// credentials checked.
+func TestVerifyVP_SuppliedContextAliasingReservedType_IsChecked(t *testing.T) {
+	const impostor = "did:web:impersonator.example"
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+	aliased := partnerVCForTest(t, impostor, holderDID, partnerMembershipContextURL, "PartnerMembershipCredential", false)
+	contexts := map[string]any{partnerMembershipContextURL: partnerMembershipContext()}
+	envelope := signVPWithContextsForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, aliased}, contexts)
+
+	opts := happyOpts(holderDID)
+	opts.ExtraCredentialContexts = contexts
+	opts.IsIssuerTrusted = strictTrust(reservedTrustedIssuer)
+	_, err := VerifyVP(envelope, opts)
+	if !errors.Is(err, ErrVPIssuerNotTrusted) || !strings.Contains(err.Error(), "verifiableCredential[1]") {
+		t.Fatalf("VerifyVP: want ErrVPIssuerNotTrusted on verifiableCredential[1], got %v", err)
+	}
+
+	opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == reservedTrustedIssuer || d == impostor, true }
+	res, err := VerifyVP(envelope, opts)
+	if err != nil {
+		t.Fatalf("VerifyVP with both issuers trusted: %v", err)
+	}
+	if len(res.AttestedClaims) != 2 || len(res.PassThroughClaims) != 0 {
+		t.Fatalf("got %d attested and %d passed through, want both checked", len(res.AttestedClaims), len(res.PassThroughClaims))
+	}
+}
+
+// A supplied credential context may add a vocabulary, never replace one of
+// Atum's: a bundled context URL, or an ExtraEnvelopeContexts key, is refused
+// before anything is verified.
+func TestVerifyVP_ExtraCredentialContexts_CannotReplaceAContext(t *testing.T) {
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+	envelope := signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted})
+
+	for name, mutate := range map[string]func(*VerifyVPOptions){
+		"a bundled context": func(o *VerifyVPOptions) {
+			o.ExtraCredentialContexts = map[string]any{lddataintegrity.KnownToAtumV1ContextURL: partnerMembershipContext()}
+		},
+		"an envelope context": func(o *VerifyVPOptions) {
+			o.ExtraEnvelopeContexts = map[string]any{partnerContextURL: partnerContext()}
+			o.ExtraCredentialContexts = map[string]any{partnerContextURL: partnerContext()}
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			opts := happyOpts(holderDID)
+			mutate(&opts)
+			_, err := VerifyVP(envelope, opts)
+			if !errors.Is(err, ErrMalformedProof) || !strings.Contains(err.Error(), "ExtraCredentialContexts") {
+				t.Fatalf("VerifyVP: want the ExtraCredentialContexts refusal, got %v", err)
+			}
+		})
+	}
+	if _, err := VerifyVP(envelope, happyOpts(holderDID)); err != nil {
+		t.Fatalf("the same presentation without the bad option must verify: %v", err)
 	}
 }
