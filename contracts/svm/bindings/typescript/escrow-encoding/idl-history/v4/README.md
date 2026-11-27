@@ -6,7 +6,7 @@ The Anchor IDL of the v4 escrow program served on devnet and mainnet (ids in
 
 `escrow.json` is `src/generated/escrow.json` as of `499bbeb5`, byte for byte. It is a snapshot,
 not build output, so `sync-idl` does not touch it. The localnet image (`contracts/svm/docker`) builds v4 from
-`56e374a0` and fails when its IDL differs from this file other than in the program id.
+`8b6c1790` and fails when its IDL differs from this file other than in the program id.
 
 ## What differs from `src/generated`
 
