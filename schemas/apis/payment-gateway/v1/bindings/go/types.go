@@ -257,6 +257,9 @@ type ChainDefaults struct {
 	// EscrowContract The escrow the deposit is made into, and the spender of the token approval. Empty when the chain is not fully configured.
 	EscrowContract string `json:"escrow_contract"`
 
+	// Escrows Every escrow the gateway accepts a payment into on this chain, the default `escrow_contract` first. Absent from a gateway that predates this member, which accepts only `escrow_contract`. A request that names another listed escrow is signed with that escrow's own fields here: on Solana its `svm_signature_domain_version` and `svm_message`.
+	Escrows *[]ChainEscrow `json:"escrows,omitempty"`
+
 	// FulfillmentProxy The contract that pays the receiver. Read this from the DESTINATION chain's defaults, not the source chain's. Empty when the chain is not fully configured.
 	FulfillmentProxy string `json:"fulfillment_proxy"`
 
@@ -294,6 +297,18 @@ type ChainDefaults struct {
 
 // ChainDefaultsByChain Defaults for every chain the gateway serves, keyed by CAIP-2 chain id. Each key repeats the `chain_id` of the value it maps to.
 type ChainDefaultsByChain map[string]ChainDefaults
+
+// ChainEscrow One escrow the gateway accepts a payment into, with how its signers sign.
+type ChainEscrow struct {
+	// EscrowContract The escrow's address, or on Solana its program id.
+	EscrowContract string `json:"escrow_contract"`
+
+	// SvmMessage Solana only. What a signer signs over this escrow's deposit or reserve hash. Absent or empty: the 32-byte hash itself. `escrow-text-v1`: the text `atum deposit v1 <base64url hash>` (or `atum reserve v1` for a reserve), bare or inside a single-signer Solana off-chain message; the hash itself is refused. A client that does not know the value must not sign for this escrow.
+	SvmMessage *string `json:"svm_message,omitempty"`
+
+	// SvmSignatureDomainVersion Solana only. This escrow's signature domain version, which its deposit and reserve hashes commit to. Absent for EVM and Tron.
+	SvmSignatureDomainVersion *int `json:"svm_signature_domain_version,omitempty"`
+}
 
 // CreateQuoteRequest Request body for opening a quote-request batch. Structurally the existing PaymentRequest
 // with `sender_auth` omitted (the spend authorization is deferred to the award call); see

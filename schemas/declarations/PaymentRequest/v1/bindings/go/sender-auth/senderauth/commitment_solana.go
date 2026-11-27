@@ -56,7 +56,7 @@ func verifySolanaCommitment(r CommitmentResult, sourceAccount string, deposit Si
 	if !r.Verified() {
 		return finish(r)
 	}
-	if outcome, detail := bindSolanaDeposit(domain, root, deposit, sourceAccount); outcome != "" {
+	if outcome, detail := bindSolanaDeposit(domain, svm.MessageScheme(solana.MessageScheme), root, deposit, sourceAccount); outcome != "" {
 		return refuse(r, outcome, detail)
 	}
 	return finish(r)
@@ -80,6 +80,9 @@ func solanaEscrowDomain(d SolanaDomain) (svm.EscrowDomain, string) {
 	}
 	if d.DomainVersion < 1 || d.DomainVersion > math.MaxUint8 {
 		return svm.EscrowDomain{}, "the Solana escrow signature domain version must be between 1 and 255"
+	}
+	if _, err := svm.MessageForms(svm.MessageScheme(d.MessageScheme)); err != nil {
+		return svm.EscrowDomain{}, "the Solana escrow message scheme is not known: " + err.Error()
 	}
 	return svm.EscrowDomain{ClusterID: clusterID, SignatureDomainVersion: uint8(d.DomainVersion), ProgramID: programID}, ""
 }
@@ -190,9 +193,9 @@ func readSolanaRecord(root map[string]any) (solanaRecord, string) {
 }
 
 // bindSolanaDeposit recomputes the deposit hash from the record, requires it to be the signed message,
-// and verifies the ed25519 signature over it with the payer's key. It returns an empty outcome when
-// bound.
-func bindSolanaDeposit(domain svm.EscrowDomain, root map[string]any, deposit SignedMessageInput, sourceAccount string) (CommitmentOutcome, string) {
+// and verifies the payer's ed25519 signature over it in a form the escrow's message scheme accepts.
+// It returns an empty outcome when bound.
+func bindSolanaDeposit(domain svm.EscrowDomain, scheme svm.MessageScheme, root map[string]any, deposit SignedMessageInput, sourceAccount string) (CommitmentOutcome, string) {
 	rec, reason := readSolanaRecord(root)
 	if reason != "" {
 		return OutcomePrehashMismatch, "message_prehash commits a destination but is not a readable Solana deposit record: " + reason
@@ -218,7 +221,7 @@ func bindSolanaDeposit(domain svm.EscrowDomain, root map[string]any, deposit Sig
 		return OutcomeSignerMismatch, "the signature is not a 64-byte hex ed25519 signature"
 	}
 	sig, _ := hex.DecodeString(deposit.Signature[2:])
-	if !verifyEd25519Strict(key, digest[:], sig) {
+	if _, _, ok := svm.MatchEscrowWitness(scheme, svm.WitnessDeposit, digest, key, sig); !ok {
 		return OutcomeSignerMismatch, "the ed25519 signature does not verify against the payment's source account"
 	}
 	return "", ""

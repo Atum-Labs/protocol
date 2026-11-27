@@ -42,6 +42,11 @@ export interface TrustedRoles {
   fulfillmentProxy: string;
   /** The tokens payable on this chain; a payment in any other token is refused. */
   tokens: ReadonlyArray<TrustedToken>;
+  /**
+   * Solana only. What a signer signs for `escrowContract`: `''` or absent is the 32-byte hash, which
+   * is the only form x402 signs, so the client refuses any other value (`escrow-text-v1`).
+   */
+  svmMessageScheme?: string;
 }
 
 /**
@@ -70,7 +75,8 @@ export type AtumEscrowTrustErrorCode =
   | 'ASSETS_NOT_COMPARABLE'
   | 'MARKUP_EXCEEDED'
   | 'CHAIN_NOT_TRUSTED'
-  | 'TRUST_SOURCE_UNAVAILABLE';
+  | 'TRUST_SOURCE_UNAVAILABLE'
+  | 'UNSUPPORTED_ESCROW_SCHEME';
 
 /**
  * A payment the client refused to sign because its corridor is not one the payer trusts.
@@ -304,13 +310,39 @@ function readRoles(body: unknown, network: string): TrustedRoles | undefined {
   // malformed answer.
   const tokens = b['tokens'] === undefined ? [] : readTokens(b['tokens']);
   if (!tokens) return undefined;
+  // Only a Solana escrow has a message scheme; other chains ignore the member as before.
+  const svmMessageScheme = network.startsWith('solana:')
+    ? readEscrowScheme(b['escrows'], b['escrow_contract'] as string)
+    : undefined;
+  if (svmMessageScheme === null) return undefined;
   return {
     escrowContract: b['escrow_contract'] as string,
     quoteSelector: b['quote_selector'] as string,
     fulfillmentVerifierAccount: account as string,
     fulfillmentProxy: b['fulfillment_proxy'] as string,
     tokens,
+    ...(svmMessageScheme !== undefined ? { svmMessageScheme } : {}),
   };
+}
+
+/**
+ * The `svm_message` of the `escrows` entry for `escrow`, on a Solana chain. Undefined when the
+ * gateway predates `escrows` or lists no entry for it (the 32-byte hash). Null when any entry is
+ * malformed, matched or not, so a bad answer fails closed instead of reading as the hash.
+ */
+function readEscrowScheme(value: unknown, escrow: string): string | undefined | null {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) return null;
+  for (const entry of value) {
+    if (typeof entry !== 'object' || entry === null) return null;
+    const e = entry as Record<string, unknown>;
+    if (typeof e['escrow_contract'] !== 'string') return null;
+    if (e['svm_message'] !== undefined && typeof e['svm_message'] !== 'string') return null;
+  }
+  const match = (value as Array<Record<string, unknown>>).find(
+    (e) => e['escrow_contract'] === escrow,
+  );
+  return match?.['svm_message'] as string | undefined;
 }
 
 function readTokens(value: unknown): TrustedToken[] | undefined {

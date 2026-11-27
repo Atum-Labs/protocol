@@ -127,6 +127,9 @@ interface DeploymentConfig {
   skipBuild: boolean;
   skipDeploy: boolean;
   revokeAuthority: boolean;
+  // The escrow alone (ESCROW_ONLY=true): a new escrow beside a proxy that is already live, whose
+  // config and upgrade authority this run must not touch.
+  escrowOnly: boolean;
 }
 
 interface DeploymentArtifact {
@@ -148,12 +151,16 @@ interface DeploymentArtifact {
     clusterIdHex: string;
     signatureDomainVersion: number;
   };
-  fulfillmentProxyRbac: {
+  // Absent on an escrow only run: this run did not initialize the proxy, so its roles are not this
+  // run's to report.
+  fulfillmentProxyRbac?: {
     defaultAdmin: string;
     pauser: string;
     defaultAdminDelaySeconds: number;
   };
   upgradeAuthorityRevoked: boolean;
+  // True on an escrow only run: upgradeAuthorityRevoked covers the escrow alone.
+  escrowOnly: boolean;
 }
 
 async function main(): Promise<void> {
@@ -233,7 +240,11 @@ async function main(): Promise<void> {
   // Step 3: Initialize protocol with RBAC roles
   console.log("\n[3/4] Initializing protocols with RBAC configuration...");
   await initializeEscrowProtocol(connection, config);
-  await initializeFulfillmentProxyProtocol(connection, config);
+  if (config.escrowOnly) {
+    console.log("  Skipping Fulfillment Proxy initialization (ESCROW_ONLY=true, it is already live)");
+  } else {
+    await initializeFulfillmentProxyProtocol(connection, config);
+  }
 
   // Step 4: Revoke upgrade authority — only when explicitly asked for.
   if (config.revokeAuthority) {
@@ -270,12 +281,17 @@ async function main(): Promise<void> {
       clusterIdHex: Buffer.from(config.escrowClusterId).toString("hex"),
       signatureDomainVersion: config.escrowSignatureDomainVersion,
     },
-    fulfillmentProxyRbac: {
-      defaultAdmin: config.defaultAdmin.toBase58(),
-      pauser: config.pauser.toBase58(),
-      defaultAdminDelaySeconds: config.defaultAdminDelaySeconds,
-    },
+    ...(config.escrowOnly
+      ? {}
+      : {
+          fulfillmentProxyRbac: {
+            defaultAdmin: config.defaultAdmin.toBase58(),
+            pauser: config.pauser.toBase58(),
+            defaultAdminDelaySeconds: config.defaultAdminDelaySeconds,
+          },
+        }),
     upgradeAuthorityRevoked: config.revokeAuthority,
+    escrowOnly: config.escrowOnly,
   };
 
   fs.writeFileSync(ARTIFACT_FILENAME, JSON.stringify(artifact, null, 2));
@@ -388,6 +404,15 @@ function loadConfig(): DeploymentConfig {
   // who set SKIP_REVOKE_AUTHORITY was trying to prevent.
   const revokeAuthority =
     process.env.REVOKE_UPGRADE_AUTHORITY?.toLowerCase() === "true";
+  const escrowOnly = process.env.ESCROW_ONLY?.toLowerCase() === "true";
+  // `anchor deploy` here deploys every program, so an escrow only run must deploy through
+  // deploy.sh (which deploys one program at a time) and reach this script with SKIP_DEPLOY.
+  if (escrowOnly && !skipDeploy) {
+    throw new Error(
+      "ESCROW_ONLY=true needs SKIP_DEPLOY=true: this script's deploy step deploys the proxy too. " +
+        "Deploy with contracts/svm/deploy/deploy.sh and PROGRAMS=escrow."
+    );
+  }
   if (process.env.SKIP_REVOKE_AUTHORITY !== undefined) {
     throw new Error(
       "SKIP_REVOKE_AUTHORITY is obsolete: revocation is now opt-in. Not revoking is the " +
@@ -412,6 +437,7 @@ function loadConfig(): DeploymentConfig {
     skipBuild,
     skipDeploy,
     revokeAuthority,
+    escrowOnly,
   };
 }
 
@@ -979,6 +1005,10 @@ async function revokeUpgradeAuthority(
     throw error;
   }
 
+  if (config.escrowOnly) {
+    console.log("  Leaving the Fulfillment Proxy upgrade authority as it is (ESCROW_ONLY=true)");
+    return;
+  }
   // Revoke fulfillment proxy program upgrade authority
   console.log("  Revoking Fulfillment Proxy program upgrade authority...");
   try {

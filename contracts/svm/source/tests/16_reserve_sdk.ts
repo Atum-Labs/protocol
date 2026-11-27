@@ -19,6 +19,10 @@ import {
   MAX_TRANSFER_SIZE,
   createDelegate,
   depositComputeBudgetIx,
+  destinationHash,
+  escrowSignedText,
+  DEPOSIT_LABEL,
+  RESERVE_LABEL,
   ensureProtocolInitialized,
   generateFundedKeypair,
   getOrCreateAssociatedTokenAccount,
@@ -36,6 +40,7 @@ type SignedMessage = {
   message: string;
   message_prehash: string;
   signature: string;
+  svmMessageScheme?: string;
 };
 type SenderAuthSdk = {
   getChainAdapter(network: string): {
@@ -75,6 +80,9 @@ function loadSdk(): SenderAuthSdk {
 const sdk = loadSdk();
 
 const NETWORK = "solana:localnet";
+// The program under test is the v5 escrow, which accepts text signatures only; the SDK signs raw
+// unless told the escrow's scheme.
+const SCHEME = "escrow-text-v1";
 // The local validator's escrow is initialized for this cluster name (helpers' ESCROW_TEST_CLUSTER_ID).
 const CLUSTER = "localnet";
 const DESTINATION_ASSET =
@@ -183,6 +191,7 @@ describe("16. SDK-built reserve", () => {
         message: built.messageHash,
         message_prehash: built.messagePrehash,
         signature: "",
+        svmMessageScheme: SCHEME,
       });
     const prehash: SolanaDepositPrehash = JSON.parse(built.messagePrehash);
     const depositHash = hexBytes(built.messageHash);
@@ -203,7 +212,7 @@ describe("16. SDK-built reserve", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(hexBytes(prehash.deposit_request_hash)),
-        prehash.destination,
+        Array.from(await destinationHash(prehash.destination)),
         new anchor.BN(prehash.amount),
         new PublicKey(prehash.reserver),
         new PublicKey(prehash.releaser),
@@ -232,7 +241,7 @@ describe("16. SDK-built reserve", () => {
         depositComputeBudgetIx(),
         anchor.web3.Ed25519Program.createInstructionWithPublicKey({
           publicKey: delegateSigner.publicKey.toBytes(),
-          message: depositHash,
+          message: escrowSignedText(DEPOSIT_LABEL, depositHash),
           signature: hexBytes(signature),
         }),
       ])
@@ -261,13 +270,16 @@ describe("16. SDK-built reserve", () => {
     });
     const reserveSignature = await sdk
       .localKeySigner(NETWORK, bs58.encode(reserver.secretKey))
-      .sign({ ...reserve, signature: "" });
+      .sign({ ...reserve, signature: "", svmMessageScheme: SCHEME });
 
     return {
       deposit,
       reserver,
       witness,
-      reserveMessage: hexBytes(reserve.message),
+      reserveMessage: escrowSignedText(
+        RESERVE_LABEL,
+        hexBytes(reserve.message)
+      ),
       reserveSignature: hexBytes(reserveSignature.signature),
     };
   }

@@ -93,3 +93,67 @@ export function verifyEd25519(
     throw new Ed25519VerifyError();
   }
 }
+
+// ED25519_PROOF_MESSAGE_PREFIX is the ASCII label that prefixes the text form of
+// an atum Ed25519Signature2020 quote, VP or PaymentRequest proof.
+export const ED25519_PROOF_MESSAGE_PREFIX = "atum ld-proof v1 ";
+
+const ED25519_SIGNING_INPUT_BYTES = 64;
+const B64URL_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+function base64UrlNoPad(bytes: Uint8Array): string {
+  let out = "";
+  let i = 0;
+  for (; i + 3 <= bytes.length; i += 3) {
+    const n = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+    out +=
+      B64URL_ALPHABET[(n >> 18) & 63] +
+      B64URL_ALPHABET[(n >> 12) & 63] +
+      B64URL_ALPHABET[(n >> 6) & 63] +
+      B64URL_ALPHABET[n & 63];
+  }
+  const rem = bytes.length - i;
+  if (rem === 1) {
+    const n = bytes[i] << 16;
+    out += B64URL_ALPHABET[(n >> 18) & 63] + B64URL_ALPHABET[(n >> 12) & 63];
+  } else if (rem === 2) {
+    const n = (bytes[i] << 16) | (bytes[i + 1] << 8);
+    out +=
+      B64URL_ALPHABET[(n >> 18) & 63] +
+      B64URL_ALPHABET[(n >> 12) & 63] +
+      B64URL_ALPHABET[(n >> 6) & 63];
+  }
+  return out;
+}
+
+// ed25519ProofMessage returns the text form of an atum Ed25519Signature2020
+// quote, VP or PaymentRequest proof, which a signer signs only when asked to
+// and verifyEd25519Proof accepts: ED25519_PROOF_MESSAGE_PREFIX followed by
+// base64url without padding of the 64-byte signingInput (103 bytes total).
+// By default those proofs sign the raw signingInput. VC proofs do not use
+// this.
+export function ed25519ProofMessage(signingInput: Uint8Array): Uint8Array {
+  if (signingInput.length !== ED25519_SIGNING_INPUT_BYTES) {
+    throw new MalformedProofError(
+      `ed25519 signing input must be ${ED25519_SIGNING_INPUT_BYTES} bytes, got ${signingInput.length}`
+    );
+  }
+  return new TextEncoder().encode(ED25519_PROOF_MESSAGE_PREFIX + base64UrlNoPad(signingInput));
+}
+
+// verifyEd25519Proof returns true if signature is a valid Ed25519 signature
+// over the exact raw signingInput or over ed25519ProofMessage(signingInput).
+// A signingInput that is not 64 bytes is checked raw only.
+export function verifyEd25519Proof(
+  pub: Uint8Array,
+  signingInput: Uint8Array,
+  signature: Uint8Array
+): boolean {
+  if (pub.length !== ED25519_PUBKEY_BYTES || signature.length !== ED25519_SIGNATURE_BYTES) {
+    return false;
+  }
+  if (nacl.sign.detached.verify(signingInput, signature, pub)) return true;
+  if (signingInput.length !== ED25519_SIGNING_INPUT_BYTES) return false;
+  return nacl.sign.detached.verify(ed25519ProofMessage(signingInput), signature, pub);
+}

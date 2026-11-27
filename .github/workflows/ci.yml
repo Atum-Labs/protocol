@@ -111,6 +111,8 @@ jobs:
               - 'contracts/registry/**'
               - 'contracts/*/deployments-*.json'
               - 'contracts/stellar/deploy/deployments-*.json'
+              # The localnet overlay test reads the docker localnet program ids.
+              - 'contracts/svm/docker/accounts.sh'
             ts:
               - '**/*.ts'
               - '**/*.mjs'
@@ -129,6 +131,8 @@ jobs:
               # and source/generated/abi, so a contract-source-only PR must run
               # this lane too.
               - 'contracts/*/source/**'
+              # overlay.test.ts reads the docker localnet program ids, as the go lane's test does.
+              - 'contracts/svm/docker/accounts.sh'
               # The publishable packages are guarded end-to-end here (build, pack,
               # install, consumer type-check, runtime import), and that guard reads
               # files no glob above matches: THIRD-PARTY-NOTICES.txt, LICENSE,

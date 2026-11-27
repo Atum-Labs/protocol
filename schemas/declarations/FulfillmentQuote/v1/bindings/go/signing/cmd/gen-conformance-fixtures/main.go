@@ -4,10 +4,12 @@
 //	FQ side:
 //	  - secp256k1-go-signed.json
 //	  - ed25519-go-signed.json
+//	  - ed25519-go-signed-text.json (TextProof)
 //
 //	VP side:
 //	  - secp256k1-go-vp.json
 //	  - ed25519-go-vp.json
+//	  - ed25519-go-vp-text.json, ed25519-go-pre-vp-text.json (TextProof)
 //	  - secp256k1-go-vp-null-issuance-date.json  (negative: VerifyVP must refuse)
 //	  - ed25519-go-vp-null-issuance-date.json    (negative: VerifyVP must refuse)
 //
@@ -95,14 +97,19 @@ func main() {
 	if err := genSecp256k1(outDir); err != nil {
 		die("secp256k1: %v", err)
 	}
-	if err := genEd25519(outDir); err != nil {
-		die("ed25519: %v", err)
+	for _, text := range []bool{false, true} {
+		if err := genEd25519(outDir, text); err != nil {
+			die("ed25519: %v", err)
+		}
+		if err := genEd25519VP(outDir, "ed25519-go-vp"+textSuffix(text)+".json", pinnedVCIssuanceDate, text); err != nil {
+			die("ed25519 VP: %v", err)
+		}
+		if err := genEd25519PREVP(outDir, text); err != nil {
+			die("ed25519 PRE VP: %v", err)
+		}
 	}
 	if err := genSecp256k1VP(outDir, "secp256k1-go-vp.json", pinnedVCIssuanceDate); err != nil {
 		die("secp256k1 VP: %v", err)
-	}
-	if err := genEd25519VP(outDir, "ed25519-go-vp.json", pinnedVCIssuanceDate); err != nil {
-		die("ed25519 VP: %v", err)
 	}
 	// Negative fixtures: the same envelopes with the credential's
 	// issuanceDate set to JSON null. The holder signature verifies; the
@@ -110,14 +117,11 @@ func main() {
 	if err := genSecp256k1VP(outDir, "secp256k1-go-vp-null-issuance-date.json", nil); err != nil {
 		die("secp256k1 VP, null issuanceDate: %v", err)
 	}
-	if err := genEd25519VP(outDir, "ed25519-go-vp-null-issuance-date.json", nil); err != nil {
+	if err := genEd25519VP(outDir, "ed25519-go-vp-null-issuance-date.json", nil, false); err != nil {
 		die("ed25519 VP, null issuanceDate: %v", err)
 	}
 	if err := genSecp256k1PREVP(outDir); err != nil {
 		die("secp256k1 PRE VP: %v", err)
-	}
-	if err := genEd25519PREVP(outDir); err != nil {
-		die("ed25519 PRE VP: %v", err)
 	}
 	if err := genSecp256k1TypedPREVP(outDir); err != nil {
 		die("secp256k1 typed PRE VP: %v", err)
@@ -179,7 +183,16 @@ func genSecp256k1(outDir string) error {
 	return nil
 }
 
-func genEd25519(outDir string) error {
+// textSuffix names the TextProof variant of an ed25519 fixture.
+func textSuffix(text bool) string {
+	if text {
+		return "-text"
+	}
+	return ""
+}
+
+// genEd25519 signs the raw SigningInput, or its text form when text is set.
+func genEd25519(outDir string, text bool) error {
 	// 32 zero bytes as the seed → deterministic keypair. This is the
 	// canonical "all-zero" RFC 8032 test vector; the only thing it has
 	// going for it is universal reproducibility across languages and
@@ -209,12 +222,13 @@ func genEd25519(outDir string) error {
 	signed, err := ldverification.SignEd25519WithCreatedString(doc, priv, ldverification.SignEd25519Options{
 		VerificationMethod: "did:pkh:solana:devnet:" + pubBase58 + "#blockchainAccountId",
 		ProofPurpose:       "assertionMethod",
+		TextProof:          text,
 	}, pinnedCreated)
 	if err != nil {
 		return fmt.Errorf("sign: %w", err)
 	}
 
-	dst := filepath.Join(outDir, "ed25519-go-signed.json")
+	dst := filepath.Join(outDir, "ed25519-go-signed"+textSuffix(text)+".json")
 	if err := os.WriteFile(dst, append(signed, '\n'), 0o644); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
@@ -267,7 +281,7 @@ func genSecp256k1VP(outDir, name string, issuanceDate any) error {
 // TS-generated counterpart MUST byte-match (pinned by the cross-language
 // byte-identity test on both sides). issuanceDate is the embedded
 // credential's issuanceDate (nil writes JSON null).
-func genEd25519VP(outDir, name string, issuanceDate any) error {
+func genEd25519VP(outDir, name string, issuanceDate any, text bool) error {
 	var seed [32]byte
 	priv := ed25519.NewKeyFromSeed(seed[:])
 	pub := priv.Public().(ed25519.PublicKey)
@@ -284,6 +298,7 @@ func genEd25519VP(outDir, name string, issuanceDate any) error {
 		VerificationMethod: holder + "#blockchainAccountId",
 		Challenge:          pinnedVPChallenge,
 		Domain:             pinnedVPDomain,
+		TextProof:          text,
 	}, pinnedCreated)
 	if err != nil {
 		return fmt.Errorf("SignVPEd25519: %w", err)
@@ -413,7 +428,7 @@ func genSecp256k1TypedPREVP(outDir string) error {
 // (pinned by TestConformance_Ed25519PREVPFixturesAreByteIdentical on both
 // sides), which is the strongest proof the declarationType-set canonical form
 // agrees across languages.
-func genEd25519PREVP(outDir string) error {
+func genEd25519PREVP(outDir string, text bool) error {
 	var seed [32]byte
 	priv := ed25519.NewKeyFromSeed(seed[:])
 	pub := priv.Public().(ed25519.PublicKey)
@@ -438,12 +453,13 @@ func genEd25519PREVP(outDir string) error {
 		DeclarationType:       preEnvelopeType,
 		EnvelopeContextURL:    preContextURL,
 		ExtraEnvelopeContexts: map[string]any{preContextURL: preCtx},
+		TextProof:             text,
 	}, pinnedCreated)
 	if err != nil {
 		return fmt.Errorf("SignVPEd25519 (PRE): %w", err)
 	}
 
-	dst := filepath.Join(outDir, "ed25519-go-pre-vp.json")
+	dst := filepath.Join(outDir, "ed25519-go-pre-vp"+textSuffix(text)+".json")
 	if err := os.WriteFile(dst, append(signed, '\n'), 0o644); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}

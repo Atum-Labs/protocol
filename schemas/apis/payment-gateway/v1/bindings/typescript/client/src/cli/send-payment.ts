@@ -399,7 +399,11 @@ Permit2 contract addresses, for the approval named under PREREQUISITE above:
       const signedMessage = paymentRequest.sender_auth.signed_messages[0];
       // A Stellar key signs 32 bytes as a transaction signature too: sign only a deposit digest.
       assertRequestSignable(paymentRequest, signer);
-      const { signature, delegateSigner } = await signer.sign(signedMessage);
+      // Raw: the CLI names no escrow scheme, and one carried in the request data is never used.
+      const { signature, delegateSigner } = await signer.sign({
+        ...signedMessage,
+        svmMessageScheme: '',
+      });
       signedMessage.signature = signature;
       if (delegateSigner) {
         signedMessage.payload = {

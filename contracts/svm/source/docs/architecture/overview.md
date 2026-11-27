@@ -23,7 +23,7 @@
 
 ```
 Authority -> create_delegate(delegate_signer, remaining_capacity, max_transfer_size, expiration)  # mint is an account
-Delegate Signer -> deposit(deposit_request_hash, destination, amount, reserver, releaser, nonce, issued_at, deadline, deposit_hash)  # last arg is checked (DepositHashMismatch)
+Delegate Signer -> deposit(deposit_request_hash, destination_hash, amount, reserver, releaser, nonce, issued_at, deadline, deposit_hash)  # last arg is checked (DepositHashMismatch)
 Reserver -> reserve(recipient, quote_hash, source_amount)
 Releaser -> release() OR refund()
 ```
@@ -132,8 +132,10 @@ means Reserved. Account closure indicates Released/Refunded.
 
 ## Message Formats
 
-All escrow messages are Keccak-256 hashes verified via an Ed25519 pre-instruction and bound to the
-on-chain signing domain stored in `ProtocolConfig`:
+All escrow messages are Keccak-256 hashes bound to the on-chain signing domain stored in
+`ProtocolConfig`, and signed as the text `<label> <base64url-nopad(hash)>` verified via an Ed25519
+pre-instruction (labels and the accepted `v1`/`v0` envelopes are in `programs/escrow.md`, "Signed
+text"):
 
 `keccak(b"escrow", [signature_domain_version], cluster_id, program_id, action, payload...)`
 

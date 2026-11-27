@@ -9,6 +9,13 @@ import {
   verifyPaymentRequestJSON,
   verifyReserveAuth,
 } from '@atum-labs/payment-request-sender-auth';
+import {
+  ESCROW_LABEL_DEPOSIT,
+  ESCROW_LABEL_RESERVE,
+  escrowMessage,
+  type EscrowLabel,
+  type EscrowMessageForm,
+} from '@atum-labs/solana-escrow-encoding';
 import { normalizeAddress } from '@atum-labs/tvm-escrow-encoding';
 import { PaymentGatewayClient, createSenderSigner, getErrorResponse } from './index';
 import type { AwardQuoteParams, AwardRequest, CreateQuoteRequest, SenderSigner } from './index';
@@ -640,5 +647,137 @@ describe('awardQuote', () => {
       .catch((e: unknown) => e);
 
     expect(getErrorResponse(error)?.code).toBe('QUOTE_REQUEST_ALREADY_AWARDED');
+  });
+});
+
+describe('awardQuote on a text escrow', () => {
+  const chain = CHAINS.find((c) => c.name === 'solana')!;
+  const escrow = chain.defaults.escrow_contract as string;
+  const textDefaults: Responder = (req) => ({
+    body: {
+      chain_id: req.query.chain_id,
+      ...chain.defaults,
+      // The chain's domain is v4; only the escrows entry says this escrow is v5 and signs text.
+      svm_signature_domain_version: 4,
+      escrows: [
+        { escrow_contract: escrow, svm_signature_domain_version: 5, svm_message: 'escrow-text-v1' },
+      ],
+      deposit_request_hash_versions: [1, 2],
+    },
+  });
+  beforeEach(() => startGateway({ 'GET /v1/defaults': textDefaults }));
+
+  it("signs the deposit and the reserve as text under the escrow's own domain version", async () => {
+    const quoteRequest = await quoteRequestFor(chain);
+    const { paymentId, request } = await client.awardQuote(awardParams(chain, quoteRequest));
+
+    const deposit = (svmMessageScheme: string) =>
+      verifyPaymentRequestJSON(
+        JSON.stringify({ ...quoteRequest, sender_auth: request.sender_auth }),
+        {
+          quoteSourceAmount: QUOTE_AMOUNT,
+          escrowContract: quoteRequest.escrow_contract_address,
+          reserver: quoteRequest.quote_selector!,
+          releaser: quoteRequest.fulfillment_verifier.account,
+          depositRequestHashV2Mode: 'enforce',
+          svmSignatureClusterId: 'devnet',
+          svmSignatureDomainVersion: 5,
+          svmMessageScheme,
+        },
+      );
+    expect(deposit('escrow-text-v1').results[0].permit.amount).toBe(QUOTE_AMOUNT);
+    expect(() => deposit('')).toThrow();
+
+    const reserve = (svmMessageScheme: string) =>
+      verifyReserveAuth(request.reserve_auth!, {
+        ...reserveExpectations(chain, quoteRequest, paymentId),
+        reserver: chain.depositor,
+        svmMessageScheme,
+      });
+    expect((await reserve('escrow-text-v1')).reason).toBe('verified');
+    expect((await reserve('')).reason).not.toBe('verified');
+  });
+
+  // A custom signer written before svmMessageScheme existed signs the raw hash, which the text
+  // escrow refuses on chain after the award. awardQuote refuses it before sending.
+  const rawOnly = (base: SenderSigner): SenderSigner => ({
+    ...base,
+    sign: (m) => base.sign({ ...m, svmMessageScheme: '' }),
+  });
+
+  // The escrow checks the deposit against the payer's delegate key, which need not be the payer's
+  // own: the deposit check must use the key the signer disclosed.
+  it('accepts a deposit signed by a delegate key other than the depositor', async () => {
+    const quoteRequest = await quoteRequestFor(chain);
+    const { request } = await client.awardQuote(
+      awardParams(chain, quoteRequest, {
+        depositorSigner: signer(chain, chain.selectorKey),
+        selectorSigner: signer(chain, chain.depositorKey),
+      }),
+    );
+    expect(request.sender_auth!.signed_messages[0].payload).toEqual({
+      delegate_signer: chain.selector,
+    });
+  });
+
+  it('refuses a depositor signer that signs the raw hash for a text escrow', async () => {
+    const quoteRequest = await quoteRequestFor(chain);
+    const depositorSigner = rawOnly(signer(chain, chain.depositorKey));
+    await expect(
+      client.awardQuote(awardParams(chain, quoteRequest, { depositorSigner })),
+    ).rejects.toThrow(/depositorSigner did not sign the deposit .*escrow-text-v1/);
+  });
+
+  // A Ledger signs the escrow text only inside a v0 off-chain message envelope.
+  const formSigner = (label: EscrowLabel, form: EscrowMessageForm): SenderSigner => ({
+    sign: async (m) => {
+      const hash = Buffer.from(m.message.replace(/^0x/, ''), 'hex');
+      const message = escrowMessage(form, label, hash, solanaDepositor.publicKey);
+      const signature = nacl.sign.detached(message, solanaDepositor.secretKey);
+      return {
+        signature: '0x' + Buffer.from(signature).toString('hex'),
+        delegateSigner: bs58.encode(solanaDepositor.publicKey),
+      };
+    },
+  });
+
+  it('refuses a deposit and a reserve both signed as v0 off-chain messages', async () => {
+    const quoteRequest = await quoteRequestFor(chain);
+    await expect(
+      client.awardQuote(
+        awardParams(chain, quoteRequest, {
+          depositorSigner: formSigner(ESCROW_LABEL_DEPOSIT, 'v0'),
+          selectorSigner: formSigner(ESCROW_LABEL_RESERVE, 'v0'),
+        }),
+      ),
+    ).rejects.toThrow(/both signed as v0 off-chain messages/);
+    expect(gateway.received('POST', '/v1/payments/awards')).toHaveLength(0);
+  });
+
+  it.each([
+    ['v0', 'v1'],
+    ['v0', 'bare'],
+    ['v1', 'v0'],
+    ['bare', 'v0'],
+  ] as Array<[EscrowMessageForm, EscrowMessageForm]>)(
+    'sends a %s deposit with a %s reserve, which fit one transaction',
+    async (depositForm, reserveForm) => {
+      const quoteRequest = await quoteRequestFor(chain);
+      await client.awardQuote(
+        awardParams(chain, quoteRequest, {
+          depositorSigner: formSigner(ESCROW_LABEL_DEPOSIT, depositForm),
+          selectorSigner: formSigner(ESCROW_LABEL_RESERVE, reserveForm),
+        }),
+      );
+      expect(gateway.received('POST', '/v1/payments/awards')).toHaveLength(1);
+    },
+  );
+
+  it('refuses a selector signer that signs the raw hash for a text escrow', async () => {
+    const quoteRequest = await quoteRequestFor(chain);
+    const selectorSigner = rawOnly(signer(chain, chain.depositorKey));
+    await expect(
+      client.awardQuote(awardParams(chain, quoteRequest, { selectorSigner })),
+    ).rejects.toThrow(/selectorSigner did not sign the reserve .*escrow-text-v1/);
   });
 });

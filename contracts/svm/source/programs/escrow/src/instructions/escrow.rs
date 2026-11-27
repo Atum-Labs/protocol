@@ -7,7 +7,10 @@ use anchor_spl::{
     token_interface::{self as token, CloseAccount, Mint, TokenAccount, TokenInterface},
 };
 
-use crate::constants::MAX_DESTINATION_LEN;
+use crate::constants::{
+    DEPOSIT_SIGNING_LABEL, EMPTY_DESTINATION_HASH, REFUND_SIGNING_LABEL, RELEASE_SIGNING_LABEL,
+    RESERVE_SIGNING_LABEL,
+};
 use crate::errors::ErrorCode;
 use crate::events::{Deposited, Refunded, Released, Reserved};
 use crate::state::{DepositInfo, EscrowDelegate, MintFeeConfig, ProtocolConfig, ReplayBucket};
@@ -24,9 +27,8 @@ use crate::utils::{
     deposit_request_hash: [u8; 32],
     // MUST stay in lockstep with the handler's parameter order. Anchor deserializes these positionally
     // to evaluate the seeds constraints, so a missing or misordered entry silently reads the wrong bytes
-    // for every later argument. Omitting destination here made replay_bucket's nonce seed resolve from
-    // the destination's bytes and failed 49 integration tests with ConstraintSeeds.
-    destination: String,
+    // for every later argument.
+    destination_hash: [u8; 32],
     amount: u64,
     reserver: Pubkey,
     releaser: Pubkey,
@@ -336,7 +338,7 @@ fn compute_release_settlement(
 pub fn deposit<'a>(
     ctx: Context<'_, '_, 'a, 'a, Deposit<'a>>,
     deposit_request_hash: [u8; 32],
-    destination: String,
+    destination_hash: [u8; 32],
     amount: u64,
     reserver: Pubkey,
     releaser: Pubkey,
@@ -357,13 +359,12 @@ pub fn deposit<'a>(
         deposit_request_hash != [0u8; 32],
         ErrorCode::DepositRequestHashCannotBeEmpty
     );
-    require!(!destination.is_empty(), ErrorCode::DestinationEmpty);
+    // The client hashes the destination off chain (keccak256 of its UTF-8 bytes) and enforces its length.
+    // Refuses the zero hash and keccak256 of an empty destination, as EVM and TVM refuse an empty one.
     require!(
-        destination.len() <= MAX_DESTINATION_LEN,
-        ErrorCode::DestinationTooLong
+        !is_empty_destination_hash(&destination_hash),
+        ErrorCode::DestinationEmpty
     );
-    // Hash first: compute_deposit_hash takes fixed-width bytes, never the string. See its doc comment.
-    let destination_hash = compute_destination_hash(&destination);
     require!(reserver != Pubkey::default(), ErrorCode::RoleAccountNotSet);
     require!(releaser != Pubkey::default(), ErrorCode::RoleAccountNotSet);
     require!(
@@ -382,8 +383,8 @@ pub fn deposit<'a>(
         delegate.allowed_mint,
         ErrorCode::InvalidMint
     );
-    // Catches a fee scheduled for a later epoch, which NonExactTransfer below cannot see yet, and a
-    // mint that carries a permanent delegate
+    // Catches an extension outside the accepted set, a permanent delegate, and a fee scheduled for a
+    // later epoch, which NonExactTransfer below cannot see yet
     check_escrowable_mint(&ctx.accounts.mint.to_account_info())?;
 
     // 3. Replay Check (time window, deadline gating, and duplicate)
@@ -415,6 +416,7 @@ pub fn deposit<'a>(
     verify_single_ed25519_instruction(
         &ctx.accounts.instructions,
         &delegate.delegate_signer,
+        DEPOSIT_SIGNING_LABEL,
         &message,
     )?;
 
@@ -545,6 +547,7 @@ pub fn reserve(
     verify_single_ed25519_instruction(
         &ctx.accounts.instructions,
         &deposit.reserver,
+        RESERVE_SIGNING_LABEL,
         &expected_message,
     )?;
 
@@ -617,6 +620,7 @@ pub fn release<'a>(ctx: Context<'_, '_, 'a, 'a, Release<'a>>) -> Result<()> {
     verify_single_ed25519_instruction(
         &ctx.accounts.instructions,
         &deposit.releaser,
+        RELEASE_SIGNING_LABEL,
         &expected_message,
     )?;
 
@@ -740,6 +744,7 @@ pub fn refund<'a>(ctx: Context<'_, '_, 'a, 'a, Refund<'a>>) -> Result<()> {
     verify_single_ed25519_instruction(
         &ctx.accounts.instructions,
         &deposit.releaser,
+        REFUND_SIGNING_LABEL,
         &expected_message,
     )?;
 
@@ -803,6 +808,11 @@ pub fn refund<'a>(ctx: Context<'_, '_, 'a, 'a, Refund<'a>>) -> Result<()> {
     Ok(())
 }
 
+/// True for the zero hash and for keccak256 of an empty destination string.
+fn is_empty_destination_hash(destination_hash: &[u8; 32]) -> bool {
+    *destination_hash == [0u8; 32] || *destination_hash == EMPTY_DESTINATION_HASH
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -830,5 +840,15 @@ mod tests {
         assert!(err
             .to_string()
             .contains("Escrow balance insufficient for intended release amount"));
+    }
+
+    #[test]
+    fn empty_destination_hashes_are_refused() {
+        assert_eq!(EMPTY_DESTINATION_HASH, compute_destination_hash(""));
+        assert!(is_empty_destination_hash(&[0u8; 32]));
+        assert!(is_empty_destination_hash(&compute_destination_hash("")));
+        assert!(!is_empty_destination_hash(&compute_destination_hash(
+            "eip155:1/erc20:0x01@0x02"
+        )));
     }
 }

@@ -132,6 +132,14 @@ the reserve must be signed by that account's key. Pass its signer as `selectorSi
 `quote_selector` is the payer's own account and the payer is its own delegate. A reserve signed by
 any other key is refused before the award is sent. The award is verifiable offline only when the payer is its own delegate (see above).
 
+On Solana each deposit and reserve signature is checked against the escrow's message scheme before
+the award is sent, so a signer that ignores `svmMessageScheme` (and signs the raw hash for an
+`escrow-text-v1` escrow) is refused here, not on chain. On a text escrow it also refuses a deposit
+and a reserve that are both v0 off-chain messages (the form a Ledger signs): together they make the
+settler's transaction about 1245 bytes, over Solana's 1232 byte limit even with the cluster's lookup
+table, so it could never be sent after the award. Sign the reserve bare or as a v1 off-chain
+message instead. Every other pair of forms fits.
+
 When it reads the record, `preparePaymentRequest` also refuses one the escrow would reject at
 `deposit`, so the request does not pass the gateway and the auction only to revert: a record that has
 expired at `issued_at`, one with no capacity left (renounced or spent), and, when you pass
@@ -805,6 +813,11 @@ it. See [docs/awarding.md](docs/awarding.md).
 Solana signs with Ed25519, which does not let a verifier recover the signer's key from
 the signature, so the key travels with the message as `payload.delegate_signer`.
 `signPaymentRequest` and the command-line tools set it for you.
+
+What the key signs is chosen per escrow: v4 escrows sign the raw 32-byte hash in `message`,
+v5 escrows sign the readable text `atum deposit v1 <base64url of the deposit hash>`. The client
+picks the form from the escrow the request names and signs the raw hash when it does not know
+the escrow's form. A custom `SenderSigner` for Solana signs the bytes it is given, verbatim.
 
 The key you sign with must be the payment's source account, which is what `pinnedAddress`
 checks — see [Signing provider](#signing-provider).

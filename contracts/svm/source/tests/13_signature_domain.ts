@@ -13,7 +13,10 @@ import {
   ESCROW_SIGNATURE_DOMAIN_VERSION,
   ESCROW_TEST_CLUSTER_ID,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createMessage,
   createPaymentId,
   createValidNonce,
@@ -25,7 +28,6 @@ import {
   treasurerKeypair,
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
-  TEST_DESTINATION,
   destinationHash,
   depositComputeBudgetIx,
 } from "./helpers";
@@ -149,7 +151,7 @@ describe("13. Signature Domain", () => {
     const builder = escrowProgram.methods
       .deposit(
         Array.from(fixture.paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         fixture.reserver.publicKey,
         fixture.releaser.publicKey,
@@ -175,7 +177,7 @@ describe("13. Signature Domain", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .preInstructions([depositComputeBudgetIx(), 
-        createEd25519Instruction(fixture.delegateSigner, signingMessage),
+        depositSigIx(fixture.delegateSigner, signingMessage),
       ])
       .signers([fixture.payer]);
 
@@ -214,7 +216,7 @@ describe("13. Signature Domain", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .preInstructions([
-        createEd25519Instruction(fixture.reserver, signingMessage),
+        reserveSigIx(fixture.reserver, signingMessage),
       ]);
 
     if (!expectedErrorCode) {
@@ -286,7 +288,7 @@ describe("13. Signature Domain", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .preInstructions([
-        createEd25519Instruction(fixture.releaser, signingMessage),
+        releaseSigIx(fixture.releaser, signingMessage),
       ])
       .signers([fixture.payer]);
 
@@ -326,7 +328,7 @@ describe("13. Signature Domain", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .preInstructions([
-        createEd25519Instruction(fixture.releaser, signingMessage),
+        refundSigIx(fixture.releaser, signingMessage),
       ])
       .signers([fixture.payer]);
 

@@ -6,7 +6,7 @@
 
 import nacl from "tweetnacl";
 
-import { encodeEd25519ProofValue } from "@atum-labs/ld-data-integrity";
+import { ed25519ProofMessage, encodeEd25519ProofValue } from "@atum-labs/ld-data-integrity";
 
 import {
   assertDeclarationContextSupplied,
@@ -75,6 +75,9 @@ export interface SignVPEd25519Options {
   // declaration context; REQUIRED when envelopeContextUrl is a URL the shared
   // loader doesn't know. Mirror of Go ExtraEnvelopeContexts.
   extraEnvelopeContexts?: Record<string, unknown>;
+  // Signs ed25519ProofMessage(signingInput) instead of the raw signingInput.
+  // Verifiers accept both. Default false.
+  textProof?: boolean;
 }
 
 // signVPEd25519 builds a W3C VerifiablePresentation around the supplied
@@ -158,7 +161,10 @@ export async function signVPEd25519(
     proofContext: [envelopeContextUrl, ED25519_2020_CONTEXT_URL],
   });
 
-  const signature = nacl.sign.detached(signingInput, secretKey);
+  const signature = nacl.sign.detached(
+    options.textProof === true ? ed25519ProofMessage(signingInput) : signingInput,
+    secretKey
+  );
   if (signature.length !== 64) {
     throw new Error(`expected 64-byte ed25519 signature, got ${signature.length}`);
   }

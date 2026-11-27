@@ -2,6 +2,7 @@ package lddataintegrity
 
 import (
 	"crypto/ed25519"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/mr-tron/base58"
@@ -70,4 +71,40 @@ func VerifyEd25519(pub ed25519.PublicKey, signingInput, signature []byte) error 
 		return ErrEd25519Verify
 	}
 	return nil
+}
+
+// Ed25519ProofMessagePrefix is the ASCII label that prefixes the text form of
+// an atum Ed25519Signature2020 quote, VP or PaymentRequest proof.
+const Ed25519ProofMessagePrefix = "atum ld-proof v1 "
+
+// ed25519SigningInputSize is len(proofHash || docHash) for Ed25519Signature2020.
+const ed25519SigningInputSize = 64
+
+// Ed25519ProofMessage returns the text form of an atum Ed25519Signature2020
+// quote, VP or PaymentRequest proof, which a signer signs only when asked
+// to and VerifyEd25519Proof accepts: Ed25519ProofMessagePrefix followed by
+// base64url without padding of the 64-byte SigningInput (103 bytes total).
+// By default those proofs sign the raw SigningInput. VC proofs do not use
+// this.
+func Ed25519ProofMessage(signingInput []byte) ([]byte, error) {
+	if len(signingInput) != ed25519SigningInputSize {
+		return nil, fmt.Errorf("%w: ed25519 signing input must be %d bytes, got %d",
+			ErrMalformedProof, ed25519SigningInputSize, len(signingInput))
+	}
+	return []byte(Ed25519ProofMessagePrefix + base64.RawURLEncoding.EncodeToString(signingInput)), nil
+}
+
+// VerifyEd25519Proof returns nil if signature is a valid Ed25519 signature
+// over the exact raw SigningInput or over Ed25519ProofMessage(SigningInput),
+// else ErrEd25519Verify (or ErrMalformedProof for a SigningInput that is not
+// 64 bytes and fails the raw check).
+func VerifyEd25519Proof(pub ed25519.PublicKey, signingInput, signature []byte) error {
+	if VerifyEd25519(pub, signingInput, signature) == nil {
+		return nil
+	}
+	msg, err := Ed25519ProofMessage(signingInput)
+	if err != nil {
+		return err
+	}
+	return VerifyEd25519(pub, msg, signature)
 }

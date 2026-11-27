@@ -4,7 +4,7 @@ import { tronAdapter } from './tron';
 import { solanaAdapter } from './solana';
 import { stellarAdapter } from './stellar';
 
-export type { ChainAdapter, ChainDefaults, ContractFieldOverrides } from './types';
+export type { ChainAdapter, ChainDefaults, ChainEscrow, ContractFieldOverrides } from './types';
 
 const adapters: Record<string, ChainAdapter> = {
   eip155: evmAdapter,

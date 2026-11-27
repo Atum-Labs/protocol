@@ -40,27 +40,51 @@ fn can_charge(fee: &TransferFee) -> bool {
     u16::from(fee.transfer_fee_basis_points) != 0 && u64::from(fee.maximum_fee) != 0
 }
 
-/// What the escrow can hold: a mint whose issuer has no permanent delegate over the escrow's token
-/// account, and whose fee can never charge.
+/// What the escrow can hold: a mint whose extensions are all accepted, whose issuer has no permanent
+/// delegate over the escrow's token account, and whose fee can never charge.
 pub fn check_escrowable_mint(mint: &AccountInfo) -> Result<()> {
     check_escrowable_mint_data(&mint.try_borrow_data()?, Clock::get()?.epoch)
 }
 
 fn check_escrowable_mint_data(data: &[u8], epoch: u64) -> Result<()> {
-    // One parse and one walk of the extension list serve both checks. This runs on every deposit,
-    // and a hooked deposit has almost no compute headroom, so it must cost what the fee check alone
-    // did. Fail closed: a mint or extension list this crate cannot read is never treated as safe.
+    // One parse and one walk of the extension list serve every check. This runs on every deposit,
+    // and a hooked deposit has almost no compute headroom. Fail closed: a mint or extension list
+    // this crate cannot read is never treated as safe.
     let state = StateWithExtensions::<Mint2022>::unpack(data)?;
     let types = state.get_extension_types()?;
-    // A permanent delegate can transfer or burn from every token account of the mint, the escrow's
-    // included, and `DepositInfo.amount` never moves with it: `release` then fails on an underfunded
-    // account and `refund` pays back only what is left. Refused by the extension's presence, not by
-    // who the delegate is, because the extension is the issuer's standing power over the account.
+    let mut has_permanent_delegate = false;
+    for ext in &types {
+        has_permanent_delegate |= check_mint_extension(*ext)?;
+    }
+    // Checked after the walk, so a refused extension is reported whatever its place in the list.
     require!(
-        !types.contains(&ExtensionType::PermanentDelegate),
+        !has_permanent_delegate,
         ErrorCode::PermanentDelegateMintNotAllowed
     );
     check_fee_in_force(&state, &types, epoch)
+}
+
+/// Deny by default. Returns whether the extension is a permanent delegate, which is refused after the
+/// walk. No wildcard arm, so a crate bump that adds a type does not build until it is reviewed here.
+fn check_mint_extension(ext: ExtensionType) -> Result<bool> {
+    use ExtensionType::*;
+    match ext {
+        // Accepted issuer powers, with the risk of each recorded in docs/architecture/security.md.
+        // A TransferFeeConfig passes here and is then checked by `check_fee_in_force`.
+        TransferFeeConfig | TransferHook | Pausable | MintCloseAuthority | DefaultAccountState
+        | ConfidentialTransferMint | ConfidentialTransferFeeConfig | MetadataPointer
+        | TokenMetadata => Ok(false),
+        // Can transfer or burn from the escrow's token account without `DepositInfo.amount` moving.
+        PermanentDelegate => Ok(true),
+        Uninitialized | NonTransferable | InterestBearingConfig | GroupPointer | TokenGroup
+        | GroupMemberPointer | TokenGroupMember | ConfidentialMintBurn | ScaledUiAmount
+        // Account extensions, which Token-2022 never writes on a mint.
+        | TransferFeeAmount | ConfidentialTransferAccount | ImmutableOwner | MemoTransfer
+        | CpiGuard | NonTransferableAccount | TransferHookAccount
+        | ConfidentialTransferFeeAmount | PausableAccount => {
+            err!(ErrorCode::MintExtensionNotAllowed)
+        }
+    }
 }
 /// Whether a plain transfer_checked into this token account can succeed once a memo precedes it.
 /// The depositor controls these states on their own account, so release must not depend on them.
@@ -182,6 +206,159 @@ mod tests {
 
     fn is_delegate_rejection(result: Result<()>) -> bool {
         result.unwrap_err() == ErrorCode::PermanentDelegateMintNotAllowed.into()
+    }
+
+    fn is_extension_rejection(result: Result<()>) -> bool {
+        result.unwrap_err() == ErrorCode::MintExtensionNotAllowed.into()
+    }
+
+    // The policy, restated so a change to `check_mint_extension` has to change a test too.
+    const ACCEPTED: [ExtensionType; 9] = [
+        ExtensionType::TransferFeeConfig,
+        ExtensionType::TransferHook,
+        ExtensionType::Pausable,
+        ExtensionType::MintCloseAuthority,
+        ExtensionType::DefaultAccountState,
+        ExtensionType::ConfidentialTransferMint,
+        ExtensionType::ConfidentialTransferFeeConfig,
+        ExtensionType::MetadataPointer,
+        ExtensionType::TokenMetadata,
+    ];
+
+    // A mint listing `extensions` in order. The extension walk reads only type and length, so every
+    // entry is empty except TransferFeeConfig, which the fee check reads and gets the given fee.
+    fn mint_listing(extensions: &[ExtensionType], transfer_fee: TransferFee) -> Vec<u8> {
+        let mut data = legacy_mint();
+        data.resize(Mint2022::LEN.max(165), 0);
+        data.push(AccountType::Mint as u8);
+        for ext in extensions {
+            if *ext == ExtensionType::TransferFeeConfig {
+                data.extend_from_slice(&fee_mint(transfer_fee, transfer_fee)[166..]);
+            } else {
+                data.extend_from_slice(&u16::from(*ext).to_le_bytes());
+                data.extend_from_slice(&0u16.to_le_bytes());
+            }
+        }
+        data
+    }
+
+    // Byte offset of the first TLV entry of type `ext` in a mint account.
+    fn tlv_offset(data: &[u8], ext: ExtensionType) -> usize {
+        let mut at = 166;
+        loop {
+            let ty = u16::from_le_bytes([data[at], data[at + 1]]);
+            if ty == u16::from(ext) {
+                return at;
+            }
+            at += 4 + u16::from_le_bytes([data[at + 2], data[at + 3]]) as usize;
+        }
+    }
+
+    #[test]
+    fn refuses_every_extension_outside_the_accepted_set() {
+        let mut refused = 0;
+        for n in 1..=u16::MAX {
+            let Ok(ext) = ExtensionType::try_from(n) else {
+                continue;
+            };
+            if ACCEPTED.contains(&ext) || ext == ExtensionType::PermanentDelegate {
+                continue;
+            }
+            let data = mint_listing(&[ext], fee(0, 0));
+            assert!(
+                is_extension_rejection(check_escrowable_mint_data(&data, LATE)),
+                "{ext:?}"
+            );
+            refused += 1;
+        }
+        // 27 known types past Uninitialized, less the 9 accepted and the permanent delegate.
+        assert_eq!(refused, 17);
+    }
+
+    #[test]
+    fn accepts_every_accepted_extension_together() {
+        let data = mint_listing(&ACCEPTED, fee(0, 0));
+        assert!(check_escrowable_mint_data(&data, LATE).is_ok());
+        let charging = mint_listing(&ACCEPTED, fee(100, 1_000_000));
+        assert!(is_fee_rejection(check_escrowable_mint_data(
+            &charging, LATE
+        )));
+        // The extension walk runs before the fee check.
+        let refused_and_charging = mint_listing(
+            &[
+                ExtensionType::TransferFeeConfig,
+                ExtensionType::NonTransferable,
+            ],
+            fee(100, 1_000_000),
+        );
+        assert!(is_extension_rejection(check_escrowable_mint_data(
+            &refused_and_charging,
+            LATE
+        )));
+    }
+
+    #[test]
+    fn reports_a_refused_extension_listed_after_a_permanent_delegate() {
+        let data = mint_listing(
+            &[
+                ExtensionType::MintCloseAuthority,
+                ExtensionType::PermanentDelegate,
+                ExtensionType::Pausable,
+                ExtensionType::NonTransferable,
+            ],
+            fee(0, 0),
+        );
+        assert!(is_extension_rejection(check_escrowable_mint_data(
+            &data, LATE
+        )));
+    }
+
+    #[test]
+    fn refuses_unknown_and_truncated_extension_lists() {
+        let unknown = fee_mint_behind_unknown_extension(fee(0, 0));
+        assert_eq!(
+            check_escrowable_mint_data(&unknown, LATE).unwrap_err(),
+            ProgramError::InvalidAccountData.into()
+        );
+        let mut truncated = mint_listing(&[ExtensionType::MetadataPointer], fee(0, 0));
+        truncated[168..170].copy_from_slice(&8u16.to_le_bytes());
+        assert_eq!(
+            check_escrowable_mint_data(&truncated, LATE).unwrap_err(),
+            ProgramError::InvalidAccountData.into()
+        );
+    }
+
+    #[test]
+    fn mainnet_stablecoin_mints_are_refused_only_for_their_permanent_delegate() {
+        for (name, data) in [
+            ("PYUSD", &include_bytes!("fixtures/pyusd.bin")[..]),
+            ("USDG", &include_bytes!("fixtures/usdg.bin")[..]),
+            ("AUSD", &include_bytes!("fixtures/ausd.bin")[..]),
+            ("GBPA", &include_bytes!("fixtures/gbpa.bin")[..]),
+            // DefaultAccountState and Pausable, and no TransferFeeConfig.
+            ("OUSD", &include_bytes!("fixtures/ousd.bin")[..]),
+        ] {
+            assert!(
+                is_delegate_rejection(check_escrowable_mint_data(data, LATE)),
+                "{name}"
+            );
+            // Relabel the delegate entry as a second MintCloseAuthority: every other extension of
+            // the real mint then passes, so accepting the permanent delegate admits the mint.
+            let mut relabelled = data.to_vec();
+            let at = tlv_offset(&relabelled, ExtensionType::PermanentDelegate);
+            relabelled[at..at + 2]
+                .copy_from_slice(&u16::from(ExtensionType::MintCloseAuthority).to_le_bytes());
+            assert!(
+                check_escrowable_mint_data(&relabelled, LATE).is_ok(),
+                "{name}"
+            );
+        }
+        for (name, data) in [
+            ("USDC", &include_bytes!("fixtures/usdc.bin")[..]),
+            ("USDT", &include_bytes!("fixtures/usdt.bin")[..]),
+        ] {
+            assert!(check_escrowable_mint_data(data, LATE).is_ok(), "{name}");
+        }
     }
 
     #[test]

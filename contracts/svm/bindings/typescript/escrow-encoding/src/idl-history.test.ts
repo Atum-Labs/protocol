@@ -13,3 +13,21 @@ describe('idl-history/v4', () => {
     );
   });
 });
+
+// idl-history/v5/escrow.json is the v5 escrow IDL (escrow-text-v1), which consumers pick for a v5
+// escrow so a later source change can't rewrite how live v5 instructions are built. Until v5 deploys
+// it also equals src/generated: a source change then updates both deliberately. Once v5 is deployed,
+// a change to its interface is a new program and a new version, and this snapshot stays.
+describe('idl-history/v5', () => {
+  const raw = readFileSync(resolve(__dirname, '../idl-history/v5/escrow.json'));
+
+  it('escrow.json is the frozen v5 IDL', () => {
+    expect(createHash('sha256').update(raw).digest('hex')).toBe(
+      '33319cb797036d9e38b06403212a9fc11800ed4462241b2d5930f2f87c49e17d',
+    );
+  });
+
+  it('equals the current source IDL until v5 deploys', () => {
+    expect(raw.equals(readFileSync(resolve(__dirname, 'generated/escrow.json')))).toBe(true);
+  });
+});

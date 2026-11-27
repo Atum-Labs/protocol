@@ -248,6 +248,7 @@ func solanaDomainOf(expected Expectations) *SolanaDomain {
 		EscrowProgramID: expected.EscrowContract,
 		ClusterID:       expected.SvmSignatureClusterID,
 		DomainVersion:   *expected.SvmSignatureDomainVersion,
+		MessageScheme:   expected.SvmMessageScheme,
 	}
 }
 

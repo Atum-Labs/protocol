@@ -1,7 +1,8 @@
 # Pre-v4 Solana IDLs
 
 The Anchor IDLs of the Solana programs that were served before v4. Use them to decode events
-those programs emitted. `../../src/generated/` describes v4 and does not decode them.
+those programs emitted. `../v4/` and `../../src/generated/` describe v4 and later and do not
+decode them.
 
 | Program | Id | Active on mainnet | IDL |
 |---|---|---|---|

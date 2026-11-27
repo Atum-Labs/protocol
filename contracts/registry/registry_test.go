@@ -135,6 +135,10 @@ func TestSignatureValidate(t *testing.T) {
 		{"Solana version 0", "solana:x", Signature{}, "needs svmDomainVersion"},
 		{"Solana version negative", "solana:x", Signature{SVMDomainVersion: -1}, "needs svmDomainVersion"},
 		{"Solana text scheme", "solana:x", Signature{SVMDomainVersion: 5, SVMMessage: "text"}, "not a known message scheme"},
+		{"Solana escrow-text-v1", "solana:x", Signature{SVMDomainVersion: 5, SVMMessage: "escrow-text-v1"}, ""},
+		{"Solana escrow-text-v1 upper case", "solana:x", Signature{SVMDomainVersion: 5, SVMMessage: "ESCROW-TEXT-V1"}, "not a known message scheme"},
+		{"Solana escrow-text-v2", "solana:x", Signature{SVMDomainVersion: 5, SVMMessage: "escrow-text-v2"}, "not a known message scheme"},
+		{"EVM with escrow-text-v1", "eip155:1", Signature{EIP712Name: "Escrow", EIP712Version: "3", SVMMessage: "escrow-text-v1"}, "no svmDomainVersion or svmMessage"},
 		{"Solana scheme of one space", "solana:x", Signature{SVMDomainVersion: 5, SVMMessage: " "}, "not a known message scheme"},
 		{"EVM", "eip155:1", Signature{EIP712Name: "Escrow", EIP712Version: "3"}, ""},
 		{"Tron", "tron:mainnet", Signature{EIP712Name: "Escrow", EIP712Version: "3"}, ""},
@@ -565,5 +569,56 @@ func TestLoadRefusesBadFiles(t *testing.T) {
 	}
 	if _, err := load(fstest.MapFS{"chains/eip155_1.json": {Data: []byte(good)}}); err != nil {
 		t.Fatalf("a good file must load: %v", err)
+	}
+}
+
+// TestSVMMessageSchemesMatchTheEncoding requires the accepted svmMessage names to be exactly the svm
+// escrow encoding's MessageSchemes, read from its source so the registry stays dependency free.
+func TestSVMMessageSchemesMatchTheEncoding(t *testing.T) {
+	const src = "contracts/svm/bindings/go/escrow-encoding/encoding/scheme.go"
+	raw, err := os.ReadFile(filepath.Join(repoRoot, src))
+	if err != nil {
+		t.Fatalf("read %s: %v", src, err)
+	}
+	consts := map[string]string{}
+	for _, m := range regexp.MustCompile(`(?m)^const (Scheme\w+) MessageScheme = "([^"]*)"$`).FindAllStringSubmatch(string(raw), -1) {
+		consts[m[1]] = m[2]
+	}
+	list := regexp.MustCompile(`var MessageSchemes = \[\]MessageScheme\{([^}]*)\}`).FindStringSubmatch(string(raw))
+	if list == nil {
+		t.Fatalf("%s: MessageSchemes not found", src)
+	}
+	want := map[string]bool{}
+	for _, name := range strings.Split(list[1], ",") {
+		v, ok := consts[strings.TrimSpace(name)]
+		if !ok {
+			t.Fatalf("%s: MessageSchemes names %q, which is not a MessageScheme constant", src, name)
+		}
+		want[v] = true
+	}
+	if !reflect.DeepEqual(want, svmMessageSchemes) {
+		t.Fatalf("registry accepts %v, the svm encoding knows %v", svmMessageSchemes, want)
+	}
+}
+
+// A Solana chain may list a raw v4 and an escrow-text-v1 v5 side by side; each escrow resolves its
+// own scheme.
+func TestLoadFSSolanaV4AndTextV5(t *testing.T) {
+	body := `{"chain":"solana:x","name":"n","mainnet":false,"versions":[` +
+		`{"id":"v4","source":"s","escrow":"Esc4","fulfillmentProxies":["P"],"signature":{"svmDomainVersion":4}},` +
+		`{"id":"v5","source":"s","escrow":"Esc5","fulfillmentProxies":["P"],"signature":{"svmDomainVersion":5,"svmMessage":"escrow-text-v1"}}]}`
+	r, err := LoadFS(fstest.MapFS{"chains/solana_x.json": {Data: []byte(body)}})
+	if err != nil {
+		t.Fatalf("LoadFS: %v", err)
+	}
+	for escrow, want := range map[string]string{"Esc4": "", "Esc5": "escrow-text-v1"} {
+		v, ok := r.VersionOfEscrow("solana:x", escrow)
+		if !ok || v.Signature.SVMMessage != want {
+			t.Errorf("%s: scheme %q (found %v), want %q", escrow, v.Signature.SVMMessage, ok, want)
+		}
+	}
+	bad := strings.Replace(body, "escrow-text-v1", "text", 1)
+	if _, err := LoadFS(fstest.MapFS{"chains/solana_x.json": {Data: []byte(bad)}}); err == nil || !strings.Contains(err.Error(), "not a known message scheme") {
+		t.Fatalf("LoadFS accepted an unknown scheme: %v", err)
 	}
 }

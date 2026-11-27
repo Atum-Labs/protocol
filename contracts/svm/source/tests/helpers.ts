@@ -16,6 +16,7 @@ import {
   createInitializeTransferFeeConfigInstruction,
   createInitializeTransferHookInstruction,
   createInitializePermanentDelegateInstruction,
+  createInitializeNonTransferableMintInstruction,
   getOrCreateAssociatedTokenAccount as splGetOrCreateAssociatedTokenAccount,
   mintTo as splMintToV2,
 } from "@solana/spl-token";
@@ -28,6 +29,10 @@ import {
   SystemProgram,
   Connection,
   Transaction,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
+  AddressLookupTableProgram,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import { randomBytes, randomInt } from "crypto";
@@ -589,14 +594,113 @@ export async function createDelegate(
   return delegate;
 }
 
-export function createEd25519Instruction(
+/** Ed25519 verification instruction over `message` exactly as given. */
+export function rawSigIx(
   signer: Keypair,
-  message: Buffer
+  message: Buffer | Uint8Array
 ): anchor.web3.TransactionInstruction {
   return anchor.web3.Ed25519Program.createInstructionWithPrivateKey({
     privateKey: signer.secretKey,
-    message,
+    message: Buffer.from(message),
   });
+}
+
+export const DEPOSIT_LABEL = "atum deposit v1";
+export const RESERVE_LABEL = "atum reserve v1";
+export const RELEASE_LABEL = "atum release v1";
+export const REFUND_LABEL = "atum refund v1";
+
+/** The escrow signed text `<label> <base64url-nopad(hash)>`. */
+export function escrowSignedText(
+  label: string,
+  hash: Buffer | Uint8Array
+): Buffer {
+  if (hash.length !== 32) throw new Error("escrow hash must be 32 bytes");
+  return Buffer.from(`${label} ${Buffer.from(hash).toString("base64url")}`);
+}
+
+export function depositSigIx(signer: Keypair, hash: Buffer | Uint8Array) {
+  return rawSigIx(signer, escrowSignedText(DEPOSIT_LABEL, hash));
+}
+
+export function reserveSigIx(signer: Keypair, hash: Buffer | Uint8Array) {
+  return rawSigIx(signer, escrowSignedText(RESERVE_LABEL, hash));
+}
+
+export function releaseSigIx(signer: Keypair, hash: Buffer | Uint8Array) {
+  return rawSigIx(signer, escrowSignedText(RELEASE_LABEL, hash));
+}
+
+export function refundSigIx(signer: Keypair, hash: Buffer | Uint8Array) {
+  return rawSigIx(signer, escrowSignedText(REFUND_LABEL, hash));
+}
+
+/**
+ * Sends instructions as a v0 transaction through a fresh address lookup table, the way the
+ * settler ships transactions that outgrow the 1232-byte legacy limit. Every account that is
+ * neither a signer nor an invoked program goes in the table. Throws on failure like .rpc().
+ */
+export async function sendV0WithLookupTable(
+  instructions: TransactionInstruction[],
+  signers: Keypair[]
+): Promise<string> {
+  const connection = provider.connection;
+  const feePayer = provider.wallet.payer as Keypair;
+  const programIds = new Set(instructions.map((ix) => ix.programId.toBase58()));
+  const lookupKeys = new Map<string, PublicKey>();
+  for (const ix of instructions) {
+    for (const meta of ix.keys) {
+      const key = meta.pubkey.toBase58();
+      if (!meta.isSigner && !programIds.has(key))
+        lookupKeys.set(key, meta.pubkey);
+    }
+  }
+
+  const [createIx, lookupTable] = AddressLookupTableProgram.createLookupTable({
+    authority: feePayer.publicKey,
+    payer: feePayer.publicKey,
+    recentSlot: await connection.getSlot("finalized"),
+  });
+  const extendIx = AddressLookupTableProgram.extendLookupTable({
+    payer: feePayer.publicKey,
+    authority: feePayer.publicKey,
+    lookupTable,
+    addresses: [...lookupKeys.values()],
+  });
+  await sendAndConfirmTransaction(
+    connection,
+    new Transaction().add(createIx, extendIx),
+    [feePayer],
+    { commitment: "confirmed" }
+  );
+
+  // Addresses added by extend are usable only from the next slot on.
+  const extendedAt = await connection.getSlot("confirmed");
+  while ((await connection.getSlot("confirmed")) <= extendedAt) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  const table = (await connection.getAddressLookupTable(lookupTable)).value;
+  if (!table) throw new Error("address lookup table not found");
+
+  const blockhash = await connection.getLatestBlockhash();
+  const message = new TransactionMessage({
+    payerKey: feePayer.publicKey,
+    recentBlockhash: blockhash.blockhash,
+    instructions,
+  }).compileToV0Message([table]);
+  const tx = new VersionedTransaction(message);
+  tx.sign([feePayer, ...signers]);
+  const signature = await connection.sendTransaction(tx);
+  const result = await connection.confirmTransaction(
+    { signature, ...blockhash },
+    "confirmed"
+  );
+  if (result.value.err) {
+    throw new Error(
+      `transaction ${signature} failed: ${JSON.stringify(result.value.err)}`
+    );
+  }
+  return signature;
 }
 
 export async function generateFundedKeypair(
@@ -718,14 +822,14 @@ export interface EscrowMessageOptions {
  * The destination every deposit test commits to (CORE-2120).
  *
  * The ratified canonical form, `<CAIP-19 asset>@<account>`, lowercase throughout for an eip155
- * namespace. 103 bytes, comfortably inside MAX_DESTINATION_LEN and the ~152-byte legacy-transaction
- * ceiling, so these tests exercise the realistic shape rather than a degenerate short string.
+ * namespace. 103 bytes, comfortably inside the 256-byte limit the bindings enforce.
  */
 export const TEST_DESTINATION =
   "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979";
 
 /**
- * keccak256 of a destination string, as the 32 bytes that enter the deposit preimage.
+ * keccak256 of a destination string: the deposit instruction's `destination_hash` argument and the
+ * 32 bytes that enter the deposit preimage.
  *
  * The deposit hash commits to keccak256(destination), NOT the string: keccak concatenates without
  * length prefixes, so injectivity depends on every hashed field being fixed-width. Tests must feed this,
@@ -1010,6 +1114,7 @@ export async function setupToken2022MintAndFund(
       maxFee: bigint;
     };
     permanentDelegate?: PublicKey;
+    nonTransferable?: boolean;
   } = {}
 ): Promise<{
   mint: PublicKey;
@@ -1026,6 +1131,9 @@ export async function setupToken2022MintAndFund(
   }
   if (options.permanentDelegate) {
     extensions.push(ExtensionType.PermanentDelegate);
+  }
+  if (options.nonTransferable) {
+    extensions.push(ExtensionType.NonTransferable);
   }
 
   const mintLen = getMintLen(extensions);
@@ -1066,6 +1174,15 @@ export async function setupToken2022MintAndFund(
       createInitializePermanentDelegateInstruction(
         mintKeypair.publicKey,
         options.permanentDelegate,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+  }
+
+  if (options.nonTransferable) {
+    tx.add(
+      createInitializeNonTransferableMintInstruction(
+        mintKeypair.publicKey,
         TOKEN_2022_PROGRAM_ID
       )
     );
@@ -1160,6 +1277,8 @@ export async function setupTransferHookMint(
     decimals?: number;
     skipAllowlist?: boolean;
     initialMintAmount?: bigint;
+    /** Names this key in the hook's extra-account list as a signing, writable account. */
+    hookSigner?: PublicKey;
   } = {}
 ): Promise<{
   mint: PublicKey;
@@ -1252,8 +1371,12 @@ export async function setupTransferHookMint(
     anchorProvider
   );
 
-  await mockTransferHookProgram.methods
-    .initializeExtraAccountMetaList()
+  await (options.hookSigner
+    ? mockTransferHookProgram.methods.initializeExtraAccountMetaListWithSigner(
+        options.hookSigner
+      )
+    : mockTransferHookProgram.methods.initializeExtraAccountMetaList()
+  )
     .accountsPartial({
       extraAccountMetaList,
       mint: mintKeypair.publicKey,
@@ -1296,7 +1419,8 @@ export async function setupTransferHookMint(
 }
 
 export function buildTransferHookRemainingAccounts(
-  extraAccountMetaList: PublicKey
+  extraAccountMetaList: PublicKey,
+  extraAccounts: PublicKey[] = []
 ): AccountMeta[] {
   return [
     {
@@ -1309,6 +1433,11 @@ export function buildTransferHookRemainingAccounts(
       isSigner: false,
       isWritable: false,
     },
+    ...extraAccounts.map((pubkey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: true,
+    })),
   ];
 }
 
@@ -1319,8 +1448,8 @@ export function buildTransferHookRemainingAccounts(
  *
  * WHY THIS IS NOT OPTIONAL. Solana's default is 200k compute units per instruction, and a v4
  * deposit no longer fits inside it once the transaction also carries token/ATA setup: that setup
- * consumes ~42k, leaving the escrow ~203k, and it exceeds that. CORE-2120 added a keccak over the
- * destination and grew `DepositInfo` 249 -> 313 bytes, eroding what margin remained.
+ * consumes ~42k, leaving the escrow ~203k, and it exceeds that. CORE-2120 grew `DepositInfo`
+ * 249 -> 313 bytes, eroding what margin remained.
  *
  * WHY IT PRESENTS AS FLAKINESS. Whether a given run tips over depends on incidental work — most of
  * all whether an ATA has to be created — so the same test can pass and fail across runs with no

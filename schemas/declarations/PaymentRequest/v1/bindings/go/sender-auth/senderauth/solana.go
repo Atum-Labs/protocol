@@ -114,6 +114,9 @@ func (solanaAdapter) BuildAuthMessage(params BuildParams) (AuthMessageResult, er
 	}, nil
 }
 
+// Sign signs the 32 byte escrow hash in signed.Message: the raw hash by default, or its escrow text
+// when the SDK-local signed.SvmMessageScheme names the text scheme (the reserve text for a reserve
+// record, the deposit text otherwise).
 func (solanaAdapter) Sign(signed SignedMessageInput, privateKey string) (string, error) {
 	messageBytes, err := hexToBytes(signed.Message)
 	if err != nil {
@@ -123,7 +126,16 @@ func (solanaAdapter) Sign(signed SignedMessageInput, privateKey string) (string,
 	if err != nil {
 		return "", err
 	}
-	sig := ed25519.Sign(secretKey, messageBytes)
+	toSign := messageBytes
+	if signed.SvmMessageScheme != "" {
+		if len(messageBytes) != 32 {
+			return "", fmt.Errorf("sender_auth: Solana message must be the 32-byte escrow hash, got %d bytes", len(messageBytes))
+		}
+		if toSign, err = svm.SigningBytes(svm.MessageScheme(signed.SvmMessageScheme), solanaWitnessKind(signed.MessagePrehash), [32]byte(messageBytes)); err != nil {
+			return "", fmt.Errorf("sender_auth: %w", err)
+		}
+	}
+	sig := ed25519.Sign(secretKey, toSign)
 	return "0x" + hex.EncodeToString(sig), nil
 }
 
@@ -145,7 +157,7 @@ func (solanaAdapter) RecoverAndVerify(signed SignedMessageInput, source SourceRe
 	if err != nil {
 		return VerifiedSenderAuth{}, err
 	}
-	if outcome, detail := bindSolanaDeposit(domain, root, signed, source.Account); outcome != "" {
+	if outcome, detail := bindSolanaDeposit(domain, svm.MessageScheme(expected.SvmMessageScheme), root, signed, source.Account); outcome != "" {
 		return VerifiedSenderAuth{}, commitmentRefusal("solana", outcome, detail)
 	}
 
@@ -202,8 +214,10 @@ func (solanaAdapter) RecoverAndVerify(signed SignedMessageInput, source SourceRe
 
 // RecoverSigner verifies the ed25519 signature against payload.delegate_signer and confirms
 // it is source.account — WITHOUT parsing or binding the deposit prehash. The recover-only
-// primitive a multi-message verifier runs over every signed_messages[] entry. Returns
-// source.account on success. Mirrors the TS `recoverSigner`.
+// primitive a multi-message verifier runs over every signed_messages[] entry. It accepts a
+// signature over the raw hash or over its escrow text in any form, since it proves the signer
+// only; the escrow's scheme is enforced by the commitment check. Returns source.account on
+// success. Mirrors the TS `recoverSigner`.
 func (solanaAdapter) RecoverSigner(signed SignedMessageInput, source SourceRef) (string, error) {
 	// The ed25519 signer is source.account. A payload.delegate_signer, when present, must equal
 	// it; when absent, source.account is the verifying key. ed25519 is not key-recoverable, so
@@ -223,7 +237,7 @@ func (solanaAdapter) RecoverSigner(signed SignedMessageInput, source SourceRef) 
 	}
 	msg, _ := hex.DecodeString(signed.Message[2:])
 	sig, _ := hex.DecodeString(signed.Signature[2:])
-	if !verifyEd25519Strict(pub, msg, sig) {
+	if !solanaSignerMatches([32]byte(msg), pub, sig) {
 		return "", fmt.Errorf("%w: ed25519 verification failed", ErrSignerMismatch)
 	}
 	return source.Account, nil

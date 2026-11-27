@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@noble/hashes": "^1.4.0",
-    "bs58": "^5.0.0"
+    "bs58": "^5.0.0",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@noble/curves": "^1.9.7",

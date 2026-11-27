@@ -244,7 +244,9 @@ import { registerAtumEscrowScheme, type SolanaSigner } from '@atumlabs/x402-atum
 const solanaSigner: SolanaSigner = {
   publicKey: '…base58',
   async sign(message) {
-    /* Ed25519-sign `message`, return the 64-byte detached signature */
+    /* Ed25519-sign `message` verbatim (the raw 32-byte deposit hash), return the 64-byte
+       detached signature. x402 signs the raw hash, so it pays a v4 escrow and refuses a v5
+       (text) escrow with UNSUPPORTED_ESCROW_SCHEME before signing. */
   },
 };
 registerAtumEscrowScheme(client, {
@@ -291,7 +293,9 @@ registerAtumEscrowScheme(client, {
 });
 
 // …or a fixed set of addresses, with no network call. Each entry carries escrowContract,
-// quoteSelector, fulfillmentVerifierAccount, fulfillmentProxy and the payable tokens.
+// quoteSelector, fulfillmentVerifierAccount, fulfillmentProxy and the payable tokens. For a
+// Solana escrow that signs text, also set svmMessageScheme: 'escrow-text-v1', so the client
+// refuses it (UNSUPPORTED_ESCROW_SCHEME) instead of signing a hash the escrow rejects on chain.
 const TRUSTED_CORRIDORS: Record<string, TrustedRoles> = {/* "eip155:8453": { ... } */};
 registerAtumEscrowScheme(client, {
   signer,
@@ -336,6 +340,7 @@ in one group are not priced against each other at all.
 | `MARKUP_EXCEEDED`             | `amount` is above the bound; `expected` is the largest amount allowed |
 | `CHAIN_NOT_TRUSTED`           | the trust source serves nothing on the chain                          |
 | `TRUST_SOURCE_UNAVAILABLE`    | the trust source could not answer; the payment may be retried         |
+| `UNSUPPORTED_ESCROW_SCHEME`   | the Solana escrow signs text (`escrow-text-v1`), which x402 can't sign |
 
 For the `UNTRUSTED_*` codes and `MARKUP_EXCEEDED`, `field`, `expected` (the trusted value or
 bound) and `actual` (what the 402 asked for) say exactly what failed.

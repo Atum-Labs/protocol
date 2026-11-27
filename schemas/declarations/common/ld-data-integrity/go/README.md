@@ -19,6 +19,13 @@ Shared Go primitives for W3C Data Integrity 1.0 signing + verification.
   of the signed N-Quads, which is why those roles are issued under v2.
 - **Cryptosuite primitives** for EcdsaSecp256k1RecoverySignature2020
   (detached JWS) + Ed25519Signature2020 (multibase proofValue).
+- **Ed25519 proof message**: `Ed25519ProofMessage(SigningInput)` =
+  `"atum ld-proof v1 "` + base64url without padding of the 64-byte
+  SigningInput (103 ASCII bytes). FulfillmentQuote quote and VP proofs
+  (PaymentRequestEnvelope VPs included) and PaymentRequest proofs sign the raw
+  SigningInput by default and this text with the off by default text proof
+  option; `VerifyEd25519Proof` accepts either. VC proofs sign the raw SigningInput.
+  `conformance/ed25519-proof-message.json` pins it for Go and TS.
 - **Combined-hash** construction (`SigningInput = H(proofHash || docHash)`
   per W3C Data Integrity §4.4) with the cryptosuite-specific hash
   algorithm (keccak256 for secp256k1, sha-256 for ed25519).
@@ -68,12 +75,15 @@ schemas/declarations/common/ld-data-integrity/go/
   jws.go                   — Secp256k1 detached JWS (build + parse)
   recovery.go              — Secp256k1 signer recovery → EVM address
   ed25519.go               — Ed25519 sign + verify + multibase proofValue
+                              + Ed25519ProofMessage, VerifyEd25519Proof
   errors.go                — sentinel errors (ErrMalformedProof,
                               ErrUnsupportedProofType, ErrUnknownContext,
                               ErrSignatureRecovery, ErrCanonicalizationFailed)
   *_test.go                — unit tests + vector pins
 ../conformance/
   admission-vectors.json   — admit/refuse vectors, intended to be shared with the TypeScript lib
+  ed25519-proof-message.json — Ed25519ProofMessage vectors read by the Go and TS tests
+                              (regenerate: REGEN_LD_PROOF_MESSAGE=1 go test -run TestEd25519ProofMessageConformance)
 ```
 
 ## Threat model notes

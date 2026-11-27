@@ -235,7 +235,11 @@ Checked in this order; the first failure is the result.
    below), it may instead equal the request's depositRequestHash v2.
 9. The prehash is exactly the canonical deposit (Permit2 typed data on EVM and Tron, the escrow
    deposit record on Solana) and hashes to `signed_messages[0].message`. On Solana the ed25519
-   signature must also verify against `source.account` as the program's strict check does (a
+   signature must also verify against `source.account` as the escrow's program checks it: a v4
+   escrow over the raw 32-byte message, a v5 escrow over the text
+   `atum deposit v1 <base64url of the message>` signed bare or inside an sRFC 38 off-chain message
+   envelope (v1, or v0 with a zero application domain), chosen per escrow. Both use the program's
+   strict check (a
    canonical `S`, and neither the key nor `R` a point of small order); a `delegate_signer`, when
    present, must equal it, and a separately approved delegate signer is not supported. On EVM and
    Tron, Permit2 checks the signature on chain, for key accounts and for contract accounts

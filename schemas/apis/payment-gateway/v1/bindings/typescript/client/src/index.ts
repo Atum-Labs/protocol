@@ -192,7 +192,11 @@ export {
 // releases. Build a signable request with {@link PaymentGatewayClient.preparePaymentRequest}
 // and sign it with {@link signPaymentRequest}. `ChainDefaults` is the data shape that entry
 // point accepts.
-export type { ChainDefaults } from './chain-adapters';
+export type { ChainDefaults, ChainEscrow } from './chain-adapters';
+// How a signer signs for one escrow of a chain's /v1/defaults: its Solana domain version and
+// message scheme.
+export { escrowSigningOf } from './escrow-signing';
+export type { EscrowSigning } from './escrow-signing';
 // The generated wire shape returned by `client.chainDefaults.getDefaults()`, aliased because
 // the public `ChainDefaults` above shadows it in the generated-types star export.
 export type { ChainDefaults as ChainDefaultsWire } from './generated/types.gen';
@@ -278,7 +282,13 @@ export {
 
 // Sign the sender_auth message with a local private key (default) or a Turnkey wallet.
 export { createSenderSigner, resolveTurnkeyAddresses, TurnkeySenderSigner } from './signers';
-export type { SenderSigner, SenderSignature, SenderSignerOptions, TurnkeyConfig } from './signers';
+export type {
+  SenderSignInput,
+  SenderSigner,
+  SenderSignature,
+  SenderSignerOptions,
+  TurnkeyConfig,
+} from './signers';
 
 /**
  * Refuses a request whose Stellar messages are not deposits, before any key signs them. A Stellar
@@ -323,11 +333,16 @@ export function assertRequestSignable(request: PaymentRequest, signer: SenderSig
  * first checked by {@link assertRequestSignable}: every message must be the deposit digest of its
  * own `message_prehash`, and nothing is signed otherwise.
  *
+ * On Solana, `options.svmMessageScheme` is the message scheme of the escrow the request names,
+ * `escrowSigningOf(defaults, request.escrow_contract_address).svmMessageScheme`. Absent, the signer
+ * signs the 32-byte hash itself, which every escrow verified before `escrow-text-v1`.
+ *
  * @throws If the request has no signed_messages, or {@link assertRequestSignable} refuses it.
  */
 export async function signPaymentRequest(
   request: PaymentRequest,
   signer: SenderSigner,
+  options?: { svmMessageScheme?: string },
 ): Promise<PaymentRequest> {
   if (!request.sender_auth?.signed_messages?.length) {
     throw new Error(
@@ -336,7 +351,12 @@ export async function signPaymentRequest(
   }
   assertRequestSignable(request, signer);
   for (const signedMessage of request.sender_auth.signed_messages) {
-    const { signature, delegateSigner } = await signer.sign(signedMessage);
+    // The scheme rides on a copy, so it never reaches the request that is sent. It comes only from
+    // the caller: one carried in the request data is overridden, never signed with.
+    const { signature, delegateSigner } = await signer.sign({
+      ...signedMessage,
+      svmMessageScheme: options?.svmMessageScheme ?? '',
+    });
     signedMessage.signature = signature;
     if (delegateSigner) {
       signedMessage.payload = { ...(signedMessage.payload ?? {}), delegate_signer: delegateSigner };
@@ -1026,6 +1046,16 @@ export class PaymentGatewayClient extends GeneratedPaymentGatewayClient {
       // gateway that predates it. Carried as published, a version this build does not know
       // included, so that prepareDirectDepositRequest refuses it rather than build at another.
       directDepositRequestHashVersion: data.direct_deposit_request_hash_version ?? undefined,
+      // Every escrow the gateway accepts into, with how each signs; absent from an older gateway.
+      ...(data.escrows
+        ? {
+            escrows: data.escrows.map((e) => ({
+              escrowContract: e.escrow_contract,
+              svmSignatureDomainVersion: e.svm_signature_domain_version ?? undefined,
+              svmMessage: e.svm_message ?? undefined,
+            })),
+          }
+        : {}),
     };
   }
 

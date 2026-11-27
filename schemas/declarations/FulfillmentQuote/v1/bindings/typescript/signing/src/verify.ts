@@ -8,9 +8,8 @@
 // and signer share a single implementation per cryptosuite.
 
 import bs58 from "bs58";
-import nacl from "tweetnacl";
 
-import { recoverSecp256k1ProofSigner } from "@atum-labs/ld-data-integrity";
+import { recoverSecp256k1ProofSigner, verifyEd25519Proof } from "@atum-labs/ld-data-integrity";
 
 import { hashQuote, type Cryptosuite, type HashResult } from "./hash.js";
 import { parseDetachedJws } from "./jws.js";
@@ -173,7 +172,8 @@ async function verifyEd25519(
     "Ed25519Signature2020"
   );
 
-  if (!nacl.sign.detached.verify(signingInput, sig, pubkey)) {
+  // The proof signs the raw signingInput or its ed25519ProofMessage text.
+  if (!verifyEd25519Proof(pubkey, signingInput, sig)) {
     throw new Error("verify: ed25519 signature verification failed");
   }
 

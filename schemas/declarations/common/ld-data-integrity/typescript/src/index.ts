@@ -78,6 +78,9 @@ export {
   decodeEd25519ProofValue,
   signEd25519,
   verifyEd25519,
+  ed25519ProofMessage,
+  verifyEd25519Proof,
+  ED25519_PROOF_MESSAGE_PREFIX,
 } from "./ed25519.js";
 
 export {

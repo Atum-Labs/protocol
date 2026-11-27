@@ -68,6 +68,13 @@ export interface SolanaDomain {
   escrowProgramId: string;
   clusterId: string;
   domainVersion: number;
+  /**
+   * The escrow's svm message scheme, from the registry's `svmMessage` for the escrow: `''` or
+   * absent (the default) accepts a deposit signed over the raw hash only, as v4 does, and
+   * `'escrow-text-v1'` accepts the escrow text (bare, v1 or v0) only. Mirrors the Go
+   * `SolanaDomain.MessageScheme`.
+   */
+  messageScheme?: string;
 }
 
 /** Verifier configuration for a commitment check beyond the Solana domain. Mirrors the Go `CommitmentOption`s. */

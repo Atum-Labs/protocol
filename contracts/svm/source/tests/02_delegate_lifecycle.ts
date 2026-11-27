@@ -12,7 +12,7 @@ import {
   generateFundedKeypair,
   getOrCreateAssociatedTokenAccount,
   getAccount,
-  createEd25519Instruction,
+  depositSigIx,
   createMessage,
   DEPOSIT_SEED,
   TOKEN_PROGRAM_ID,
@@ -23,7 +23,6 @@ import {
   createValidNonce,
   ensureProtocolInitialized,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import { Transaction } from "@solana/web3.js";
@@ -518,10 +517,7 @@ describe("2. Delegate Lifecycle", () => {
       ]);
       const depositHash = message;
 
-      const ed25519Instruction = createEd25519Instruction(
-        delegateSigner,
-        message
-      );
+      const ed25519Instruction = depositSigIx(delegateSigner, message);
 
       const [depositPda] = PublicKey.findProgramAddressSync(
         [DEPOSIT_SEED, depositHash],
@@ -548,7 +544,7 @@ describe("2. Delegate Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           amount,
           reserver,
           releaser,
@@ -635,10 +631,7 @@ describe("2. Delegate Lifecycle", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
-      delegateSigner,
-      message
-    );
+    const ed25519Instruction = depositSigIx(delegateSigner, message);
 
     const [depositPda] = PublicKey.findProgramAddressSync(
       [DEPOSIT_SEED, depositHash],
@@ -662,7 +655,7 @@ describe("2. Delegate Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           amount,
           reserver,
           releaser,

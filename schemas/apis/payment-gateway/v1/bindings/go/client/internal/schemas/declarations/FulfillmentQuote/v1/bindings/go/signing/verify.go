@@ -197,7 +197,8 @@ func verifyEd25519(signedQuoteJSON []byte, quote *fq.SchemaJson) (Result, error)
 		return Result{}, err
 	}
 
-	if err := lddataintegrity.VerifyEd25519(pubKey, hash.SigningInput, signature); err != nil {
+	// The proof signs the raw SigningInput or its Ed25519ProofMessage text.
+	if err := lddataintegrity.VerifyEd25519Proof(pubKey, hash.SigningInput, signature); err != nil {
 		return Result{}, errors.New("ed25519 signature verification failed")
 	}
 

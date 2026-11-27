@@ -79,9 +79,10 @@ pub enum ErrorCode {
     InsufficientEscrowBalance,
     #[msg("The depositor-signed deposit-request commitment cannot be zero")]
     DepositRequestHashCannotBeEmpty,
-    #[msg("The committed destination cannot be empty")]
+    #[msg("The committed destination hash cannot be zero")]
     DestinationEmpty,
-    #[msg("The committed destination exceeds 256 bytes")]
+    // Kept so later error codes keep their numbers.
+    #[msg("Not raised by this program: the 256-byte destination limit is enforced off chain")]
     DestinationTooLong,
     #[msg("The reserved source amount cannot be zero")]
     AmountCannotBeZero,
@@ -142,10 +143,8 @@ pub enum ErrorCode {
     #[msg("A timestamp calculation overflowed")]
     TimestampOverflow,
 
-    /// The Ed25519 instruction is well formed and its signature verifies, but the message it signed
-    /// is not the 32 bytes this program hashes. Split from `MalformedSignatureData` because nothing
-    /// here falls outside the instruction's data — the instruction is intact and simply signed the
-    /// wrong shape, which points at the caller's message construction rather than at the signer.
+    /// Reserved, not raised: a signed message of the wrong shape is `InvalidMessage`. Kept, with its
+    /// message, so the codes after it and the IDL do not move.
     #[msg("The signed message is not 32 bytes")]
     SignatureMessageSizeInvalid,
 
@@ -160,4 +159,14 @@ pub enum ErrorCode {
     /// credited deposit could be emptied and neither release nor refund could pay it out.
     #[msg("Mints with a permanent delegate are not allowed")]
     PermanentDelegateMintNotAllowed,
+
+    /// The mint carries a Token-2022 extension outside the accepted set in
+    /// `docs/architecture/security.md`.
+    #[msg("The mint carries a Token-2022 extension the escrow does not accept")]
+    MintExtensionNotAllowed,
+
+    /// A `remaining_accounts` entry other than the transfer authority is a signer. A transfer hook
+    /// would receive it able to sign, so a hook naming the fee payer could spend from it.
+    #[msg("A transfer hook account other than the transfer authority is a signer")]
+    HookAccountSignerNotAllowed,
 }

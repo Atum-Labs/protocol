@@ -36,6 +36,7 @@ func verifySolanaReserveAuth(auth ReserveAuth, expected ReserveAuthExpectations)
 		EscrowProgramID: expected.EscrowContract,
 		ClusterID:       expected.SvmSignatureClusterID,
 		DomainVersion:   *expected.SvmSignatureDomainVersion,
+		MessageScheme:   expected.SvmMessageScheme,
 	})
 	if detail != "" {
 		return misconfigured(detail)
@@ -92,7 +93,7 @@ func verifySolanaReserveAuth(auth ReserveAuth, expected ReserveAuthExpectations)
 		return reserveVerdict(PathEOA, ReserveReasonSignerMismatch, "the signature is not a 64-byte hex ed25519 signature")
 	}
 	signature, _ := hex.DecodeString(auth.Signature[2:])
-	if !verifyEd25519Strict(reserver[:], digest[:], signature) {
+	if _, _, ok := svm.MatchEscrowWitness(svm.MessageScheme(expected.SvmMessageScheme), svm.WitnessReserve, digest, reserver[:], signature); !ok {
 		return reserveVerdict(PathEOA, ReserveReasonSignerMismatch, "the ed25519 signature does not verify against the reserver")
 	}
 	return reserveVerdict(PathEOA, ReserveReasonVerified, "the signature verifies against the reserver")

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The bundled payment gateway client verifies Ed25519 proofs over the raw signing input or the `atum ld-proof v1` text, and knows the optional `ChainDefaults.escrows` list. Solana payments made through this package still sign the raw hash, as every v4 escrow requires.
 - The bundled Solana escrow encoding keeps a frozen copy of the v4 escrow IDL and names the raw 32 byte hash signing scheme its v4 deposits use. What is signed and sent is unchanged.
 - The bundled payment-gateway client's quote-request response types gain an optional `error`. Payments made through this package never create a quote request, so they behave as before.
 - The package moved within the protocol repository, from `schemas/apis/payment-gateway/v1/bindings/mppx-atum-escrow/` to `schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow/`, beside the other payment-gateway bindings split by language. Only the manifest `homepage` and `repository.directory` change; the published name, entry points and behavior do not.

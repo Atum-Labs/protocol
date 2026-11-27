@@ -8,7 +8,10 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   DEPOSIT_AMOUNT,
   TOKEN_PROGRAM_ID,
@@ -29,7 +32,6 @@ import {
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -128,7 +130,7 @@ describe("8. Replay Protection", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -152,7 +154,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -194,7 +196,7 @@ describe("8. Replay Protection", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -214,7 +216,7 @@ describe("8. Replay Protection", () => {
       message,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -257,7 +259,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -322,7 +324,7 @@ describe("8. Replay Protection", () => {
       issuedAt.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519InstructionA = createEd25519Instruction(
+    const ed25519InstructionA = depositSigIx(
       delegateSigner,
       messageA
     );
@@ -343,7 +345,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdA),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -386,7 +388,7 @@ describe("8. Replay Protection", () => {
       issuedAt.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519InstructionB = createEd25519Instruction(
+    const ed25519InstructionB = depositSigIx(
       delegateSigner,
       messageB
     );
@@ -407,7 +409,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdB),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -470,7 +472,7 @@ describe("8. Replay Protection", () => {
       issuedAt.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519InstructionA = createEd25519Instruction(
+    const ed25519InstructionA = depositSigIx(
       delegateSigner,
       messageA
     );
@@ -491,7 +493,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdA),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -535,7 +537,7 @@ describe("8. Replay Protection", () => {
         issuedAt.toBuffer("le", 8),
         deadline.toBuffer("le", 8),
       ]);
-      const ed25519InstructionB = createEd25519Instruction(
+      const ed25519InstructionB = depositSigIx(
         delegateSigner,
         messageB
       );
@@ -549,7 +551,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentIdB),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -625,7 +627,7 @@ describe("8. Replay Protection", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -650,7 +652,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -711,7 +713,7 @@ describe("8. Replay Protection", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -736,7 +738,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -797,7 +799,7 @@ describe("8. Replay Protection", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -822,7 +824,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -888,7 +890,7 @@ describe("8. Replay Protection", () => {
       issuedAtPrevEpoch.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -914,7 +916,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -972,7 +974,7 @@ describe("8. Replay Protection", () => {
       issuedAtA.toBuffer("le", 8),
       deadlineA.toBuffer("le", 8),
     ]);
-    const ed25519InstructionA = createEd25519Instruction(
+    const ed25519InstructionA = depositSigIx(
       delegateSigner,
       messageA
     );
@@ -993,7 +995,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdA),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1041,7 +1043,7 @@ describe("8. Replay Protection", () => {
       issuedAtB.toBuffer("le", 8),
       deadlineB.toBuffer("le", 8),
     ]);
-    const ed25519InstructionB = createEd25519Instruction(
+    const ed25519InstructionB = depositSigIx(
       delegateSigner,
       messageB
     );
@@ -1054,7 +1056,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdB),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1107,7 +1109,7 @@ describe("8. Replay Protection", () => {
       issuedAtPrev.toBuffer("le", 8),
       deadlinePrev.toBuffer("le", 8),
     ]);
-    const sigPrev = createEd25519Instruction(delegateSigner, msgPrev);
+    const sigPrev = depositSigIx(delegateSigner, msgPrev);
     const [replayBucket] = PublicKey.findProgramAddressSync(
       [
         REPLAY_SEED,
@@ -1129,7 +1131,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdPrev),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1180,7 +1182,7 @@ describe("8. Replay Protection", () => {
       issuedAtCurr.toBuffer("le", 8),
       deadlineCurr.toBuffer("le", 8),
     ]);
-    const sigCurr = createEd25519Instruction(delegateSigner, msgCurr);
+    const sigCurr = depositSigIx(delegateSigner, msgCurr);
     const [depositCurr] = PublicKey.findProgramAddressSync(
       [DEPOSIT_SEED, msgCurr],
       escrowProgram.programId
@@ -1198,7 +1200,7 @@ describe("8. Replay Protection", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentIdCurr),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -1259,7 +1261,7 @@ describe("8. Replay Protection", () => {
       issuedAt.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519InstructionA = createEd25519Instruction(
+    const ed25519InstructionA = depositSigIx(
       delegateSigner,
       messageA
     );
@@ -1282,7 +1284,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1354,7 +1356,7 @@ describe("8. Replay Protection", () => {
       issuedAt.toBuffer("le", 8),
       deadline.toBuffer("le", 8),
     ]);
-    const ed25519InstructionC = createEd25519Instruction(signerC, messageC);
+    const ed25519InstructionC = depositSigIx(signerC, messageC);
     const [depositC] = PublicKey.findProgramAddressSync(
       [DEPOSIT_SEED, messageC],
       escrowProgram.programId
@@ -1373,7 +1375,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentIdC),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1429,7 +1431,7 @@ describe("8. Replay Protection", () => {
       issuedAtA.toBuffer("le", 8),
       deadlineA.toBuffer("le", 8),
     ]);
-    const sigA = createEd25519Instruction(delegateSigner, msgA);
+    const sigA = depositSigIx(delegateSigner, msgA);
     const [replayA] = PublicKey.findProgramAddressSync(
       [
         REPLAY_SEED,
@@ -1447,7 +1449,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1484,9 +1486,9 @@ describe("8. Replay Protection", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveSigA = createEd25519Instruction(reserver, reserveMsgA);
+    const reserveSigA = reserveSigIx(reserver, reserveMsgA);
     const refundMsgA = await createMessage("refund", [msgA, ZERO_QUOTE_HASH]);
-    const refundSigA = createEd25519Instruction(releaser, refundMsgA);
+    const refundSigA = refundSigIx(releaser, refundMsgA);
 
     // Execute refund for A (closing deposit A)
     await escrowProgram.methods
@@ -1524,7 +1526,7 @@ describe("8. Replay Protection", () => {
       issuedAtB.toBuffer("le", 8),
       deadlineB.toBuffer("le", 8),
     ]);
-    const sigB = createEd25519Instruction(delegateSigner, msgB);
+    const sigB = depositSigIx(delegateSigner, msgB);
     const [replayB] = PublicKey.findProgramAddressSync(
       [
         REPLAY_SEED,
@@ -1542,7 +1544,7 @@ describe("8. Replay Protection", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -1594,12 +1596,8 @@ describe("8. Replay Protection", () => {
       expect.fail("Replay of old refund signature should fail");
     } catch (err: any) {
       const code = err.error?.errorCode?.code;
-      if (code) expect(["InvalidMessage", "SignatureMessageSizeInvalid"]).to.include(code);
-      else
-        expect(err.toString()).to.satisfy(
-          (s: string) =>
-            s.includes("InvalidMessage") || s.includes("SignatureMessageSizeInvalid")
-        );
+      if (code) expect(code).to.equal("InvalidMessage");
+      else expect(err.toString()).to.include("InvalidMessage");
     }
 
     // Attempt to replay reserve signature from A on deposit B
@@ -1616,12 +1614,8 @@ describe("8. Replay Protection", () => {
       expect.fail("Replay of old reserve signature should fail");
     } catch (err: any) {
       const code = err.error?.errorCode?.code;
-      if (code) expect(["InvalidMessage", "SignatureMessageSizeInvalid"]).to.include(code);
-      else
-        expect(err.toString()).to.satisfy(
-          (s: string) =>
-            s.includes("InvalidMessage") || s.includes("SignatureMessageSizeInvalid")
-        );
+      if (code) expect(code).to.equal("InvalidMessage");
+      else expect(err.toString()).to.include("InvalidMessage");
     }
   });
 });

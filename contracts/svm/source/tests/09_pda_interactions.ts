@@ -8,7 +8,9 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   DEPOSIT_AMOUNT,
   TOKEN_PROGRAM_ID,
@@ -31,7 +33,6 @@ import {
   deriveFulfillmentReplayBucket,
   DEFAULT_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -874,7 +875,7 @@ describe("9. PDA Interactions", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const depositSig = createEd25519Instruction(delegateSigner, depositMessage);
+    const depositSig = depositSigIx(delegateSigner, depositMessage);
 
     const [deposit] = PublicKey.findProgramAddressSync(
       [DEPOSIT_SEED, depositMessage],
@@ -895,7 +896,7 @@ describe("9. PDA Interactions", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -948,7 +949,7 @@ describe("9. PDA Interactions", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveSig = createEd25519Instruction(reserver, reserveMessage);
+    const reserveSig = reserveSigIx(reserver, reserveMessage);
 
     await escrowProgram.methods
       .reserve(pdaRecipient, Array.from(DEFAULT_QUOTE_HASH), DEPOSIT_AMOUNT)
@@ -978,7 +979,7 @@ describe("9. PDA Interactions", () => {
       depositMessage,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseSig = createEd25519Instruction(releaser, releaseMessage);
+    const releaseSig = releaseSigIx(releaser, releaseMessage);
 
     await escrowProgram.methods
       .release()

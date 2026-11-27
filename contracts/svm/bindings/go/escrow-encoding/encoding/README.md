@@ -4,7 +4,7 @@ Go library for generating message hashes for the Solana escrow program.
 
 ## Overview
 
-The Solana escrow contract requires Ed25519 signatures over Keccak-256 hashes of structured messages. This library computes those message hashes for each operation type.
+The Solana escrow contract requires Ed25519 signatures over the Keccak-256 hash of a structured message: v4 escrows verify the raw hash, v5 escrows verify a labelled text that carries it, chosen per escrow. This library computes those hashes for each operation type and builds the signed text (see "Signed text").
 
 ### Two-Stage Identifier Model
 
@@ -92,12 +92,43 @@ Three rules matter for interoperability:
    lowercase corrupts all three into different addresses. The commitment is over the exact bytes the
    payer signed, so callers must validate casing separately, never by mutating the value.
 3. **`MaxDestinationLen` is 256 bytes**, uniform across EVM, TVM and SVM so one client signing-policy
-   rule covers every chain. Note the tighter Solana ceiling beneath it: a LEGACY transaction admits only
+   rule covers every chain. Note the tighter Solana ceiling beneath it on v4: a LEGACY transaction admits only
    about 152 bytes of destination at the current deposit account shape, so anything larger needs a v0
    transaction with an address lookup table. Real destinations are ~103 bytes (eip155) and ~135 bytes
-   (solana), so normal traffic approaches neither limit.
+   (solana), so normal traffic approaches neither limit. The v5 `deposit` instruction takes only the
+   32-byte destination hash, so there this limit and the non-empty rule are enforced off chain: build
+   that argument with `ValidateAndHashDestination`.
 
 > **Note**: Reserve hash has `recipient` BEFORE `deposit_hash` - this matches the Rust contract.
+
+### Signed text
+
+v5 escrows sign readable text, v4 escrows sign the raw hash, chosen per escrow. For a v5 escrow
+the signer signs the escrow text for the instruction's label:
+
+```
+<label> <base64url-nopad(hash)>      e.g. atum deposit v1 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8
+```
+
+Labels: `atum deposit v1`, `atum reserve v1`, `atum release v1`, `atum refund v1`
+(`EscrowLabelDeposit` ... `EscrowLabelRefund`). The v5 program accepts the text in three forms,
+compared byte for byte:
+
+| Form | Bytes |
+|---|---|
+| `EscrowFormBare` | the text |
+| `EscrowFormV1` | `ff "solana offchain"` ‖ `01` ‖ `01` (one signer) ‖ signer pubkey ‖ text |
+| `EscrowFormV0` | `ff "solana offchain"` ‖ `00` ‖ 32 zero bytes ‖ `00` (format) ‖ `01` (one signer) ‖ signer pubkey ‖ `u16le(len(text))` ‖ text |
+
+```go
+msg := encoding.EscrowMessage(encoding.EscrowFormBare, encoding.EscrowLabelDeposit, depositHash, signer)
+```
+
+The TypeScript package exports `escrowText`, `escrowMessage` and `escrowEd25519Instruction`, which
+returns the Ed25519SigVerify instruction data; for `v1`/`v0` its pubkey offset points at the
+signer inside the message. Both packages are pure bytes and do no signature verification.
+`../../../../conformance/signed-text.json` holds the shared vectors (regenerate with
+`REGEN_SIGNED_TEXT=1 go test ./... -run TestRegenerateSignedTextVectors`).
 
 ### Key Differences from EVM
 
@@ -247,6 +278,7 @@ Validation errors are exported as sentinel values in `errors.go`. Use `errors.Is
 | `ErrZeroQuoteHash`   | Quote hash is all zeros (reserve V2 only; release and refund permit zero, because a deposit can be refunded having never been reserved) |
 | `ErrEmptyDestination` | Committed destination is empty (deposit V2)       |
 | `ErrDestinationTooLong` | Committed destination exceeds `MaxDestinationLen` (deposit V2) |
+| `ErrDestinationNotUTF8` | Committed destination is not valid UTF-8 (deposit V2) |
 | `ErrZeroDepositHash` | Deposit hash is all zeros (reserve/release/refund) |
 | `ErrZeroDepositor`   | Depositor pubkey is all zeros                      |
 | `ErrZeroMint`        | Mint pubkey is all zeros                           |

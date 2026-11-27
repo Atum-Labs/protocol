@@ -1,6 +1,15 @@
-import nacl from 'tweetnacl';
 import bs58 from 'bs58';
-import { computeDepositHashV2, Pubkey, type EscrowDomain } from '@atum-labs/solana-escrow-encoding';
+import {
+  computeDepositHashV2,
+  isSmallOrderEncoding,
+  matchEscrowWitness,
+  messageForms,
+  Pubkey,
+  verifyEd25519Strict,
+  WitnessKind,
+  type EscrowDomain,
+  type MessageScheme,
+} from '@atum-labs/solana-escrow-encoding';
 
 import type { SignedMessageInput } from './types.js';
 import { clusterIdFromName } from './chain-id.js';
@@ -83,7 +92,7 @@ export function verifySolanaCommitment(
   if (hash === undefined) return withOutcome(r, 'prehash_mismatch', DETAIL_BAD_REQUEST_HASH);
   r = compareExpected(r, destination, hash, expected);
   if (r.outcome !== 'verified') return r;
-  const refusal = bindSolanaDeposit(domain, root, deposit, sourceAccount);
+  const refusal = bindSolanaDeposit(domain, root, deposit, sourceAccount, solana.messageScheme);
   return refusal === undefined ? r : withOutcome(r, refusal.outcome, refusal.detail);
 }
 
@@ -177,6 +186,11 @@ export function solanaEscrowDomain(d: SolanaDomain): EscrowDomain | string {
   if (!Number.isInteger(d.domainVersion) || d.domainVersion < 1 || d.domainVersion > 255) {
     return 'the Solana escrow signature domain version must be between 1 and 255';
   }
+  try {
+    messageForms(d.messageScheme ?? '');
+  } catch (e) {
+    return 'the Solana escrow message scheme is not known: ' + (e as Error).message;
+  }
   return { clusterId, signatureDomainVersion: d.domainVersion, programId };
 }
 
@@ -199,8 +213,6 @@ const DIGEST = /^0x[0-9a-fA-F]{64}$/;
 const ED25519_SIGNATURE = /^0x[0-9a-fA-F]{128}$/;
 export { BASE58 as SOLANA_BASE58, DIGEST as SOLANA_DIGEST, ED25519_SIGNATURE as SOLANA_SIGNATURE };
 const MAX_U64 = (1n << 64n) - 1n;
-/** Order of the ed25519 group. A signature whose S is not below it is non-canonical. */
-const ED25519_L = (1n << 252n) + 27742317777372353535851937790883648493n;
 
 interface SolanaRecord {
   params: Parameters<typeof computeDepositHashV2>[0];
@@ -276,13 +288,15 @@ export function solanaDelegateIs(payload: unknown, account: string): boolean {
 
 /**
  * Recomputes the deposit hash from the record, requires it to be the signed message, and verifies
- * the ed25519 signature over it with the payer's key. Returns undefined when bound.
+ * the payer's ed25519 signature over it in a form the escrow's message `scheme` accepts (the raw
+ * hash by default). Returns undefined when bound.
  */
 export function bindSolanaDeposit(
   domain: EscrowDomain,
   root: JsonObject,
   deposit: SignedMessageInput,
   sourceAccount: string,
+  scheme: MessageScheme = '',
 ): { outcome: CommitmentOutcome; detail: string } | undefined {
   const prehash = (detail: string) => ({ outcome: 'prehash_mismatch' as const, detail });
   const signer = (detail: string) => ({ outcome: 'signer_mismatch' as const, detail });
@@ -317,62 +331,15 @@ export function bindSolanaDeposit(
   const signature = deposit.signature;
   if (typeof signature !== 'string' || !ED25519_SIGNATURE.test(signature))
     return signer('the signature is not a 64-byte hex ed25519 signature');
-  if (!verifyEd25519Strict(key, digest, hexBytes('0x' + signature.slice(2)))) {
+  const sig = hexBytes('0x' + signature.slice(2));
+  if (matchEscrowWitness(scheme, WitnessKind.Deposit, digest, key, sig) === undefined) {
     return signer("the ed25519 signature does not verify against the payment's source account");
   }
   return undefined;
 }
 
-/** ed25519 verification that, like Go's, refuses a non-canonical S. */
-function verifyEd25519(publicKey: Uint8Array, message: Uint8Array, signature: Uint8Array): boolean {
-  if (publicKey.length !== 32 || signature.length !== 64) return false;
-  let s = 0n;
-  for (let i = 63; i >= 32; i--) s = (s << 8n) | BigInt(signature[i]!);
-  if (s >= ED25519_L) return false;
-  try {
-    return nacl.sign.detached.verify(message, signature, publicKey);
-  } catch {
-    return false;
-  }
-}
-
 /**
- * The y-coordinates, as the 32-byte little-endian encodings with the sign bit cleared, of every
- * ed25519 point whose order divides 8, canonical and not (y = p and y = p + 1). For such a public
- * key or signature R, a signature can be made without the private key. Mirrors the Go
- * `smallOrderEncodings`.
+ * ed25519 verification as the Solana ed25519 program performs it, and whether a point is of small
+ * order. Both are the escrow encoding's.
  */
-const SMALL_ORDER_ENCODINGS = [
-  '0000000000000000000000000000000000000000000000000000000000000000',
-  '0100000000000000000000000000000000000000000000000000000000000000',
-  '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05',
-  'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a',
-  'ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f',
-  'edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f',
-  'eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f',
-];
-
-/** Whether a 32-byte point encoding, with either sign bit, is a point whose order divides 8. */
-export function isSmallOrderEncoding(point: Uint8Array): boolean {
-  if (point.length !== 32) return false;
-  const masked = Uint8Array.from(point);
-  masked[31]! &= 0x7f;
-  return SMALL_ORDER_ENCODINGS.includes(Buffer.from(masked).toString('hex'));
-}
-
-/**
- * ed25519 verification as the Solana ed25519 program performs it (verify_strict):
- * {@link verifyEd25519}, which refuses a non-canonical S, plus a refusal of a small-order public
- * key or signature R. Mirrors the Go `verifyEd25519Strict`.
- */
-export function verifyEd25519Strict(
-  publicKey: Uint8Array,
-  message: Uint8Array,
-  signature: Uint8Array,
-): boolean {
-  if (publicKey.length !== 32 || signature.length !== 64) return false;
-  if (isSmallOrderEncoding(publicKey) || isSmallOrderEncoding(signature.subarray(0, 32))) {
-    return false;
-  }
-  return verifyEd25519(publicKey, message, signature);
-}
+export { isSmallOrderEncoding, verifyEd25519Strict };

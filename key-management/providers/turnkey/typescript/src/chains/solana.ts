@@ -10,10 +10,26 @@ import {
 } from '@atum-labs/km-core';
 
 import type { TurnkeyClient } from '../client';
-import { encodePayload } from './ed25519-payload';
+import { encodePayload as encodeEd25519Payload } from './ed25519-payload';
 import { resolveTurnkeyAccountAddress, type TurnkeySignerCommonDeps } from '../signer-base';
 
-export { encodePayload };
+// A Solana escrow text: label then the base64url (no padding) 32-byte hash.
+const ESCROW_TEXT = /^atum (deposit|reserve|release|refund) v1 [A-Za-z0-9_-]{43}$/;
+
+/**
+ * Choose the Turnkey payload encoding for a Solana raw signature.
+ *
+ * A 32-byte escrow hash and an escrow text always go as HEXADECIMAL, the encoding every role's
+ * ed25519 allow admits (ed25519 signs the same bytes either way). Anything else follows the shared
+ * ed25519 choice: printable text as TEXT_UTF8, binary as HEXADECIMAL.
+ */
+export function encodePayload(bytes: Uint8Array): ReturnType<typeof encodeEd25519Payload> {
+  const buf = Buffer.from(bytes);
+  if (buf.length === 32 || ESCROW_TEXT.test(buf.toString('latin1'))) {
+    return { payload: buf.toString('hex'), encoding: 'PAYLOAD_ENCODING_HEXADECIMAL' };
+  }
+  return encodeEd25519Payload(bytes);
+}
 
 const ADDRESS_FORMAT = 'ADDRESS_FORMAT_SOLANA';
 

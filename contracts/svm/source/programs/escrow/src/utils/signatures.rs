@@ -25,16 +25,11 @@ fn keccak_hashv(inputs: &[&[u8]]) -> [u8; 32] {
 
 // Hashing Functions
 
-/// keccak256 of the depositor-committed destination string.
+/// keccak256 of the depositor-committed destination string, the `destination_hash` a client passes to
+/// `deposit`. The program never sees the string; this pins the definition the off-chain bindings mirror.
 ///
-/// The single place the destination is turned into bytes for hashing. It exists so the hash-first rule
-/// has one home and one explanation: `keccak_hashv` concatenates its inputs with NO length prefixes, so
-/// preimage injectivity depends on every hashed field being fixed-width. A variable-length destination
-/// fed straight into `compute_deposit_hash` would make injectivity conditional on the surrounding
-/// fields' widths — it survives today only because there would be exactly one variable-length member,
-/// and it becomes unsound the moment a second is added. EVM has no such exposure because EIP-712 hashes
-/// a dynamic `string` member as keccak256(bytes(value)); this mirrors that.
-///
+/// Hash first: `keccak_hashv` concatenates its inputs with NO length prefixes, so preimage injectivity
+/// depends on every hashed field being fixed-width. EVM hashes a dynamic `string` member the same way.
 /// `raw_destination_feed_is_rejected` pins the distinction.
 pub fn compute_destination_hash(destination: &str) -> [u8; 32] {
     keccak_hashv(&[destination.as_bytes()])
@@ -244,11 +239,81 @@ pub fn compute_refund_hash(
 
 // Signature Verification Helpers
 
+/// Signing domain shared by the v0 and v1 off-chain message envelopes: `\xffsolana offchain`.
+const OFFCHAIN_SIGNING_DOMAIN: [u8; 16] = *b"\xffsolana offchain";
+const V1_HEADER_LEN: usize = 16 + 1 + 1 + 32;
+const V0_HEADER_LEN: usize = 16 + 1 + 32 + 1 + 1 + 32 + 2;
+/// Longest label + ' ' + 43 base64url chars the stack buffer holds.
+const MAX_ESCROW_TEXT_LEN: usize = 96;
+const B64URL: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+/// Unpadded base64url of `input` into `out`; returns the number of bytes written.
+fn base64url_nopad(input: &[u8], out: &mut [u8]) -> usize {
+    let mut n = 0;
+    for chunk in input.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
+        let v = (b0 << 16) | (b1 << 8) | b2;
+        let chars = chunk.len() + 1;
+        for i in 0..chars {
+            out[n] = B64URL[((v >> (18 - 6 * i)) & 0x3f) as usize];
+            n += 1;
+        }
+    }
+    n
+}
+
+/// Writes `<label> <base64url-nopad(hash)>` into `out`; returns its length.
+fn escrow_text(
+    label: &[u8],
+    hash: &[u8; 32],
+    out: &mut [u8; MAX_ESCROW_TEXT_LEN],
+) -> Result<usize> {
+    let len = label.len() + 1 + 43;
+    if len > MAX_ESCROW_TEXT_LEN {
+        return err!(ErrorCode::InvalidMessage);
+    }
+    out[..label.len()].copy_from_slice(label);
+    out[label.len()] = b' ';
+    base64url_nopad(hash, &mut out[label.len() + 1..]);
+    Ok(len)
+}
+
+/// True when `msg` is exactly the escrow text, its v1 envelope or its v0 envelope (zero
+/// application domain, format 0), each envelope naming `public_key` as its only signer.
+fn matches_escrow_text(msg: &[u8], public_key: &Pubkey, text: &[u8]) -> bool {
+    if msg == text {
+        return true;
+    }
+    let pk = public_key.as_ref();
+    if msg.len() == V1_HEADER_LEN + text.len() {
+        return msg[..16] == OFFCHAIN_SIGNING_DOMAIN
+            && msg[16] == 1
+            && msg[17] == 1
+            && &msg[18..50] == pk
+            && &msg[50..] == text;
+    }
+    if msg.len() == V0_HEADER_LEN + text.len() {
+        let text_len = text.len() as u16;
+        return msg[..16] == OFFCHAIN_SIGNING_DOMAIN
+            && msg[16] == 0
+            && msg[17..49].iter().all(|b| *b == 0)
+            && msg[49] == 0
+            && msg[50] == 1
+            && &msg[51..83] == pk
+            && msg[83..85] == text_len.to_le_bytes()
+            && &msg[85..] == text;
+    }
+    false
+}
+
 // Helper to verify a single Ed25519 instruction (Optimized parsing)
 fn check_sig_ix(
     ix: &SolanaInstruction,
     expected_public_key: &Pubkey,
-    expected_message: &[u8; 32],
+    label: &[u8],
+    hash: &[u8; 32],
 ) -> Result<()> {
     if ix.program_id != ED25519_PROGRAM_ID {
         return err!(ErrorCode::InvalidVerificationInstruction);
@@ -324,28 +389,33 @@ fn check_sig_ix(
     if msg_end > data.len() {
         return err!(ErrorCode::MalformedSignatureData);
     }
-    if msg_size != 32 {
-        return err!(ErrorCode::SignatureMessageSizeInvalid);
-    }
-    if &data[msg_offset..msg_end] != expected_message.as_ref() {
+    let mut text = [0u8; MAX_ESCROW_TEXT_LEN];
+    let text_len = escrow_text(label, hash, &mut text)?;
+    if !matches_escrow_text(
+        &data[msg_offset..msg_end],
+        expected_public_key,
+        &text[..text_len],
+    ) {
         return err!(ErrorCode::InvalidMessage);
     }
 
     Ok(())
 }
 
-// Verifies the immediately preceding instruction (Index N-1)
+// Verifies the immediately preceding instruction (Index N-1) signed the escrow text for `label`
+// and `hash`, bare or in a v1/v0 off-chain message envelope.
 pub fn verify_single_ed25519_instruction(
     instructions: &AccountInfo,
     expected_public_key: &Pubkey,
-    expected_message: &[u8; 32],
+    label: &[u8],
+    hash: &[u8; 32],
 ) -> Result<()> {
     let current_index = load_current_index_checked(instructions)? as usize;
     if current_index == 0 {
         return err!(ErrorCode::MissingSignatureVerification);
     }
     let verify_ix = load_instruction_at_checked(current_index - 1, instructions)?;
-    check_sig_ix(&verify_ix, expected_public_key, expected_message)
+    check_sig_ix(&verify_ix, expected_public_key, label, hash)
 }
 
 #[cfg(test)]
@@ -415,8 +485,7 @@ mod hash_anchor_tests {
     const QUOTE_HASH: [u8; 32] = [0x33; 32];
     const DEPOSIT_REQUEST_HASH: [u8; 32] = [0x44; 32];
     /// The ratified canonical destination form: `<CAIP-19 asset>@<account>`, lowercase throughout for
-    /// an eip155 namespace. 103 bytes — comfortably inside both MAX_DESTINATION_LEN and the ~152-byte
-    /// legacy-transaction ceiling documented on that constant.
+    /// an eip155 namespace. 103 bytes, comfortably inside the 256-byte limit the bindings enforce.
     const DESTINATION: &str = "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979";
     /// keccak256(DESTINATION), derived out of band. Byte-identical to the value EVM pins for the same
     /// canonical string, which is what makes the destination commitment comparable across chains.
@@ -1038,5 +1107,355 @@ mod hash_anchor_tests {
                + releaser(32) + nonce(8) + issued_at(8) + deadline(8). 302, not the 270 of the
                pre-CORE-2120 layout: destination_hash is the 32 bytes that were added"#
         );
+    }
+}
+
+#[cfg(test)]
+mod signed_text_tests {
+    //! Pins of the escrow signed text and its envelopes. Every value equals
+    //! contracts/svm/conformance/signed-text.json and was checked against an independent
+    //! derivation; never regenerate these from this code's output.
+
+    use super::*;
+    use crate::constants::{
+        DEPOSIT_SIGNING_LABEL, REFUND_SIGNING_LABEL, RELEASE_SIGNING_LABEL, RESERVE_SIGNING_LABEL,
+    };
+
+    /// Public key derived from the conformance seed a0a1..bf.
+    const PK_HEX: &str = "4fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c4";
+
+    struct Pin {
+        name: &'static str,
+        label: &'static [u8],
+        hash: &'static str,
+        text: &'static str,
+        v1: &'static str,
+        v0: &'static str,
+    }
+
+    const PINS: &[Pin] = &[
+        Pin {
+            name: "deposit",
+            label: DEPOSIT_SIGNING_LABEL,
+            hash: "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+            text: "atum deposit v1 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d206465706f7369742076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43b006174756d206465706f7369742076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+        },
+        Pin {
+            name: "reserve",
+            label: RESERVE_SIGNING_LABEL,
+            hash: "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+            text: "atum reserve v1 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d20726573657276652076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43b006174756d20726573657276652076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+        },
+        Pin {
+            name: "release",
+            label: RELEASE_SIGNING_LABEL,
+            hash: "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+            text: "atum release v1 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d2072656c656173652076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43b006174756d2072656c656173652076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+        },
+        Pin {
+            name: "refund",
+            label: REFUND_SIGNING_LABEL,
+            hash: "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+            text: "atum refund v1 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d20726566756e642076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43a006174756d20726566756e642076312041414543417751464267634943516f4c4441304f4478415245684d554652595847426b6147787764486838",
+        },
+        Pin {
+            name: "deposit-ff",
+            label: DEPOSIT_SIGNING_LABEL,
+            hash: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            text: "atum deposit v1 __________________________________________8",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d206465706f736974207631205f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f38",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43b006174756d206465706f736974207631205f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f38",
+        },
+        Pin {
+            name: "refund-zero",
+            label: REFUND_SIGNING_LABEL,
+            hash: "0000000000000000000000000000000000000000000000000000000000000000",
+            text: "atum refund v1 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            v1: "ff736f6c616e61206f6666636861696e01014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c46174756d20726566756e642076312041414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+            v0: "ff736f6c616e61206f6666636861696e00000000000000000000000000000000000000000000000000000000000000000000014fd099ccd47d7893dfe9ec24414ecb0d9b5420232aad30d91c465be33cbe65c43a006174756d20726566756e642076312041414141414141414141414141414141414141414141414141414141414141414141414141414141414141",
+        },
+    ];
+
+    fn unhex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
+    fn unhex32(s: &str) -> [u8; 32] {
+        unhex(s).try_into().unwrap()
+    }
+
+    fn pk() -> Pubkey {
+        Pubkey::new_from_array(unhex32(PK_HEX))
+    }
+
+    /// Ed25519 instruction data in the web3.js layout: header, pubkey, signature, message.
+    fn sig_ix(pk: &Pubkey, msg: &[u8]) -> SolanaInstruction {
+        let mut data = vec![1u8, 0];
+        for v in [
+            48u16,
+            u16::MAX,
+            16,
+            u16::MAX,
+            112,
+            msg.len() as u16,
+            u16::MAX,
+        ] {
+            data.extend_from_slice(&v.to_le_bytes());
+        }
+        data.extend_from_slice(pk.as_ref());
+        data.extend_from_slice(&[0u8; 64]);
+        data.extend_from_slice(msg);
+        SolanaInstruction {
+            program_id: ED25519_PROGRAM_ID,
+            accounts: vec![],
+            data,
+        }
+    }
+
+    /// Envelope layout with the pubkey offset pointing at the signer inside the message.
+    fn sig_ix_pk_in_message(msg: &[u8], pk_at: usize) -> SolanaInstruction {
+        let mut data = vec![1u8, 0];
+        let msg_offset = 16 + 64;
+        for v in [
+            16u16,
+            u16::MAX,
+            (msg_offset + pk_at) as u16,
+            u16::MAX,
+            msg_offset as u16,
+            msg.len() as u16,
+            u16::MAX,
+        ] {
+            data.extend_from_slice(&v.to_le_bytes());
+        }
+        data.extend_from_slice(&[0u8; 64]);
+        data.extend_from_slice(msg);
+        SolanaInstruction {
+            program_id: ED25519_PROGRAM_ID,
+            accounts: vec![],
+            data,
+        }
+    }
+
+    fn check(msg: &[u8], label: &[u8], hash: &[u8; 32]) -> Result<()> {
+        check_sig_ix(&sig_ix(&pk(), msg), &pk(), label, hash)
+    }
+
+    fn assert_invalid_message(res: Result<()>, what: &str) {
+        assert_eq!(
+            res.unwrap_err(),
+            ErrorCode::InvalidMessage.into(),
+            "{what} must be InvalidMessage"
+        );
+    }
+
+    fn deposit_pin() -> &'static Pin {
+        &PINS[0]
+    }
+
+    #[test]
+    fn escrow_text_matches_pins() {
+        for p in PINS {
+            let mut out = [0u8; MAX_ESCROW_TEXT_LEN];
+            let n = escrow_text(p.label, &unhex32(p.hash), &mut out).unwrap();
+            assert_eq!(&out[..n], p.text.as_bytes(), "{}", p.name);
+            assert!(p.text.as_bytes().starts_with(p.label), "{}", p.name);
+        }
+    }
+
+    #[test]
+    fn every_form_of_every_label_is_accepted() {
+        for p in PINS {
+            let hash = unhex32(p.hash);
+            check(p.text.as_bytes(), p.label, &hash).unwrap();
+            check(&unhex(p.v1), p.label, &hash).unwrap();
+            check(&unhex(p.v0), p.label, &hash).unwrap();
+        }
+    }
+
+    #[test]
+    fn envelope_pubkey_offset_may_point_inside_the_message() {
+        for p in PINS {
+            let hash = unhex32(p.hash);
+            check_sig_ix(
+                &sig_ix_pk_in_message(&unhex(p.v1), 18),
+                &pk(),
+                p.label,
+                &hash,
+            )
+            .unwrap();
+            check_sig_ix(
+                &sig_ix_pk_in_message(&unhex(p.v0), 51),
+                &pk(),
+                p.label,
+                &hash,
+            )
+            .unwrap();
+        }
+    }
+
+    #[test]
+    fn instruction_pubkey_must_still_match() {
+        let p = deposit_pin();
+        let other = Pubkey::new_from_array([7u8; 32]);
+        let res = check_sig_ix(
+            &sig_ix(&other, p.text.as_bytes()),
+            &pk(),
+            p.label,
+            &unhex32(p.hash),
+        );
+        assert_eq!(res.unwrap_err(), ErrorCode::InvalidPublicKey.into());
+    }
+
+    #[test]
+    fn legacy_raw_hash_is_rejected() {
+        for p in PINS {
+            let hash = unhex32(p.hash);
+            assert_invalid_message(check(&hash, p.label, &hash), p.name);
+        }
+    }
+
+    #[test]
+    fn wrong_label_is_rejected() {
+        for p in PINS {
+            let hash = unhex32(p.hash);
+            for other in [
+                DEPOSIT_SIGNING_LABEL,
+                RESERVE_SIGNING_LABEL,
+                RELEASE_SIGNING_LABEL,
+                REFUND_SIGNING_LABEL,
+            ] {
+                if other == p.label {
+                    continue;
+                }
+                assert_invalid_message(check(p.text.as_bytes(), other, &hash), "bare wrong label");
+                assert_invalid_message(check(&unhex(p.v1), other, &hash), "v1 wrong label");
+                assert_invalid_message(check(&unhex(p.v0), other, &hash), "v0 wrong label");
+            }
+        }
+    }
+
+    #[test]
+    fn wrong_hash_is_rejected() {
+        let p = deposit_pin();
+        let mut hash = unhex32(p.hash);
+        hash[31] ^= 1;
+        assert_invalid_message(check(p.text.as_bytes(), p.label, &hash), "bare");
+        assert_invalid_message(check(&unhex(p.v1), p.label, &hash), "v1");
+        assert_invalid_message(check(&unhex(p.v0), p.label, &hash), "v0");
+    }
+
+    #[test]
+    fn text_variants_are_rejected() {
+        let p = deposit_pin();
+        let hash = unhex32(p.hash);
+        let text = p.text.as_bytes();
+        let mut newline = text.to_vec();
+        newline.push(b'\n');
+        assert_invalid_message(check(&newline, p.label, &hash), "trailing newline");
+        let mut padded = text.to_vec();
+        padded.push(b'=');
+        assert_invalid_message(check(&padded, p.label, &hash), "base64 padding");
+        let mut standard = text.to_vec();
+        standard[text.len() - 1] = b'+';
+        assert_invalid_message(check(&standard, p.label, &hash), "altered character");
+        assert_invalid_message(check(&text[..text.len() - 1], p.label, &hash), "truncated");
+        assert_invalid_message(check(&[], p.label, &hash), "empty");
+        let ff = &PINS[4];
+        let std_alphabet = ff.text.replace('_', "/");
+        assert_invalid_message(
+            check(std_alphabet.as_bytes(), ff.label, &unhex32(ff.hash)),
+            "standard base64 alphabet",
+        );
+    }
+
+    #[test]
+    fn envelope_variants_are_rejected() {
+        let p = deposit_pin();
+        let hash = unhex32(p.hash);
+        let v1 = unhex(p.v1);
+        let v0 = unhex(p.v0);
+        let mutate = |base: &Vec<u8>, at: usize, val: u8| {
+            let mut m = base.clone();
+            m[at] = val;
+            m
+        };
+
+        assert_invalid_message(check(&mutate(&v1, 0, 0xfe), p.label, &hash), "v1 domain");
+        assert_invalid_message(check(&mutate(&v1, 16, 0), p.label, &hash), "v1 version");
+        assert_invalid_message(
+            check(&mutate(&v1, 17, 2), p.label, &hash),
+            "v1 signer count",
+        );
+        assert_invalid_message(check(&mutate(&v1, 18, v1[18] ^ 1), p.label, &hash), "v1 pk");
+
+        assert_invalid_message(check(&mutate(&v0, 0, 0xfe), p.label, &hash), "v0 domain");
+        assert_invalid_message(check(&mutate(&v0, 16, 1), p.label, &hash), "v0 version");
+        assert_invalid_message(
+            check(&mutate(&v0, 17, 1), p.label, &hash),
+            "v0 app domain first",
+        );
+        assert_invalid_message(
+            check(&mutate(&v0, 48, 1), p.label, &hash),
+            "v0 app domain last",
+        );
+        assert_invalid_message(check(&mutate(&v0, 49, 1), p.label, &hash), "v0 format 1");
+        assert_invalid_message(check(&mutate(&v0, 49, 2), p.label, &hash), "v0 format 2");
+        assert_invalid_message(
+            check(&mutate(&v0, 50, 2), p.label, &hash),
+            "v0 signer count",
+        );
+        assert_invalid_message(check(&mutate(&v0, 51, v0[51] ^ 1), p.label, &hash), "v0 pk");
+        assert_invalid_message(
+            check(&mutate(&v0, 83, v0[83] + 1), p.label, &hash),
+            "v0 length",
+        );
+        assert_invalid_message(check(&mutate(&v0, 84, 1), p.label, &hash), "v0 length high");
+
+        let mut v1_extra = v1.clone();
+        v1_extra.push(b' ');
+        assert_invalid_message(check(&v1_extra, p.label, &hash), "v1 trailing byte");
+        let mut v0_newline = v0.clone();
+        v0_newline.push(b'\n');
+        assert_invalid_message(check(&v0_newline, p.label, &hash), "v0 trailing newline");
+    }
+
+    #[test]
+    fn envelope_for_another_signer_is_rejected() {
+        let p = deposit_pin();
+        let hash = unhex32(p.hash);
+        let other = Pubkey::new_from_array([7u8; 32]);
+        let mut v1 = unhex(p.v1);
+        v1[18..50].copy_from_slice(other.as_ref());
+        let mut v0 = unhex(p.v0);
+        v0[51..83].copy_from_slice(other.as_ref());
+        assert_invalid_message(check(&v1, p.label, &hash), "v1 other signer");
+        assert_invalid_message(check(&v0, p.label, &hash), "v0 other signer");
+    }
+
+    #[test]
+    fn base64url_matches_known_vectors() {
+        let mut out = [0u8; 8];
+        for (input, want) in [
+            (&b""[..], ""),
+            (&b"f"[..], "Zg"),
+            (&b"fo"[..], "Zm8"),
+            (&b"foo"[..], "Zm9v"),
+            (&b"foob"[..], "Zm9vYg"),
+            (&[0xfb, 0xff][..], "-_8"),
+        ] {
+            let n = base64url_nopad(input, &mut out);
+            assert_eq!(&out[..n], want.as_bytes());
+        }
     }
 }

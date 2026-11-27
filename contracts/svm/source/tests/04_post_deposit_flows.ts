@@ -8,7 +8,10 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   DEPOSIT_AMOUNT,
   TOKEN_PROGRAM_ID,
@@ -28,7 +31,6 @@ import {
   ZERO_QUOTE_HASH,
   findProgramEvent,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -130,7 +132,7 @@ describe("4. Post-Deposit Flows", () => {
     // Persist the deposit hash for post-deposit messages
     depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -154,7 +156,7 @@ describe("4. Post-Deposit Flows", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -212,7 +214,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const ed25519Instruction = createEd25519Instruction(reserver, message);
+    const ed25519Instruction = reserveSigIx(reserver, message);
 
     const txSig = await escrowProgram.methods
       .reserve(recipient, Array.from(DEFAULT_QUOTE_HASH), DEPOSIT_AMOUNT)
@@ -250,7 +252,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    let ed25519Instruction = createEd25519Instruction(reserver, message);
+    let ed25519Instruction = reserveSigIx(reserver, message);
 
     await escrowProgram.methods
       .reserve(recipient1, Array.from(DEFAULT_QUOTE_HASH), DEPOSIT_AMOUNT)
@@ -270,7 +272,7 @@ describe("4. Post-Deposit Flows", () => {
         DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-      ed25519Instruction = createEd25519Instruction(reserver, message);
+      ed25519Instruction = reserveSigIx(reserver, message);
 
       await escrowProgram.methods
         .reserve(recipient2, Array.from(DEFAULT_QUOTE_HASH), DEPOSIT_AMOUNT)
@@ -296,7 +298,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = reserveSigIx(
       invalidReserver,
       message
     );
@@ -325,7 +327,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -345,7 +347,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -386,7 +388,7 @@ describe("4. Post-Deposit Flows", () => {
         DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-      const newReserveEd25519Instruction = createEd25519Instruction(
+      const newReserveEd25519Instruction = reserveSigIx(
         reserver,
         newReserveMessage
       );
@@ -414,7 +416,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -443,7 +445,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -514,7 +516,7 @@ describe("4. Post-Deposit Flows", () => {
       emptyQuoteHash,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const ed25519Instruction = createEd25519Instruction(reserver, message);
+    const ed25519Instruction = reserveSigIx(reserver, message);
 
     try {
       await escrowProgram.methods
@@ -547,7 +549,7 @@ describe("4. Post-Deposit Flows", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -561,7 +563,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       wrongQuoteHash,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -600,7 +602,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -640,7 +642,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -708,7 +710,7 @@ describe("4. Post-Deposit Flows", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     // Refund must bind the reserved quote hash (deposit.quote_hash), not zero.
@@ -716,7 +718,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -785,7 +787,7 @@ describe("4. Post-Deposit Flows", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     // Refund signed over a different quote hash than the reserved one. The refund
@@ -795,7 +797,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       wrongQuoteHash,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -831,7 +833,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       invalidReleaser,
       refundMessage
     );
@@ -872,7 +874,7 @@ describe("4. Post-Deposit Flows", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -892,7 +894,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       invalidReleaser,
       releaseMessage
     );
@@ -938,7 +940,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -970,7 +972,7 @@ describe("4. Post-Deposit Flows", () => {
         DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-      const reserveEd25519Instruction = createEd25519Instruction(
+      const reserveEd25519Instruction = reserveSigIx(
         reserver,
         reserveMessage
       );
@@ -996,7 +998,7 @@ describe("4. Post-Deposit Flows", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -1028,7 +1030,7 @@ describe("4. Post-Deposit Flows", () => {
         DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-      const reserveEd25519Instruction = createEd25519Instruction(
+      const reserveEd25519Instruction = reserveSigIx(
         reserver,
         reserveMessage
       );
@@ -1077,7 +1079,7 @@ describe("4. Post-Deposit Flows", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -1107,7 +1109,7 @@ describe("4. Post-Deposit Flows", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
   });
@@ -1143,7 +1145,7 @@ describe("4. Post-Deposit Flows", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, refundMessage)])
+      .preInstructions([refundSigIx(releaser, refundMessage)])
       .signers([payer])
       .rpc();
   });
@@ -1174,7 +1176,7 @@ describe("4. Post-Deposit Flows", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -1204,7 +1206,7 @@ describe("4. Post-Deposit Flows", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
   });
@@ -1243,7 +1245,7 @@ describe("4. Post-Deposit Flows", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, refundMessage)])
+      .preInstructions([refundSigIx(releaser, refundMessage)])
       .signers([payer])
       .rpc();
   });

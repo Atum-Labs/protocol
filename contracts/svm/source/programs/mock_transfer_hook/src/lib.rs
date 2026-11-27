@@ -14,15 +14,14 @@ pub mod mock_transfer_hook {
     /// discriminator, so it is bound to that instead of Anchor's, and the `Execute` accounts require
     /// the validation PDA. A caller that drops the hook's extra accounts therefore fails here.
     #[instruction(discriminator = ExecuteInstruction::SPL_DISCRIMINATOR_SLICE)]
-    pub fn execute(_ctx: Context<Execute>, amount: u64) -> Result<()> {
+    pub fn execute(ctx: Context<Execute>, amount: u64) -> Result<()> {
         msg!("Mock TransferHook: execute called with amount: {}", amount);
 
-        // This is a mock implementation - just log and succeed
-        // In a real transfer hook, you could implement custom logic here:
-        // - Fee collection
-        // - Transfer restrictions
-        // - Compliance checks
-        // - etc.
+        // A hook must never get signing power over the transfer authority or any account the
+        // caller forwarded, even one the hook's own list named as a signer.
+        let signed = ctx.accounts.to_account_infos().iter().any(|a| a.is_signer)
+            || ctx.remaining_accounts.iter().any(|a| a.is_signer);
+        require!(!signed, ErrorCode::HookReceivedSigner);
 
         Ok(())
     }
@@ -33,59 +32,78 @@ pub mod mock_transfer_hook {
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
         msg!("Mock TransferHook: initialize_extra_account_meta_list called");
+        init_extra_account_meta_list(&ctx, &[])
+    }
 
-        // Calculate the space needed for an empty ExtraAccountMetaList
-        // For this mock, we don't need any extra accounts beyond the standard ones
-        let account_size =
-            ExtraAccountMetaList::size_of(0).map_err(|_| ProgramError::InvalidAccountData)?;
-
-        // Calculate rent
-        let lamports = Rent::get()?.minimum_balance(account_size);
-
-        // Derive PDA seeds
-        let mint_key = ctx.accounts.mint.key();
-        let seeds: &[&[u8]] = &[b"extra-account-metas", mint_key.as_ref()];
-        let (pda, bump) = Pubkey::find_program_address(seeds, ctx.program_id);
-
-        // Verify the derived PDA matches the provided account
-        require_keys_eq!(
-            pda,
-            ctx.accounts.extra_account_meta_list.key(),
-            ErrorCode::InvalidExtraAccountMetaListPDA
-        );
-
-        // Create the account using invoke_signed since extra_account_meta_list is a PDA
-        let signer_seeds: &[&[&[u8]]] = &[&[b"extra-account-metas", mint_key.as_ref(), &[bump]]];
-        invoke_signed(
-            &system_instruction::create_account(
-                ctx.accounts.payer.key,
-                ctx.accounts.extra_account_meta_list.key,
-                lamports,
-                account_size as u64,
-                ctx.program_id,
-            ),
-            &[
-                ctx.accounts.payer.to_account_info(),
-                ctx.accounts.extra_account_meta_list.to_account_info(),
-                ctx.accounts.system_program.to_account_info(),
-            ],
-            signer_seeds,
-        )?;
-
-        // Initialize the ExtraAccountMetaList with no extra accounts
-        let account_info = ctx.accounts.extra_account_meta_list.to_account_info();
-        let mut data = account_info.try_borrow_mut_data()?;
-        let extra_account_metas: Vec<ExtraAccountMeta> = vec![];
-        ExtraAccountMetaList::init::<spl_transfer_hook_interface::instruction::ExecuteInstruction>(
-            &mut data,
-            &extra_account_metas,
+    /// A hostile list that names `signer` as a signing, writable extra account, the shape a hook
+    /// authority would set to get a transaction's fee payer handed to the hook able to sign.
+    pub fn initialize_extra_account_meta_list_with_signer(
+        ctx: Context<InitializeExtraAccountMetaList>,
+        signer: Pubkey,
+    ) -> Result<()> {
+        let meta = ExtraAccountMeta::new_with_pubkey(
+            &spl_tlv_account_resolution::solana_pubkey::Pubkey::new_from_array(signer.to_bytes()),
+            true,
+            true,
         )
+        .map_err(|_| ProgramError::InvalidArgument)?;
+        init_extra_account_meta_list(&ctx, &[meta])
+    }
+}
+
+fn init_extra_account_meta_list(
+    ctx: &Context<InitializeExtraAccountMetaList>,
+    extra_account_metas: &[ExtraAccountMeta],
+) -> Result<()> {
+    let account_size = ExtraAccountMetaList::size_of(extra_account_metas.len())
         .map_err(|_| ProgramError::InvalidAccountData)?;
 
-        msg!("ExtraAccountMetaList initialized successfully with 0 extra accounts");
+    // Calculate rent
+    let lamports = Rent::get()?.minimum_balance(account_size);
 
-        Ok(())
-    }
+    // Derive PDA seeds
+    let mint_key = ctx.accounts.mint.key();
+    let seeds: &[&[u8]] = &[b"extra-account-metas", mint_key.as_ref()];
+    let (pda, bump) = Pubkey::find_program_address(seeds, ctx.program_id);
+
+    // Verify the derived PDA matches the provided account
+    require_keys_eq!(
+        pda,
+        ctx.accounts.extra_account_meta_list.key(),
+        ErrorCode::InvalidExtraAccountMetaListPDA
+    );
+
+    // Create the account using invoke_signed since extra_account_meta_list is a PDA
+    let signer_seeds: &[&[&[u8]]] = &[&[b"extra-account-metas", mint_key.as_ref(), &[bump]]];
+    invoke_signed(
+        &system_instruction::create_account(
+            ctx.accounts.payer.key,
+            ctx.accounts.extra_account_meta_list.key,
+            lamports,
+            account_size as u64,
+            ctx.program_id,
+        ),
+        &[
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.extra_account_meta_list.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        signer_seeds,
+    )?;
+
+    let account_info = ctx.accounts.extra_account_meta_list.to_account_info();
+    let mut data = account_info.try_borrow_mut_data()?;
+    ExtraAccountMetaList::init::<spl_transfer_hook_interface::instruction::ExecuteInstruction>(
+        &mut data,
+        extra_account_metas,
+    )
+    .map_err(|_| ProgramError::InvalidAccountData)?;
+
+    msg!(
+        "ExtraAccountMetaList initialized with {} extra accounts",
+        extra_account_metas.len()
+    );
+    Ok(())
 }
 
 #[derive(Accounts)]
@@ -128,4 +146,6 @@ pub struct InitializeExtraAccountMetaList<'info> {
 pub enum ErrorCode {
     #[msg("Invalid ExtraAccountMetaList PDA")]
     InvalidExtraAccountMetaListPDA,
+    #[msg("The hook received an account with signer privileges")]
+    HookReceivedSigner,
 }

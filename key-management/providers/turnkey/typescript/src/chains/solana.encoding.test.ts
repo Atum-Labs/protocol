@@ -102,3 +102,42 @@ describe('encodePayload', () => {
     }
   });
 });
+
+describe('encodePayload for Solana escrow hashes and texts', () => {
+  const hash = Buffer.alloc(32);
+  for (let i = 0; i < 32; i++) hash[i] = (i * 53 + 7) & 0xff;
+  const b64 = hash.toString('base64url');
+
+  it('sends a 32-byte hash as HEXADECIMAL, even one made of printable bytes', () => {
+    for (const bytes of [hash, Buffer.from('a'.repeat(32), 'utf8')]) {
+      const r = encodePayload(bytes);
+      expect(r).toEqual({
+        payload: bytes.toString('hex'),
+        encoding: 'PAYLOAD_ENCODING_HEXADECIMAL',
+      });
+    }
+  });
+
+  it('sends every escrow text as HEXADECIMAL over the exact text bytes', () => {
+    for (const label of ['deposit', 'reserve', 'release', 'refund']) {
+      const bytes = Buffer.from(`atum ${label} v1 ${b64}`, 'utf8');
+      const r = encodePayload(bytes);
+      expect(r.encoding, label).toBe('PAYLOAD_ENCODING_HEXADECIMAL');
+      expect(reconstruct(r).equals(bytes)).toBe(true);
+    }
+  });
+
+  it('leaves other text on TEXT_UTF8, near-miss escrow texts included', () => {
+    for (const text of [
+      'settler-agent:gw-handshake:v1\nprobe',
+      `atum ld-proof v1 ${'A'.repeat(86)}`,
+      `atum award v1 ${b64}`,
+      `atum release v1 ${b64}\n`,
+      `atum release v1 ${b64}=`,
+    ]) {
+      expect(encodePayload(Buffer.from(text, 'utf8')).encoding, text).toBe(
+        'PAYLOAD_ENCODING_TEXT_UTF8',
+      );
+    }
+  });
+});

@@ -92,7 +92,7 @@ Updates the delay for admin transfers. Only callable by default_admin.
 
 ### allow_mint
 
-Adds a mint to the allowlist with zero fees. Rejects Token-2022 mints whose TransferFeeConfig can charge a fee (nonzero basis points and nonzero maximum fee) in `newer_transfer_fee`, or in `older_transfer_fee` while it is still in force (the current epoch is before `newer_transfer_fee.epoch`), mints that carry the `PermanentDelegate` extension (`PermanentDelegateMintNotAllowed`), and mints whose extension list the program cannot read. `set_mint_fee_config` and `deposit` run the same checks.
+Adds a mint to the allowlist with zero fees. Rejects Token-2022 mints whose TransferFeeConfig can charge a fee (nonzero basis points and nonzero maximum fee) in `newer_transfer_fee`, or in `older_transfer_fee` while it is still in force (the current epoch is before `newer_transfer_fee.epoch`), mints that carry the `PermanentDelegate` extension (`PermanentDelegateMintNotAllowed`), mints that carry any extension outside the accepted set in `architecture/security.md` (`MintExtensionNotAllowed`), and mints whose extension list the program cannot read. `set_mint_fee_config` and `deposit` run the same checks.
 
 | Account                  | Type    | Mut | Description                                                 |
 | ------------------------ | ------- | --- | ----------------------------------------------------------- |
@@ -207,6 +207,42 @@ Clients should fetch `ProtocolConfig` and compose messages using:
 
 This binds signatures to a specific deployment and schema version.
 
+#### Signed text
+
+Signers do not sign the 32-byte hash directly. Each instruction requires the Ed25519 instruction
+immediately before it to carry a valid signature over the escrow text for its own label:
+
+`<label> <base64url-nopad(hash)>`
+
+| Instruction | Label             | Signer            |
+| ----------- | ----------------- | ----------------- |
+| `deposit`   | `atum deposit v1` | `delegate_signer` |
+| `reserve`   | `atum reserve v1` | `reserver`        |
+| `release`   | `atum release v1` | `releaser`        |
+| `refund`    | `atum refund v1`  | `releaser`        |
+
+The text is printable ASCII: the label, one space, then 43 base64url characters with no padding
+and no trailing newline. The program accepts the signed message in exactly one of three forms and
+compares it byte for byte:
+
+| Form   | Bytes                                                                                     |
+| ------ | ----------------------------------------------------------------------------------------- |
+| bare   | the text                                                                                  |
+| `v1`   | `ff "solana offchain"` ‖ `01` (version) ‖ `01` (signer count) ‖ signer pubkey ‖ text        |
+| `v0`   | `ff "solana offchain"` ‖ `00` (version) ‖ 32 zero bytes (application domain) ‖ `00` (format) ‖ `01` (signer count) ‖ signer pubkey ‖ `u16le(len(text))` ‖ text |
+
+`bare` is what a wallet's `signMessage` signs. `v1` and `v0` are the off-chain message envelopes
+produced by `signOffchainMessage` and by hardware wallets (Ledger Solana app 1.16 or later, since
+1.15 writes an extra `u16` length in `v1`, which the program refuses). The signer
+pubkey inside an envelope must be the expected signer. The Ed25519 instruction's pubkey offset is
+not constrained, so an envelope instruction may point it at the pubkey inside the message. Any
+other message, including the bare 32-byte hash, fails with `InvalidMessage`.
+
+`contracts/svm/bindings/{go,typescript}/escrow-encoding` build the text and the three forms
+(`EscrowText` / `EscrowMessage`, and in TypeScript `escrowEd25519Instruction` for the instruction
+data); `contracts/svm/conformance/signed-text.json` holds the shared vectors, pinned in
+`signatures.rs` module `signed_text_tests`.
+
 #### This document is not the source of truth
 
 Off-chain signers (notably `atum-core:contracts/svm/bindings/{go,typescript}`) must not be
@@ -234,17 +270,22 @@ Creates a new escrow deposit, authorized by the delegate signer via Ed25519 sign
 `protocol_config` (blocked when paused) and `mint_fee_config`. Stores computed `fee_amount` in the
 deposit.
 
-| Parameter      | Type       | Description                    |
-| -------------- | ---------- | ------------------------------ |
+| Parameter              | Type       | Description                                                 |
+| ---------------------- | ---------- | ----------------------------------------------------------- |
 | `deposit_request_hash` | `[u8; 32]` | Depositor-signed commitment to the offchain deposit request (non-zero) |
-| `destination`  | `String`   | Destination the depositor commits to (non-empty, at most 256 bytes); only its keccak-256 is stored |
-| `amount`       | `u64`      | Token amount to deposit        |
-| `reserver`     | `Pubkey`   | Entity authorized to reserve   |
-| `releaser`     | `Pubkey`   | Entity authorized to release   |
-| `nonce`        | `u64`      | Replay protection nonce        |
-| `issued_at`    | `u64`      | Signature timestamp            |
-| `deadline`     | `u64`      | Transaction deadline           |
-| `deposit_hash` | `[u8; 32]` | Keccak hash of deposit message |
+| `destination_hash`     | `[u8; 32]` | `keccak256(destination)`, must be non-zero                  |
+| `amount`               | `u64`      | Token amount to deposit                                     |
+| `reserver`             | `Pubkey`   | Entity authorized to reserve                                |
+| `releaser`             | `Pubkey`   | Entity authorized to release                                |
+| `nonce`                | `u64`      | Replay protection nonce                                     |
+| `issued_at`            | `u64`      | Signature timestamp                                         |
+| `deadline`             | `u64`      | Transaction deadline                                        |
+| `deposit_hash`         | `[u8; 32]` | Keccak hash of deposit message                              |
+
+The destination string never reaches the program. Clients hash it off chain and enforce its rules
+first: non-empty and at most 256 bytes (`ValidateAndHashDestination` / `validateAndHashDestination` in
+the escrow-encoding bindings). `DestinationTooLong` (`6036`) is kept in the error table but is not
+raised.
 
 | Account                    | Type             | Mut | Description                   |
 | -------------------------- | ---------------- | --- | ----------------------------- |
@@ -263,7 +304,7 @@ deposit.
 | `system_program`           | Program          |     | System program                |
 | `instructions`             | Sysvar           |     | For Ed25519 verification      |
 
-**Payload:** `deposit_request_hash, destination_hash, depositor, mint, amount, reserver, releaser, nonce, issued_at, deadline` (`destination_hash` is the keccak-256 of `destination`)
+**Payload:** `deposit_request_hash, destination_hash, depositor, mint, amount, reserver, releaser, nonce, issued_at, deadline`
 
 ### reserve
 
@@ -302,7 +343,9 @@ program, not by its token owner, and is created when missing. A classic SPL acco
 reassigned by the depositor, which would otherwise make the release fail validation.
 
 For a mint with a transfer hook program, the hook's validation account, its extra accounts and the
-hook program go in `remaining_accounts`; every transfer forwards them.
+hook program go in `remaining_accounts`; every transfer forwards them. A signer among them other than
+the transfer authority fails with `HookAccountSignerNotAllowed`, since the hook would receive it able
+to sign.
 
 | Account                    | Type             | Mut | Description                      |
 | -------------------------- | ---------------- | --- | -------------------------------- |
@@ -475,8 +518,8 @@ declared.
 | `6032` | `NonExactTransfer` | Transfer amount mismatch - exact transfer required |
 | `6033` | `InsufficientEscrowBalance` | Escrow balance insufficient for intended release amount |
 | `6034` | `DepositRequestHashCannotBeEmpty` | The depositor-signed deposit-request commitment cannot be zero |
-| `6035` | `DestinationEmpty` | The committed destination cannot be empty |
-| `6036` | `DestinationTooLong` | The committed destination exceeds 256 bytes |
+| `6035` | `DestinationEmpty` | The committed destination hash cannot be zero |
+| `6036` | `DestinationTooLong` | Not raised by this program: the 256-byte destination limit is enforced off chain |
 | `6037` | `AmountCannotBeZero` | The reserved source amount cannot be zero |
 | `6038` | `SourceAmountExceedsDeposit` | The reserved source amount exceeds the amount the depositor authorized |
 | `6039` | `MinFeeNotRepresentable` | Minimum fee is not representable in this mint's decimals |
@@ -491,21 +534,23 @@ declared.
 | `6048` | `SignatureMessageSizeInvalid` | The signed message is not 32 bytes |
 | `6049` | `InvalidDepositorAta` | Depositor token account is not the depositor's associated token account |
 | `6050` | `PermanentDelegateMintNotAllowed` | Mints with a permanent delegate are not allowed |
+| `6051` | `MintExtensionNotAllowed` | The mint carries a Token-2022 extension the escrow does not accept |
+| `6052` | `HookAccountSignerNotAllowed` | A transfer hook account other than the transfer authority is a signer |
 
 <!-- END GENERATED ERROR TABLE -->
 
 ### One code, several conditions
 
 `InvalidData` used to cover twenty-two raise sites. Each now has its own code:
-`MalformedSignatureData` (Ed25519 offsets outside the instruction data), `SignatureMessageSizeInvalid`
-(a verifying signature over something other than 32 bytes), `FeeArithmeticFailed`, `RoleAccountNotSet`,
+`MalformedSignatureData` (Ed25519 offsets outside the instruction data), `FeeArithmeticFailed`, `RoleAccountNotSet`,
 `DepositHashMismatch`, `DelegateLimitsInvalid` and `InconsistentTimestamps`.
 
 `CapacityExceeded` used to carry the fee and timestamp arithmetic too. Those moved to
 `FeeArithmeticFailed` and `TimestampOverflow`, so it now means only what its message says.
 
-Four codes are reserved and raised by nothing: `InvalidData`, `InvalidAuthority`, `InvalidCaller` and
-`InvalidRevoker`. `Unauthorized` covers the three authority conditions. They stay declared so the
+Five codes are reserved and raised by nothing: `InvalidData`, `InvalidAuthority`, `InvalidCaller`,
+`InvalidRevoker` and `SignatureMessageSizeInvalid`. `Unauthorized` covers the three authority conditions,
+and `InvalidMessage` covers every signed message that is not the expected escrow text. They stay declared so the
 codes after them do not move, and so a client decoding an older transaction still resolves the name.
 
 ## Events

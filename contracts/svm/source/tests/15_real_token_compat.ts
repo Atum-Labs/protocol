@@ -11,7 +11,6 @@ import {
   DEPOSIT_AMOUNT,
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
-  TEST_DESTINATION,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -20,7 +19,10 @@ import {
   PublicKey,
   SystemProgram,
   computeExpectedFeeAtoms,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createMessage,
   createPaymentId,
   createStrictFulfillArgs,
@@ -214,7 +216,7 @@ describe("15 Real Token Compatibility", () => {
         await escrowProgram.methods
           .deposit(
             Array.from(paymentId),
-            TEST_DESTINATION,
+            Array.from(await destinationHash()),
             DEPOSIT_AMOUNT,
             reserver.publicKey,
             releaser.publicKey,
@@ -255,7 +257,7 @@ describe("15 Real Token Compatibility", () => {
           })
           .preInstructions([
             depositComputeBudgetIx(),
-            createEd25519Instruction(delegateSigner, depositHash),
+            depositSigIx(delegateSigner, depositHash),
           ])
           .signers([payer])
           .rpc();
@@ -403,7 +405,7 @@ describe("15 Real Token Compatibility", () => {
               instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
             })
             .preInstructions([
-              createEd25519Instruction(
+              reserveSigIx(
                 reserver,
                 await createMessage("reserve", [
                   recipient.publicKey.toBuffer(),
@@ -450,7 +452,9 @@ describe("15 Real Token Compatibility", () => {
               instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
             })
             .preInstructions([
-              createEd25519Instruction(
+              // Creating the recipient and treasury ATAs puts this release near the default 200k.
+              depositComputeBudgetIx(),
+              releaseSigIx(
                 releaser,
                 await createMessage("release", [
                   depositHash,
@@ -504,7 +508,8 @@ describe("15 Real Token Compatibility", () => {
               instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
             })
             .preInstructions([
-              createEd25519Instruction(
+              depositComputeBudgetIx(),
+              refundSigIx(
                 releaser,
                 await createMessage("refund", [depositHash, ZERO_QUOTE_HASH])
               ),

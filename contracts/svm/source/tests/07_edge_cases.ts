@@ -8,7 +8,11 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  rawSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   DEPOSIT_AMOUNT,
   TOKEN_PROGRAM_ID,
@@ -27,7 +31,6 @@ import {
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -127,7 +130,7 @@ describe("7. Edge Cases", () => {
     ]);
     depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -150,7 +153,7 @@ describe("7. Edge Cases", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -200,7 +203,7 @@ describe("7. Edge Cases", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -223,7 +226,7 @@ describe("7. Edge Cases", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           new anchor.BN(0),
           reserver.publicKey,
           releaser.publicKey,
@@ -276,7 +279,7 @@ describe("7. Edge Cases", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -299,7 +302,7 @@ describe("7. Edge Cases", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -342,7 +345,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -371,7 +374,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -425,7 +428,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -455,7 +458,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -488,7 +491,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -536,7 +539,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -567,7 +570,7 @@ describe("7. Edge Cases", () => {
     const recipient = await generateFundedKeypair();
 
     const wrongMessage = Buffer.from("wrong message");
-    const invalidEd25519Instruction = createEd25519Instruction(
+    const invalidEd25519Instruction = rawSigIx(
       reserver,
       wrongMessage
     );
@@ -584,10 +587,9 @@ describe("7. Edge Cases", () => {
         .rpc();
       expect.fail("Should have thrown signature verification failure");
     } catch (error: any) {
-      // A real Ed25519 signature over a non-32-byte message: the native program verifies, so this
-      // lands on the message-size branch rather than the content comparison.
-      const errorCode = error.error?.errorCode?.code;
-      expect(["InvalidMessage", "SignatureMessageSizeInvalid"].includes(errorCode)).to.be.true;
+      // A real Ed25519 signature over text that is not the escrow text: the native program
+      // verifies, the content comparison rejects it.
+      expect(error.error?.errorCode?.code).to.equal("InvalidMessage");
     }
   });
 
@@ -601,7 +603,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -633,7 +635,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -682,7 +684,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -712,7 +714,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -762,7 +764,7 @@ describe("7. Edge Cases", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -797,7 +799,7 @@ describe("7. Edge Cases", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -826,7 +828,7 @@ describe("7. Edge Cases", () => {
           instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         })
         .preInstructions([
-          createEd25519Instruction(releaser, secondReleaseMessage),
+          releaseSigIx(releaser, secondReleaseMessage),
         ])
         .signers([payer])
         .rpc();
@@ -858,7 +860,7 @@ describe("7. Edge Cases", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, refundMessage)])
+      .preInstructions([refundSigIx(releaser, refundMessage)])
       .signers([payer])
       .rpc();
 
@@ -884,7 +886,7 @@ describe("7. Edge Cases", () => {
           instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         })
         .preInstructions([
-          createEd25519Instruction(releaser, secondRefundMessage),
+          refundSigIx(releaser, secondRefundMessage),
         ])
         .signers([payer])
         .rpc();
@@ -915,7 +917,7 @@ describe("7. Edge Cases", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -958,7 +960,7 @@ describe("7. Edge Cases", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -994,7 +996,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -1022,7 +1024,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -1067,7 +1069,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -1107,7 +1109,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -1139,7 +1141,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -1184,7 +1186,7 @@ describe("7. Edge Cases", () => {
     ]);
 
     // Instruction 0: A normal ed25519 instruction that embeds the message in its own data
-    const providerIx = createEd25519Instruction(reserver, message);
+    const providerIx = reserveSigIx(reserver, message);
 
     // Parse offsets from the provider instruction to locate sig/pk/message positions
     const dataA = providerIx.data as Buffer;
@@ -1206,7 +1208,7 @@ describe("7. Edge Cases", () => {
     header.writeUInt16LE(16 + 64, 6); // pk_offset (within this instruction)
     header.writeUInt16LE(0xffff, 8); // pk_ix = u16::MAX (in-instruction)
     header.writeUInt16LE(msgOffsetA, 10); // msg_offset (but in another instruction)
-    header.writeUInt16LE(32, 12); // msg_size
+    header.writeUInt16LE(dataA.readUInt16LE(12), 12); // msg_size of the signed text
     header.writeUInt16LE(0, 14); // msg_ix = 0 (reference instruction 0)
 
     const maliciousData = Buffer.concat([header, signature, pubkey]);
@@ -1250,7 +1252,7 @@ describe("7. Edge Cases", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const authorityTokenAccount = await getAssociatedTokenAddress(
@@ -1303,7 +1305,7 @@ describe("7. Edge Cases", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -1372,7 +1374,7 @@ describe("7. Edge Cases", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, refundMessage)])
+      .preInstructions([refundSigIx(releaser, refundMessage)])
       .signers([payer])
       .rpc();
 
@@ -1407,7 +1409,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -1454,7 +1456,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -1519,7 +1521,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );
@@ -1564,7 +1566,7 @@ describe("7. Edge Cases", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519Instruction = createEd25519Instruction(
+    const reserveEd25519Instruction = reserveSigIx(
       reserver,
       reserveMessage
     );
@@ -1611,7 +1613,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519Instruction = createEd25519Instruction(
+    const releaseEd25519Instruction = releaseSigIx(
       releaser,
       releaseMessage
     );
@@ -1675,7 +1677,7 @@ describe("7. Edge Cases", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519Instruction = createEd25519Instruction(
+    const refundEd25519Instruction = refundSigIx(
       releaser,
       refundMessage
     );

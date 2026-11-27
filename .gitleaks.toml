@@ -116,12 +116,13 @@ description = "Solana 64-byte keypair as a JSON byte array"
 regex = '''\[\s*(?:\d{1,3}\s*,\s*){63}\d{1,3}\s*\]'''
 
 [rules.allowlist]
-# The eleven throwaway localnet keypairs in contracts/svm/accounts/ (and, byte
-# for byte, at contracts/svm/docker/keypairs/ in the July import 1575c173),
-# documented as such in contracts/svm/docker/accounts.sh. The audit verified every
-# derived public key holds 0 lamports and has no signatures on mainnet-beta and
-# devnet. Pinned by the first six bytes of each array, not by path, so a new
-# keypair file dropped into the same directory is still reported.
+# The twelve throwaway localnet keypairs in contracts/svm/accounts/ (the first
+# eleven also, byte for byte, at contracts/svm/docker/keypairs/ in the July import
+# 1575c173), documented as such in contracts/svm/docker/accounts.sh. Every derived
+# public key holds 0 lamports and has no signatures on mainnet-beta and devnet
+# (the last one, escrow_v5.json at AtBJCoGvJynVf4pk3XtAnn1WbyhiW7eZCtA24FCzrUqF,
+# checked 2026-11-24). Pinned by the first six bytes of each array, not by path,
+# so a new keypair file dropped into the same directory is still reported.
 regexes = [
   '''^\[\s*137\s*,\s*155\s*,\s*18\s*,\s*146\s*,\s*131\s*,\s*204\s*,''',
   '''^\[\s*81\s*,\s*229\s*,\s*64\s*,\s*127\s*,\s*10\s*,\s*91\s*,''',
@@ -134,6 +135,7 @@ regexes = [
   '''^\[\s*146\s*,\s*68\s*,\s*114\s*,\s*105\s*,\s*12\s*,\s*168\s*,''',
   '''^\[\s*85\s*,\s*233\s*,\s*71\s*,\s*14\s*,\s*149\s*,\s*40\s*,''',
   '''^\[\s*221\s*,\s*169\s*,\s*42\s*,\s*47\s*,\s*21\s*,\s*2\s*,''',
+  '''^\[\s*107\s*,\s*187\s*,\s*43\s*,\s*55\s*,\s*4\s*,\s*50\s*,''',
 ]
 
 # Solana 64-byte secret keys are 87-88 base58 characters. Public keys are 43-44

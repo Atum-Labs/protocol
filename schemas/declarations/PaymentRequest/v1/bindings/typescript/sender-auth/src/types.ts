@@ -119,6 +119,11 @@ export interface VerifyExpectations {
   svmSignatureClusterId?: string;
   svmSignatureDomainVersion?: number;
   /**
+   * The Solana escrow's svm message scheme, from the registry's `svmMessage` for the escrow. `''` or
+   * absent (the default) is the raw hash; see `SolanaDomain.messageScheme`.
+   */
+  svmMessageScheme?: string;
+  /**
    * The Permit2 the escrow uses, for chains that do not run the canonical address (EVM) or the
    * pinned one (Tron); absent means that default. It is the EIP-712 verifying contract, so it must
    * match the one used to build, and it comes from the verifier's own configuration, never from
@@ -231,6 +236,12 @@ export type SignedMessageInput = {
   signature: string;
   message_prehash?: string;
   payload?: SignedMessage['payload'];
+  /**
+   * SDK-local, never on the wire: the Solana escrow's svm message scheme, set only by a caller that
+   * knows it. `''` or absent (the default) signs the raw 32 byte hash; `'escrow-text-v1'` signs the
+   * escrow text. Other chains ignore it. Mirrors the Go `SignedMessageInput.SvmMessageScheme`.
+   */
+  svmMessageScheme?: string;
   [k: string]: unknown;
 };
 

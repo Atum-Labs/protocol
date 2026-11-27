@@ -39,6 +39,7 @@ Source: **protocol `main`**, `contracts/svm/source/`.
 - [Which mint](#which-mint)
 - [RPC endpoints](#rpc-endpoints)
 - [Set the environment](#set-the-environment)
+- [v5 escrow (readable text signing): deploy checklist](#v5-escrow-readable-text-signing-deploy-checklist)
 - [STEP 0 — The gates, with evidence](#step-0--the-gates-with-evidence)
 - [STEP 1 — Source and toolchain](#step-1--source-and-toolchain)
 - [STEP 2 — Keys](#step-2--keys)
@@ -288,6 +289,77 @@ echo "env ok — escrow $ESCROW_ID"
 
 ---
 
+## v5 escrow (readable text signing): deploy checklist
+
+v5 is the current source: its `deposit` takes `destination_hash` (32 bytes) and its signed
+instructions verify readable text (`escrow-text-v1`) instead of the raw 32 byte hash. It deploys at
+a **new program id beside v4**. The v4 programs stay deployed and keep serving every v4 deposit, so
+nothing is drained, paused or upgraded in place. Clients and services pick raw or text per escrow
+from the registry. v4 stays every chain's default through all of these steps. The only cutover is
+per wallet and mint, in step 10, and only for a wallet that moves to v5. Extending the lookup table
+(step 4) and listing v5 (step 11) change nothing for a v4 payment. Run per cluster, devnet first.
+
+1. **Escrow only deploy.** Run Steps 1 to 6a for the escrow alone: `PROGRAMS=escrow ./deploy.sh`
+   with `ESCROW_ID` set to the v5 escrow id (the preflight refuses one that differs from
+   `declare_id!`) and `FP_ID` to the cluster's v4 fulfillment proxy (`../deployments-v4.json`). It needs no
+   proxy keypair, and it neither deploys, initializes nor revokes the proxy, whose settler allowlist
+   stays as it is. The run is recorded per escrow id, so the cluster's v4 record doesn't block it.
+2. **Fresh program keypair** (Step 2c), custodied outside the repo. At deploy set the escrow's
+   `declare_id!`, its four `Anchor.toml` tables, `PROGRAM_ID_BYTES` (`derive.py --sync-id-bytes`)
+   and the 13 hash anchors (re-derived out of band) to that id. The committed source keeps the
+   legacy id until then.
+3. **`initialize_protocol`** (Step 6a) with the cluster's `ESCROW_CLUSTER_ID`. Confirm the
+   `ProtocolConfig` reads `signature_domain_version` **5**.
+4. **Lookup table.** Add the v5 escrow's addresses to the cluster's **existing** table with
+   `ESCROW_ID=<v5 escrow id> create-address-lookup-table.ts --table <existing> --mint <mint>` per
+   mint ("Later: adding a mint to an existing ALT" in 6b, `FP_ID` still the v4 proxy). `--keypair`
+   must be the table's authority, which `../deployments-v4.json` notes isn't held locally for
+   devnet: get that key first. Never create a second one: the settler carries one table per
+   cluster, and without v5's `protocol_config` and `mint_fee_config` in it a v0 deposit plus reserve
+   overruns 1232 B.
+5. **Allow the mints.** Per mint, `allow_mint` and `set_mint_fee_config` with the v4 fees
+   (Step 6c, `configure-token.ts`).
+6. **Turnkey program allowlists.** Add the v5 program id beside v4 to `allowedPrograms` in each
+   settler sub-org config for the cluster, and to `solanaEscrowProgramId` (it takes a list) in each
+   sender sub-org config. Then run `apply-policies --dry-run`, `apply-policies --update` and
+   `test-policies` for each (`key-management/providers/turnkey/typescript/scripts/PROVISIONING.md`).
+   Without the settler entry the settler can't sign a v5 transaction. Without the sender entry
+   step 10 is denied.
+7. **Record and register.** Record the escrow id and the reused v4 proxy in a
+   `../deployments-v5.json`, listing **only the clusters where v5 is deployed and initialized**:
+   the registry generator trusts every chain in the file, and `published.txt` keeps a row for
+   good. Add one `v5` entry for that file to `contracts/registry/versions.json`
+   (`svmDomainVersion` 5, `svmMessage` `"escrow-text-v1"`), run `go run ./cmd/gen-chains` in
+   `contracts/registry`, and add the `published.txt` line.
+8. **Repins.** Pin that protocol commit in settler-agent, then protocol and settler-agent in
+   atum-core (with the matching `go.mod` pseudo versions).
+9. **Consumers before the gateway.** Append the v5 id after v4 in each settler's
+   `programs.escrow` for the cluster, and in veri-fill's trusted Solana escrows. Deploy both and
+   confirm each serves v5 (the settler logs both escrows at boot, veri-fill's chain check passes)
+   before the next step. Until then every v5 payment is declined.
+10. **Delegates, a cutover per wallet and mint.** A token account holds one SPL delegate, and
+    `create_delegate` points it at the calling program's `escrow_delegate` PDA. So creating a
+    wallet's v5 `EscrowDelegate` for a mint moves that wallet and mint off v4: every later v4
+    deposit from it fails the settler's pre-flight after the award, and a later v4
+    `revoke_delegate` breaks v5 the same way. Run
+    `key-management/providers/turnkey/typescript/scripts/svm/create-delegate.ts <v5 escrow id> <mint> <capacity>`
+    for a wallet only once it has no open v4 payment for that mint and names the v5 escrow on every
+    payment from then on.
+11. **`CONTRACT_VERSIONS`.** List `v5` after `v4` for the cluster's chain in each environment
+    (`solana:<genesis>=v4,v5`). The list only says which versions a payment may name, so v4 stays
+    the default and clients opt in to v5 by naming its escrow. Making v5 the default is a later,
+    separate change.
+12. **Upgrade authority.** The deploy keeps v5's upgrade authority on the deployer. Move it to the
+    cluster's Squads vault (`solana program set-upgrade-authority <v5 escrow id> --new-upgrade-authority <vault>`).
+    On mainnet, once the audit fixes for v5 are deployed, register the verified build (Step 6e, it
+    is the one chance), run `SOLANA_ESCROW_PROGRAM_ID=<v5 escrow id> CLUSTER=mainnet-beta ./pre-finalize.sh`
+    (it defaults to the v4 ids), and revoke through a vault proposal, since the vault holds the
+    authority. Devnet keeps its authority: it is where upgrades are tested, and `pre-finalize.sh`
+    refuses it. v4 stays frozen
+    by convention: `upgrade-verified.sh` refuses to apply to the v4 programs without
+    `ALLOW_V4_UPGRADE=1`.
+
+---
 
 ## STEP 0 — The gates, with evidence
 
@@ -299,7 +371,7 @@ echo "env ok — escrow $ESCROW_ID"
 | Fresh program IDs | **the route** | Generate keypairs (Step 2c) and custody them outside the repo. Repointing is not one edit: `declare_id!`, all four `Anchor.toml` tables, `scripts/deploy.ts` (Step 2c), then `PROGRAM_ID_BYTES`, the 13 hash anchors and ~50 consumer files (Step 8). A deploy succeeds with the last three stale — signature agreement is what breaks. |
 | Open deposits | **not a gate on this route** | A deposit belongs to the program that created it. A pre-v4 deposit settles only against the pre-v4 program, with a signature over that program's id and its domain version (2). See Step 4. |
 | Settler-allowlist tooling | `configure-settler-allowlist.ts` | Provisioning script for the settler allowlist. See Step 6d for the mandatory ordering — populate before enforcing. |
-| ALT tooling | `create-address-lookup-table.ts` | A per-cluster ALT is **required** once the deposit preimage carries a plaintext destination, i.e. from v4 on: without one the deposit transaction overruns. The settler must carry the table at **both** `compileToV0Message()` sites, send *and* simulation — a mismatch lets a size overrun pass simulation and fail on send. Check whether your settler and service configuration carry the address for your cluster; that config home is easy to miss. |
+| ALT tooling | `create-address-lookup-table.ts` | A per-cluster ALT is **required** to send deposit and reserve in one transaction: without one that transaction overruns. The settler must carry the table at **both** `compileToV0Message()` sites, send *and* simulation — a mismatch lets a size overrun pass simulation and fail on send. Check whether your settler and service configuration carry the address for your cluster; that config home is easy to miss. |
 | Widened-witness gate | **no SVM equivalent** | Solana has no typehash; `atum-assert-typehashes` covers EVM and TVM only. `contracts/svm/verify.sh` checks the IDL and the hash anchors, not a deployed program. |
 | Mainnet authority | **off-curve PDA** | The Squads vault `9YvUZVux…` is not on the ed25519 curve, so **no private key exists**. Every admin TS script (`configure-token`, `read-state`, `escrow-rotate-all-roles`, `fp-*`) loads a keypair, so none can sign for it. The v4 upgrade authorities are the on-curve deploy payers recorded in `../deployments-v4.json`. |
 
@@ -1230,14 +1302,15 @@ from `Anchor.toml` per cluster and tables `getProtocolConfigAddress(escrowProgra
 Step 2c's ID propagation and the table holds the **old** `protocol_config` PDA — a plausible-looking
 table that is silently wrong on every deposit. Run it only after the flip, i.e. now.
 
-`--measure` is fully offline and answers the question this step exists for. Measured on the v4 ids:
-without a table, a 2-signature deposit leaves **61 bytes** of headroom and the largest destination that
-fits is **164 bytes** — under the 256-byte `MAX_DESTINATION_LEN`. With the table: **242 bytes** of
-headroom and the full 256 fits. That is why the ALT is required rather than an optimisation.
+`--measure` is fully offline and reports the size of deposit + reserve in one transaction, with the
+deposit signed in its longest accepted form (`v0` envelope) and the reserve bare. Measured: with one
+signature it is **1373 bytes** without the table (141 over the 1232 limit) and **1192 bytes** with it
+(40 bytes of headroom). The settler is the only signer, so the two-signature row is a what-if. A
+deposit alone fits a legacy transaction. That is why the ALT is required rather than an optimisation.
 
 `staticAddresses()` tables the accounts that are identical on every deposit — the escrow's
 `protocol_config` PDA, the instructions sysvar, and the per-mint accounts — so each 32-byte key
-becomes a 1-byte index and buys back the room the plaintext destination needs. That is why it
+becomes a 1-byte index and buys back the room the combined transaction needs. That is why it
 needs to know which mints you will transact.
 
 Measure first, then rehearse, then create:

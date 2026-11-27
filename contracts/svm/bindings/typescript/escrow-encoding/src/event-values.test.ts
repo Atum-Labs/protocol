@@ -15,7 +15,8 @@ import { findProgramAddress } from '../scripts/lib/pda.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const load = (path: string) => JSON.parse(readFileSync(resolve(here, path), 'utf8'));
-const escrowIdl = load('./generated/escrow.json');
+// The mainnet v4 fixtures come from the served v4 escrow, whose deposit takes the destination string.
+const escrowIdl = load('../idl-history/v4/escrow.json');
 const proxyIdl = load('./generated/fulfillment_proxy.json');
 const ESCROW = '5BD9UAUCRCg6Chv6CS5k4sBHGd7CciWpng9u7iJxJFjx';
 const PROXY = 'CMxMPzpmeJPJbyUK4DDSDEhEYdCCAUt7w5cr5SWEHoNJ';

@@ -11,6 +11,8 @@ var (
 	ErrEmptyDestination = errors.New("destination cannot be empty")
 	// ErrDestinationTooLong is returned when the destination exceeds MaxDestinationLen bytes.
 	ErrDestinationTooLong = errors.New("destination exceeds the maximum length")
+	// ErrDestinationNotUTF8 is returned when the destination is not valid UTF-8.
+	ErrDestinationNotUTF8 = errors.New("destination is not valid UTF-8")
 
 	// ErrZeroDepositor is returned when the depositor pubkey is all zeros.
 	ErrZeroDepositor = errors.New("depositor cannot be zero")

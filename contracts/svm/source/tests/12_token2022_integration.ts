@@ -7,7 +7,10 @@ import {
   Keypair,
   PublicKey,
   SystemProgram,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   createValidNonce,
   DEPOSIT_AMOUNT,
@@ -31,9 +34,9 @@ import {
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
   MINT_DECIMALS,
+  sendV0WithLookupTable,
 } from "./helpers";
 import {
   AuthorityType,
@@ -174,7 +177,7 @@ describe("12 Token-2022 Integration", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519Instruction = createEd25519Instruction(
+    const depositEd25519Instruction = depositSigIx(
       delegateSigner,
       depositMessage
     );
@@ -198,10 +201,10 @@ describe("12 Token-2022 Integration", () => {
       tokenProgram
     );
 
-    await escrowProgram.methods
+    const depositBuilder = escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -227,14 +230,19 @@ describe("12 Token-2022 Integration", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .remainingAccounts(remainingAccounts)
-      // A hooked deposit drops the budget instruction to fit the 1232-byte packet, see 12.3.
-      .preInstructions(
-        remainingAccounts.length > 0
-          ? [depositEd25519Instruction]
-          : [depositComputeBudgetIx(), depositEd25519Instruction]
-      )
-      .signers([payer])
-      .rpc();
+      .preInstructions([depositComputeBudgetIx(), depositEd25519Instruction])
+      .signers([payer]);
+    // A hooked deposit exceeds the 1232-byte legacy limit and ships as v0 with a lookup table, see 12.3.
+    if (remainingAccounts.length > 0) {
+      await sendV0WithLookupTable(
+        (
+          await depositBuilder.transaction()
+        ).instructions,
+        [payer]
+      );
+    } else {
+      await depositBuilder.rpc();
+    }
 
     // Verify deposit was created
     const depositAccount = await escrowProgram.account.depositInfo.fetch(
@@ -282,7 +290,7 @@ describe("12 Token-2022 Integration", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(d.reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(d.reserver, reserveMessage)])
       .rpc();
   }
 
@@ -335,7 +343,7 @@ describe("12 Token-2022 Integration", () => {
       .remainingAccounts(d.remainingAccounts)
       .preInstructions([
         depositComputeBudgetIx(),
-        createEd25519Instruction(d.releaser, releaseMessage),
+        releaseSigIx(d.releaser, releaseMessage),
       ])
       .signers([d.payer])
       .rpc();
@@ -364,7 +372,7 @@ describe("12 Token-2022 Integration", () => {
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
       .remainingAccounts(d.remainingAccounts)
-      .preInstructions([createEd25519Instruction(d.releaser, refundMessage)])
+      .preInstructions([refundSigIx(d.releaser, refundMessage)])
       .signers([d.payer])
       .rpc();
     expect(await provider.connection.getAccountInfo(d.deposit)).to.be.null;
@@ -469,7 +477,7 @@ describe("12 Token-2022 Integration", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519Instruction = createEd25519Instruction(
+    const depositEd25519Instruction = depositSigIx(
       delegateSigner,
       depositMessage
     );
@@ -498,7 +506,7 @@ describe("12 Token-2022 Integration", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -610,7 +618,7 @@ describe("12 Token-2022 Integration", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519Instruction = createEd25519Instruction(
+    const depositEd25519Instruction = depositSigIx(
       delegateSigner,
       depositMessage
     );
@@ -635,10 +643,10 @@ describe("12 Token-2022 Integration", () => {
     );
 
     // Perform deposit WITH remaining_accounts for TransferHook
-    await escrowProgram.methods
+    const depositTx = await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -675,16 +683,11 @@ describe("12 Token-2022 Integration", () => {
           isWritable: false,
         },
       ])
-      // NO compute-budget instruction here, deliberately. This is the only deposit in the
-      // suite that also carries transfer-hook remaining_accounts, and the legacy transaction is
-      // already at the 1232-byte ceiling: adding the budget instruction takes it to 1257 and it
-      // fails to serialize before it ever reaches the validator. It does not need the raised limit
-      // either -- the hook path deploys no ATA, which is the incidental work that pushes an
-      // ordinary v4 deposit past 200k CU. If this test ever does need more compute, it has to move
-      // to a versioned transaction with an address lookup table rather than gain an instruction.
-      .preInstructions([depositEd25519Instruction])
-      .signers([payer])
-      .rpc();
+      // A transfer-hook deposit exceeds the 1232-byte legacy limit, so it ships as a v0
+      // transaction with an address lookup table, as the settler sends it.
+      .preInstructions([depositComputeBudgetIx(), depositEd25519Instruction])
+      .transaction();
+    await sendV0WithLookupTable(depositTx.instructions, [payer]);
 
     // Verify deposit was created successfully
     const depositAccount = await escrowProgram.account.depositInfo.fetch(
@@ -1176,5 +1179,50 @@ describe("12 Token-2022 Integration", () => {
       );
       expect(info).to.equal(null);
     }
+  });
+
+  // 12.13 A mint extension outside the accepted set is rejected on allowMint
+  it("12.13 NonTransferable mint rejected on allowMint", async () => {
+    const { mint } = await setupToken2022MintAndFund(
+      escrowProgram,
+      provider,
+      provider.wallet.payer as Keypair,
+      { skipAllowlist: true, nonTransferable: true }
+    );
+    await expectRejected(() => allowMint(mint), /MintExtensionNotAllowed/);
+    const info = await provider.connection.getAccountInfo(
+      getMintFeeConfigAddress(mint, escrowProgram.programId)
+    );
+    expect(info).to.equal(null);
+  });
+
+  // A transaction marks its fee payer a signer whatever the client sets, and Token-2022 strips the
+  // signer flag only from the base transfer accounts, so a hook naming the payer would get to sign.
+  it("12.14 hooked deposit refused when the hook's list names a signer", async () => {
+    const authority = provider.wallet.payer as Keypair;
+    const { mint, mintFeeConfig, depositorAta, extraAccountMetaList } =
+      await setupTransferHookMint(
+        escrowProgram,
+        provider,
+        authority,
+        authority,
+        {
+          hookSigner: provider.wallet.publicKey,
+        }
+      );
+    await expectRejected(
+      () =>
+        openDeposit(
+          mint,
+          mintFeeConfig!,
+          depositorAta,
+          undefined,
+          TOKEN_2022_PROGRAM_ID,
+          buildTransferHookRemainingAccounts(extraAccountMetaList, [
+            provider.wallet.publicKey,
+          ])
+        ),
+      /HookAccountSignerNotAllowed/
+    );
   });
 });

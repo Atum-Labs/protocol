@@ -5,6 +5,7 @@ import {
   computeDepositHashV2,
   Pubkey,
   generateNonce,
+  signingBytes,
   type EscrowDomain,
 } from '@atum-labs/solana-escrow-encoding';
 
@@ -34,8 +35,8 @@ import {
   SOLANA_DIGEST,
   SOLANA_SIGNATURE,
   SVM_DESTINATION_COMMITMENT_VERSION,
-  verifyEd25519Strict,
 } from '../commitment-solana.js';
+import { solanaSignerMatches, solanaWitnessKind } from '../solana-witness.js';
 import {
   assertToken,
   assertPermitAmount,
@@ -170,9 +171,18 @@ export const solanaAdapter: ChainAdapter = {
   },
 
   async sign(signedMessage: SignedMessageInput, privateKey: string): Promise<string> {
-    const messageBytes = getBytes(signedMessage.message);
+    let toSign = getBytes(signedMessage.message);
+    const scheme = signedMessage.svmMessageScheme;
+    if (scheme !== undefined && scheme !== '') {
+      if (toSign.length !== 32) {
+        throw new Error(
+          `sender_auth: Solana message must be the 32-byte escrow hash, got ${toSign.length} bytes`,
+        );
+      }
+      toSign = signingBytes(scheme, solanaWitnessKind(signedMessage.message_prehash), toSign);
+    }
     const secretKey = secretKeyFromPrivate(privateKey);
-    const sig = nacl.sign.detached(messageBytes, secretKey);
+    const sig = nacl.sign.detached(toSign, secretKey);
     return '0x' + Buffer.from(sig).toString('hex');
   },
 
@@ -206,7 +216,7 @@ export const solanaAdapter: ChainAdapter = {
     if (typeof signed.signature !== 'string' || !SOLANA_SIGNATURE.test(signed.signature)) {
       throw new RecoveryFailedError('sender_auth: signature must be 0x-prefixed 64-byte hex');
     }
-    if (!verifyEd25519Strict(pub, getBytes(signed.message), getBytes(signed.signature))) {
+    if (!solanaSignerMatches(getBytes(signed.message), pub, getBytes(signed.signature))) {
       throw new SignerMismatchError('sender_auth: ed25519 verification failed');
     }
     return source.account;
@@ -223,7 +233,13 @@ export const solanaAdapter: ChainAdapter = {
     // ed25519 signature must verify against source.account (a delegate_signer, when present, must
     // be that same key).
     const read = readSolanaDepositForVerify(signed, solanaDomainOf(expected));
-    const refusal = bindSolanaDeposit(read.domain, read.root, signed, source.account);
+    const refusal = bindSolanaDeposit(
+      read.domain,
+      read.root,
+      signed,
+      source.account,
+      expected.svmMessageScheme,
+    );
     if (refusal !== undefined) throw commitmentRefusal('solana', refusal.outcome, refusal.detail);
     const f = read.record.fields;
     const destination = read.destination;
@@ -312,5 +328,6 @@ function solanaDomainOf(expected: VerifyExpectations): SolanaDomain | undefined 
     escrowProgramId: expected.escrowContract ?? '',
     clusterId: expected.svmSignatureClusterId ?? '',
     domainVersion: expected.svmSignatureDomainVersion,
+    messageScheme: expected.svmMessageScheme,
   };
 }
