@@ -170,7 +170,11 @@ type VerifyVPOptions struct {
 	// subject-holder binding and no date-window check. It is returned
 	// byte-identical in VPResult.PassThroughClaims, never in
 	// AttestedClaims, and it never satisfies RequiredVCTypes. The holder's
-	// signature over the whole presentation still covers it.
+	// signature over the presentation still covers it, but only the terms a
+	// loaded context defines: canonicalization drops a member no context
+	// defines, so such a member (a subject field the credential's contexts
+	// don't name, say) can change after signing without breaking the
+	// signature, and PassThroughClaims returns the changed bytes.
 	//
 	// The reserved set is ReservedVCTypes together with RequiredVCTypes, so
 	// a type the caller requires is always verified. Unset, it is
@@ -368,9 +372,12 @@ type VPResult struct {
 	// verifier passed through unchecked because it declares none of the
 	// reserved types (see VerifyVPOptions.ReservedVCTypes), in envelope
 	// order. Nothing about these VCs was verified beyond the holder's
-	// signature over the presentation: they are for the counterparties,
-	// who decide whom they trust as an issuer. Nil when there is no
-	// reserved set or every VC declares a reserved type.
+	// signature over the presentation, and that signature covers only the
+	// terms a loaded context defines: a member no context defines is not
+	// signed and may have changed since. They are for the counterparties,
+	// who decide whom they trust as an issuer and verify the credential's
+	// own proof themselves. Nil when there is no reserved set or every VC
+	// declares a reserved type.
 	PassThroughClaims []json.RawMessage
 
 	// IssuerTrustObservations records each VC whose issuer DID was

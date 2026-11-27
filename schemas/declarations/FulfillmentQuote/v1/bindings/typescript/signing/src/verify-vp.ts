@@ -128,7 +128,10 @@ export interface VerifyVPOptions {
   // verification, no subject-holder binding, no date-window check),
   // returned in VPResult.passThroughClaims and never in attestedClaims, and
   // it never satisfies requiredVCTypes. The holder's signature over the
-  // whole presentation still covers it.
+  // presentation still covers it, but only the terms a loaded context
+  // defines: canonicalization drops a member no context defines, so such a
+  // member can change after signing without breaking the signature, and
+  // passThroughClaims returns it changed.
   //
   // The reserved set is reservedVCTypes together with requiredVCTypes.
   // Undefined or empty, it is requiredVCTypes alone; when both are empty
@@ -229,7 +232,10 @@ export interface VPResult {
   // VCs passed through unchecked because they declare none of the reserved
   // types (see VerifyVPOptions.reservedVCTypes), in envelope order and as
   // they arrived. Nothing about them was verified beyond the holder's
-  // signature over the presentation. Empty when there is no reserved set or
+  // signature over the presentation, and that signature covers only the
+  // terms a loaded context defines: a member no context defines is not
+  // signed and may have changed since. The counterparties verify the
+  // credential's own proof themselves. Empty when there is no reserved set or
   // every VC declares a reserved type. Mirror of Go VPResult.PassThroughClaims.
   passThroughClaims: unknown[];
   // Count of VCs whose cryptographic proof was verified.
