@@ -3,7 +3,7 @@ module github.com/atum-labs/protocol/schemas/apis/error/v1/bindings/go-http
 go 1.25.0
 
 require (
-	github.com/atum-labs/protocol/schemas/apis/error/v1/bindings/go v0.2.0
+	github.com/atum-labs/protocol/schemas/apis/error/v1/bindings/go v0.2.1
 	github.com/gin-gonic/gin v1.10.1
 )
 
