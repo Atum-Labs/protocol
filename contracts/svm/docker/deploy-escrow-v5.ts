@@ -122,7 +122,8 @@ async function main(): Promise<void> {
     };
     if ((await connection.getAccountInfo(mintFeeConfig)) === null) {
       await program.methods
-        .allowMint()
+        // Classic SPL mints, which have no permanent delegate.
+        .allowMint(PublicKey.default)
         .accountsPartial({ ...accounts, systemProgram: SystemProgram.programId })
         .rpc();
     }

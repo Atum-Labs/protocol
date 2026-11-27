@@ -41,6 +41,7 @@ import {
   getAssociatedTokenAddressSync,
   getExtensionTypes,
   getOrCreateAssociatedTokenAccount,
+  getPermanentDelegate,
   getTransferFeeConfig,
   getTransferHook,
   mintToChecked,
@@ -292,6 +293,13 @@ describe("15 Real Token Compatibility", () => {
           [...getExtensionTypes(parsed.tlvData)].sort((a, b) => a - b)
         ).to.deep.equal(row.extensions);
 
+        // A cleared delegate reads as the default key, which the manifest writes as null.
+        const delegate =
+          getPermanentDelegate(parsed)?.delegate.toBase58() ?? null;
+        expect(
+          delegate === PublicKey.default.toBase58() ? null : delegate
+        ).to.equal(row.permanentDelegate);
+
         const hook = getTransferHook(parsed);
         if (hook) {
           expect(hook.programId.toBase58()).to.equal(
@@ -308,17 +316,38 @@ describe("15 Real Token Compatibility", () => {
       });
 
       it(`15.${row.name}.b allowMint: ${row.expectAllowMint}`, async () => {
-        const allowMint = escrowProgram.methods
-          .allowMint()
-          .accountsPartial({
-            tokenConfigAuthority: provider.wallet.publicKey,
-            protocolConfig,
-            mintAccount: mint,
-            mintFeeConfig,
-            tokenProgram,
-            systemProgram: SystemProgram.programId,
-          })
-          .rpc();
+        const permanentDelegate = row.permanentDelegate
+          ? new PublicKey(row.permanentDelegate)
+          : PublicKey.default;
+        const allowMintWith = (expected: PublicKey) =>
+          escrowProgram.methods
+            .allowMint(expected)
+            .accountsPartial({
+              tokenConfigAuthority: provider.wallet.publicKey,
+              protocolConfig,
+              mintAccount: mint,
+              mintFeeConfig,
+              tokenProgram,
+              systemProgram: SystemProgram.programId,
+            })
+            .rpc();
+
+        if (allowed && row.permanentDelegate) {
+          // The real delegate is pinned only when it is the key the caller expected.
+          let refused: any;
+          try {
+            await allowMintWith(PublicKey.default);
+          } catch (err) {
+            refused = err;
+          }
+          expect(refused, "allowMint should fail").to.exist;
+          expect(refused.error?.errorCode?.code).to.equal(
+            "PermanentDelegateChanged"
+          );
+          expect(await provider.connection.getAccountInfo(mintFeeConfig)).to.be
+            .null;
+        }
+        const allowMint = allowMintWith(permanentDelegate);
 
         if (allowed) {
           await allowMint;
@@ -326,6 +355,9 @@ describe("15 Real Token Compatibility", () => {
             mintFeeConfig
           );
           expect(config.mint.toBase58()).to.equal(mint.toBase58());
+          expect(config.permanentDelegate.toBase58()).to.equal(
+            permanentDelegate.toBase58()
+          );
           return;
         }
         try {

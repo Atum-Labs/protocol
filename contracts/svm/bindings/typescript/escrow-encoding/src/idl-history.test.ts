@@ -23,7 +23,7 @@ describe('idl-history/v5', () => {
 
   it('escrow.json is the frozen v5 IDL', () => {
     expect(createHash('sha256').update(raw).digest('hex')).toBe(
-      '33319cb797036d9e38b06403212a9fc11800ed4462241b2d5930f2f87c49e17d',
+      'edc78b3daab60088ba29c96a48423b6d4d512e5e6e13ac1eeda58e410bbf732d',
     );
   });
 

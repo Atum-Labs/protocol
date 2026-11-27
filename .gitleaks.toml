@@ -208,10 +208,18 @@ regexes = [
   '''A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo''',
   '''4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU''',
   '''cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN''',
-  # Mainnet PYUSD and USDG Token-2022 mints, the real-mint fixtures in
-  # contracts/svm/source/tests/fixtures/real-mints/.
+  # Mainnet PYUSD, USDG, GBPA and OUSD Token-2022 mints and their permanent
+  # delegates, in the real-mint fixtures in contracts/svm/source/tests/fixtures/real-mints/
+  # and the escrow mint.rs unit tests.
   '''2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo''',
   '''2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH''',
+  '''DYoCmA91VE8REbWNw3kM736PN7vv97qc2jr5wmUbuNtZ''',
+  '''ousd2mJsPEckLHcSCDxyKD7NDGARZcfLbDZkKiatYHB''',
+  '''2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk''',
+  '''AkRcEoab3ECQ4GoDgVb9jE9wVMVeSksR3TwGCmdNEtB8''',
+  '''Aj2gxCSQ7A7eTnUL2VnyT3KQa79AcZi5x15rPRSnw6RA''',
+  # AUSD's permanent delegate, in the escrow mint.rs unit tests.
+  '''6HAFLav8Qn2QfeSRVPLwtmPKHMm8f93uWSQMp2n1MyoU''',
   # Solana transaction signatures share the 87-88 character base58 shape of a
   # secret key. The two quoted in the veri-fill conformance vectors, by value.
   '''5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW''',

@@ -69,6 +69,16 @@ pub struct DefaultAdminDelayUpdated {
 #[event]
 pub struct MintAllowed {
     pub mint: Pubkey,
+    /// The pinned permanent delegate, `Pubkey::default()` when the mint has none.
+    pub permanent_delegate: Pubkey,
+}
+
+/// `pin_mint_permanent_delegate` replaced the stored permanent delegate.
+#[event]
+pub struct MintPermanentDelegatePinned {
+    pub mint: Pubkey,
+    pub previous: Pubkey,
+    pub delegate: Pubkey,
 }
 
 #[event]

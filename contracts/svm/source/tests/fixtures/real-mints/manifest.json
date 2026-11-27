@@ -6,6 +6,7 @@
     "tokenProgram": "spl",
     "decimals": 6,
     "extensions": [],
+    "permanentDelegate": null,
     "expectAllowMint": "ok"
   },
   {
@@ -15,6 +16,7 @@
     "tokenProgram": "spl",
     "decimals": 6,
     "extensions": [],
+    "permanentDelegate": null,
     "expectAllowMint": "ok"
   },
   {
@@ -24,6 +26,7 @@
     "tokenProgram": "spl",
     "decimals": 6,
     "extensions": [],
+    "permanentDelegate": null,
     "expectAllowMint": "ok"
   },
   {
@@ -33,7 +36,8 @@
     "tokenProgram": "token2022",
     "decimals": 6,
     "extensions": [1, 3, 4, 12, 14, 16, 18, 19],
-    "expectAllowMint": "PermanentDelegateMintNotAllowed"
+    "permanentDelegate": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+    "expectAllowMint": "ok"
   },
   {
     "name": "mainnet_usdg",
@@ -42,6 +46,27 @@
     "tokenProgram": "token2022",
     "decimals": 6,
     "extensions": [1, 3, 4, 12, 14, 16, 18, 19],
-    "expectAllowMint": "PermanentDelegateMintNotAllowed"
+    "permanentDelegate": "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+    "expectAllowMint": "ok"
+  },
+  {
+    "name": "mainnet_gbpa",
+    "cluster": "mainnet-beta",
+    "mint": "DYoCmA91VE8REbWNw3kM736PN7vv97qc2jr5wmUbuNtZ",
+    "tokenProgram": "token2022",
+    "decimals": 6,
+    "extensions": [1, 3, 4, 12, 14, 16, 18, 19, 26],
+    "permanentDelegate": "AkRcEoab3ECQ4GoDgVb9jE9wVMVeSksR3TwGCmdNEtB8",
+    "expectAllowMint": "ok"
+  },
+  {
+    "name": "mainnet_ousd",
+    "cluster": "mainnet-beta",
+    "mint": "ousd2mJsPEckLHcSCDxyKD7NDGARZcfLbDZkKiatYHB",
+    "tokenProgram": "token2022",
+    "decimals": 6,
+    "extensions": [3, 4, 6, 12, 14, 18, 19, 26],
+    "permanentDelegate": "Aj2gxCSQ7A7eTnUL2VnyT3KQa79AcZi5x15rPRSnw6RA",
+    "expectAllowMint": "ok"
   }
 ]

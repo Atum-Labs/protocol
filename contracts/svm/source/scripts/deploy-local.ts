@@ -693,7 +693,8 @@ async function allowMints(
     const existing = await connection.getAccountInfo(mintFeeConfig);
     if (existing === null) {
       await escrowProgram.methods
-        .allowMint()
+        // Classic SPL mints, which have no permanent delegate.
+        .allowMint(PublicKey.default)
         .accountsPartial({
           tokenConfigAuthority: authority.publicKey,
           protocolConfig,

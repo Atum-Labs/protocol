@@ -16,7 +16,7 @@ use crate::events::{Deposited, Refunded, Released, Reserved};
 use crate::state::{DepositInfo, EscrowDelegate, MintFeeConfig, ProtocolConfig, ReplayBucket};
 use crate::utils::{
     fees::{compute_fee, rescale_reserved_fee},
-    mint::{accepts_plain_credit, check_escrowable_mint},
+    mint::{accepts_plain_credit, check_escrowable_mint, check_pinned_delegate},
     replay::check_replay,
     signatures::*,
     transfer,
@@ -383,9 +383,9 @@ pub fn deposit<'a>(
         delegate.allowed_mint,
         ErrorCode::InvalidMint
     );
-    // Catches an extension outside the accepted set, a permanent delegate, and a fee scheduled for a
-    // later epoch, which NonExactTransfer below cannot see yet
-    check_escrowable_mint(&ctx.accounts.mint.to_account_info())?;
+    // Catches an extension outside the accepted set and a fee scheduled for a later epoch, which
+    // NonExactTransfer below cannot see yet. The live delegate is compared with the pin in step 5.
+    let live_delegate = check_escrowable_mint(&ctx.accounts.mint.to_account_info())?;
 
     // 3. Replay Check (time window, deadline gating, and duplicate)
     check_replay(
@@ -430,6 +430,8 @@ pub fn deposit<'a>(
     let mint_fee_config_data = mint_fee_config_info.try_borrow_data()?;
     let mint_fee_config = MintFeeConfig::try_deserialize(&mut &mint_fee_config_data[..])
         .map_err(|_| ErrorCode::MintNotAllowed)?;
+    // After the allowlist check, so an unlisted mint still reports MintNotAllowed.
+    check_pinned_delegate(live_delegate, &mint_fee_config.permanent_delegate)?;
     let mint_decimals = ctx.accounts.mint.decimals;
     let fee_amount = compute_fee(
         amount,

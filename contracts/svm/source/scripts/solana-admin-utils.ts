@@ -24,6 +24,9 @@ export type VerifiedProgramInfo = {
   protocolConfig: PublicKey;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   idl: any;
+  // The IDL stored with the deployed program, which describes what the live program accepts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onchainIdl: any;
 };
 
 function inferClusterHintFromRpcUrl(rpcUrl: string): string | null {
@@ -240,6 +243,7 @@ export async function loadVerifiedProgramInfo(args: {
     programId,
     protocolConfig: getProtocolConfigAddress(programId),
     idl,
+    onchainIdl,
   };
 }
 

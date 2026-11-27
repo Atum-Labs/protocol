@@ -149,8 +149,8 @@ pub mod escrow {
     }
 
     // Mint configuration instructions
-    pub fn allow_mint(ctx: Context<AllowMint>) -> Result<()> {
-        instructions::mint_config::allow_mint(ctx)
+    pub fn allow_mint(ctx: Context<AllowMint>, expected_permanent_delegate: Pubkey) -> Result<()> {
+        instructions::mint_config::allow_mint(ctx, expected_permanent_delegate)
     }
 
     pub fn disallow_mint(ctx: Context<DisallowMint>) -> Result<()> {
@@ -168,5 +168,12 @@ pub mod escrow {
 
     pub fn clear_mint_fee_config(ctx: Context<ClearMintFeeConfig>) -> Result<()> {
         instructions::mint_config::clear_mint_fee_config(ctx)
+    }
+
+    pub fn pin_mint_permanent_delegate(
+        ctx: Context<SetMintFeeConfig>,
+        expected_permanent_delegate: Pubkey,
+    ) -> Result<()> {
+        instructions::mint_config::pin_mint_permanent_delegate(ctx, expected_permanent_delegate)
     }
 }

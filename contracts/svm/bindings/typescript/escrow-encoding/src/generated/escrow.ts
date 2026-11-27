@@ -152,7 +152,12 @@ export type Escrow = {
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "expectedPermanentDelegate",
+          "type": "pubkey"
+        }
+      ]
     },
     {
       "name": "beginDefaultAdminTransfer",
@@ -1062,6 +1067,100 @@ export type Escrow = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "pinMintPermanentDelegate",
+      "discriminator": [
+        176,
+        167,
+        38,
+        30,
+        184,
+        17,
+        189,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "tokenConfigAuthority",
+          "signer": true
+        },
+        {
+          "name": "protocolConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mintAccount",
+          "docs": [
+            "The mint (for Token-2022 validation)"
+          ]
+        },
+        {
+          "name": "mintFeeConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  102,
+                  101,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint_fee_config.mint",
+                "account": "mintFeeConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "expectedPermanentDelegate",
+          "type": "pubkey"
+        }
+      ]
     },
     {
       "name": "refund",
@@ -2437,6 +2536,19 @@ export type Escrow = {
       ]
     },
     {
+      "name": "mintPermanentDelegatePinned",
+      "discriminator": [
+        171,
+        170,
+        3,
+        191,
+        158,
+        252,
+        5,
+        232
+      ]
+    },
+    {
       "name": "paused",
       "discriminator": [
         172,
@@ -2819,6 +2931,11 @@ export type Escrow = {
       "code": 6052,
       "name": "hookAccountSignerNotAllowed",
       "msg": "A transfer hook account other than the transfer authority is a signer"
+    },
+    {
+      "code": 6053,
+      "name": "permanentDelegateChanged",
+      "msg": "The mint's permanent delegate is not the pinned key"
     }
   ],
   "types": [
@@ -3087,6 +3204,13 @@ export type Escrow = {
           {
             "name": "mint",
             "type": "pubkey"
+          },
+          {
+            "name": "permanentDelegate",
+            "docs": [
+              "The pinned permanent delegate, `Pubkey::default()` when the mint has none."
+            ],
+            "type": "pubkey"
           }
         ]
       }
@@ -3140,6 +3264,15 @@ export type Escrow = {
               "Maximum fee in 6-decimal normalized units (0 = disabled)"
             ],
             "type": "u64"
+          },
+          {
+            "name": "permanentDelegate",
+            "docs": [
+              "The mint's permanent delegate reviewed at `allow_mint` or `pin_mint_permanent_delegate`, or",
+              "`Pubkey::default()` when it had none. A deposit is refused while the live delegate is another",
+              "key. A live delegate is never the default key, so default means none or cleared."
+            ],
+            "type": "pubkey"
           }
         ]
       }
@@ -3176,6 +3309,29 @@ export type Escrow = {
           {
             "name": "maxFee6",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "mintPermanentDelegatePinned",
+      "docs": [
+        "`pin_mint_permanent_delegate` replaced the stored permanent delegate."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "previous",
+            "type": "pubkey"
+          },
+          {
+            "name": "delegate",
+            "type": "pubkey"
           }
         ]
       }

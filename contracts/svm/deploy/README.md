@@ -318,7 +318,8 @@ per wallet and mint, in step 10, and only for a wallet that moves to v5. Extendi
    cluster, and without v5's `protocol_config` and `mint_fee_config` in it a v0 deposit plus reserve
    overruns 1232 B.
 5. **Allow the mints.** Per mint, `allow_mint` and `set_mint_fee_config` with the v4 fees
-   (Step 6c, `configure-token.ts`).
+   (Step 6c, `configure-token.ts`). For a Token-2022 mint with a permanent delegate, review the key
+   and pass it as `--permanent-delegate`. Rerunning with a new reviewed key re-pins it.
 6. **Turnkey program allowlists.** Add the v5 program id beside v4 to `allowedPrograms` in each
    settler sub-org config for the cluster, and to `solanaEscrowProgramId` (it takes a list) in each
    sender sub-org config. Then run `apply-policies --dry-run`, `apply-policies --update` and
@@ -1514,13 +1515,17 @@ npx ts-node scripts/configure-token.ts \
   --rpc "$SOLANA_RPC_URL"
 ```
 
+Add `--permanent-delegate <reviewed key>` for a Token-2022 mint with a permanent delegate.
+
 Verify the fee config landed:
 
 ```bash
 npx ts-node scripts/read-state.ts --rpc "$SOLANA_RPC_URL" | grep -A6 -i 'mint\|fee'
 ```
 
-Safe to re-run: it skips `allowMint` when the mint is already allowlisted and only updates fees —
+Safe to re-run: it skips `allowMint` when the mint is already allowlisted, re-pins the permanent
+delegate when `--permanent-delegate` differs from the pinned key, and updates fees. On a v5 escrow a
+mint with a permanent delegate needs `--permanent-delegate` on every run —
 unlike the EVM/TVM pair, where allow and set-fee are exact inverses and the wrong one always reverts.
 
 > **Only USDC is seedable on devnet.** `config/tokens/testnet.yaml:89-95` lists two mints for

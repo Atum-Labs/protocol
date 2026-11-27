@@ -154,9 +154,8 @@ pub enum ErrorCode {
     #[msg("Depositor token account is not the depositor's associated token account")]
     InvalidDepositorAta,
 
-    /// The mint carries Token-2022's PermanentDelegate extension. Its delegate can transfer or burn
-    /// from any token account of the mint, the escrow's included, without the escrow's say-so, so a
-    /// credited deposit could be emptied and neither release nor refund could pay it out.
+    /// Reserved, not raised: a permanent delegate is pinned instead, see `PermanentDelegateChanged`.
+    /// Kept so the codes after it do not move.
     #[msg("Mints with a permanent delegate are not allowed")]
     PermanentDelegateMintNotAllowed,
 
@@ -169,4 +168,11 @@ pub enum ErrorCode {
     /// would receive it able to sign, so a hook naming the fee payer could spend from it.
     #[msg("A transfer hook account other than the transfer authority is a signer")]
     HookAccountSignerNotAllowed,
+
+    /// The mint's live permanent delegate is not the key pinned for it, or not the key the caller
+    /// expected. Its delegate can transfer or burn from the escrow's token accounts, so deposits stop
+    /// until `token_config_authority` reviews the new key and runs `pin_mint_permanent_delegate`, or the
+    /// issuer clears the delegate.
+    #[msg("The mint's permanent delegate is not the pinned key")]
+    PermanentDelegateChanged,
 }

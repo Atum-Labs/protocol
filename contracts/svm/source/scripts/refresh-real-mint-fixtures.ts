@@ -5,13 +5,13 @@
  * local validator through the [[test.validator.account]] blocks in Anchor.toml.
  *
  * For every row of tests/fixtures/real-mints/manifest.json it fetches the live mint, refuses to
- * write a fixture that no longer matches the row (owner, decimals, exact extension set, a set
- * transfer hook program, a non-zero older or newer transfer fee), then rewrites ONLY the
+ * write a fixture that no longer matches the row (owner, decimals, exact extension set, permanent
+ * delegate, a set transfer hook program, a non-zero older or newer transfer fee), then rewrites ONLY the
  * mint_authority COption (bytes 0..36) to the fixture authority so the tests can mint. Everything
  * else (supply, freeze authority, every extension) stays byte-identical to the chain.
  *
  * Usage:
- *   pnpm fixtures:real-mints [--mainnet-rpc <url>] [--devnet-rpc <url>]
+ *   pnpm fixtures:real-mints [--mainnet-rpc <url>] [--devnet-rpc <url>] [--only <name,...>]
  */
 
 import { createHash } from "node:crypto";
@@ -24,6 +24,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   getExtensionTypes,
+  getPermanentDelegate,
   getTransferFeeConfig,
   getTransferHook,
   unpackMint,
@@ -53,22 +54,30 @@ interface RealMintRow {
   tokenProgram: "spl" | "token2022";
   decimals: number;
   extensions: number[];
+  // The live permanent delegate, null when the mint has none or it was cleared.
+  permanentDelegate: string | null;
   expectAllowMint: string;
 }
 
-function parseArgs(): Record<RealMintRow["cluster"], string> {
+function parseArgs(): {
+  urls: Record<RealMintRow["cluster"], string>;
+  only: string[] | null;
+} {
   const args = process.argv.slice(2);
   const urls = {
     "mainnet-beta": "https://api.mainnet-beta.solana.com",
     devnet: "https://api.devnet.solana.com",
   };
+  let only: string[] | null = null;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--mainnet-rpc" && args[i + 1])
       urls["mainnet-beta"] = args[++i]!;
     else if (args[i] === "--devnet-rpc" && args[i + 1])
       urls.devnet = args[++i]!;
+    else if (args[i] === "--only" && args[i + 1])
+      only = args[++i]!.split(",").map((name) => name.trim());
   }
-  return urls;
+  return { urls, only };
 }
 
 async function refreshRow(
@@ -105,6 +114,16 @@ async function refreshRow(
       `${row.name}: extensions ${JSON.stringify(
         extensions
       )}, manifest says ${JSON.stringify(row.extensions)}`
+    );
+  }
+
+  // A changed delegate is a re-review, not a refresh: the suite pins the manifest key.
+  const delegate = getPermanentDelegate(parsed)?.delegate.toBase58() ?? null;
+  const liveDelegate =
+    delegate === PublicKey.default.toBase58() ? null : delegate;
+  if (liveDelegate !== row.permanentDelegate) {
+    throw new Error(
+      `${row.name}: permanent delegate ${liveDelegate}, manifest says ${row.permanentDelegate}`
     );
   }
 
@@ -161,12 +180,19 @@ async function refreshRow(
 }
 
 async function main(): Promise<void> {
-  const urls = parseArgs();
+  const { urls, only } = parseArgs();
   const rows = JSON.parse(
     readFileSync(path.join(FIXTURES_DIR, "manifest.json"), "utf8")
   ) as RealMintRow[];
 
+  const unknown = (only ?? []).filter(
+    (name) => !rows.some((row) => row.name === name)
+  );
+  if (unknown.length) {
+    throw new Error(`--only names no manifest row: ${unknown.join(", ")}`);
+  }
   for (const row of rows) {
+    if (only && !only.includes(row.name)) continue;
     await refreshRow(row, new Connection(urls[row.cluster], "confirmed"));
   }
 }

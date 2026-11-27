@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use spl_token_2022::extension::confidential_transfer::ConfidentialTransferAccount;
+use spl_token_2022::extension::permanent_delegate::PermanentDelegate;
 use spl_token_2022::extension::transfer_fee::{TransferFee, TransferFeeConfig};
 use spl_token_2022::extension::{BaseStateWithExtensions, ExtensionType, StateWithExtensions};
 use spl_token_2022::state::{Account as Account2022, Mint as Mint2022};
@@ -40,42 +41,60 @@ fn can_charge(fee: &TransferFee) -> bool {
     u16::from(fee.transfer_fee_basis_points) != 0 && u64::from(fee.maximum_fee) != 0
 }
 
-/// What the escrow can hold: a mint whose extensions are all accepted, whose issuer has no permanent
-/// delegate over the escrow's token account, and whose fee can never charge.
-pub fn check_escrowable_mint(mint: &AccountInfo) -> Result<()> {
+/// What the escrow can hold: a mint whose extensions are all accepted and whose fee can never
+/// charge. Returns the mint's live permanent delegate, `None` when the mint has no PermanentDelegate
+/// extension or its issuer cleared the delegate.
+pub fn check_escrowable_mint(mint: &AccountInfo) -> Result<Option<Pubkey>> {
     check_escrowable_mint_data(&mint.try_borrow_data()?, Clock::get()?.epoch)
 }
 
-fn check_escrowable_mint_data(data: &[u8], epoch: u64) -> Result<()> {
-    // One parse and one walk of the extension list serve every check. This runs on every deposit,
-    // and a hooked deposit has almost no compute headroom. Fail closed: a mint or extension list
-    // this crate cannot read is never treated as safe.
+fn check_escrowable_mint_data(data: &[u8], epoch: u64) -> Result<Option<Pubkey>> {
+    // One parse serves every check, and each extension read rescans the short TLV list. This runs
+    // on every deposit, and a hooked deposit has almost no compute headroom. Fail closed: a mint or
+    // extension list this crate cannot read is never treated as safe.
     let state = StateWithExtensions::<Mint2022>::unpack(data)?;
     let types = state.get_extension_types()?;
-    let mut has_permanent_delegate = false;
     for ext in &types {
-        has_permanent_delegate |= check_mint_extension(*ext)?;
+        check_mint_extension(*ext)?;
     }
-    // Checked after the walk, so a refused extension is reported whatever its place in the list.
-    require!(
-        !has_permanent_delegate,
-        ErrorCode::PermanentDelegateMintNotAllowed
-    );
-    check_fee_in_force(&state, &types, epoch)
+    check_fee_in_force(&state, &types, epoch)?;
+    if !types.contains(&ExtensionType::PermanentDelegate) {
+        return Ok(None);
+    }
+    // An entry that is not exactly one key fails here, so an unreadable delegate is never `None`.
+    let delegate = state.get_extension::<PermanentDelegate>()?.delegate;
+    Ok(Option::<Pubkey>::from(delegate))
 }
 
-/// Deny by default. Returns whether the extension is a permanent delegate, which is refused after the
-/// walk. No wildcard arm, so a crate bump that adds a type does not build until it is reviewed here.
-fn check_mint_extension(ext: ExtensionType) -> Result<bool> {
+/// Deposit rule: refuses a live permanent delegate other than the pinned key. A cleared delegate
+/// passes, since Token-2022 cannot set one again, so no key holds the power.
+pub fn check_pinned_delegate(live: Option<Pubkey>, pinned: &Pubkey) -> Result<()> {
+    if let Some(live) = live {
+        require_keys_eq!(live, *pinned, ErrorCode::PermanentDelegateChanged);
+    }
+    Ok(())
+}
+
+/// Pin rule: the live delegate, as stored (`Pubkey::default()` for none or cleared), only when it
+/// is exactly the key the caller reviewed. Stricter than the deposit rule, so a pin always records
+/// what is live.
+pub fn check_expected_delegate(live: Option<Pubkey>, expected: Pubkey) -> Result<Pubkey> {
+    let live = live.unwrap_or_default();
+    require_keys_eq!(live, expected, ErrorCode::PermanentDelegateChanged);
+    Ok(live)
+}
+
+/// Deny by default. No wildcard arm, so a crate bump that adds a type does not build until it is
+/// reviewed here.
+fn check_mint_extension(ext: ExtensionType) -> Result<()> {
     use ExtensionType::*;
     match ext {
         // Accepted issuer powers, with the risk of each recorded in docs/architecture/security.md.
-        // A TransferFeeConfig passes here and is then checked by `check_fee_in_force`.
+        // A TransferFeeConfig passes here and is then checked by `check_fee_in_force`. A
+        // PermanentDelegate is pinned by key at `allow_mint` and compared on every deposit.
         TransferFeeConfig | TransferHook | Pausable | MintCloseAuthority | DefaultAccountState
         | ConfidentialTransferMint | ConfidentialTransferFeeConfig | MetadataPointer
-        | TokenMetadata => Ok(false),
-        // Can transfer or burn from the escrow's token account without `DepositInfo.amount` moving.
-        PermanentDelegate => Ok(true),
+        | TokenMetadata | PermanentDelegate => Ok(()),
         Uninitialized | NonTransferable | InterestBearingConfig | GroupPointer | TokenGroup
         | GroupMemberPointer | TokenGroupMember | ConfidentialMintBurn | ScaledUiAmount
         // Account extensions, which Token-2022 never writes on a mint.
@@ -86,6 +105,7 @@ fn check_mint_extension(ext: ExtensionType) -> Result<bool> {
         }
     }
 }
+
 /// Whether a plain transfer_checked into this token account can succeed once a memo precedes it.
 /// The depositor controls these states on their own account, so release must not depend on them.
 pub fn accepts_plain_credit(token_account: &AccountInfo) -> Result<bool> {
@@ -115,7 +135,6 @@ mod tests {
     use super::*;
     use anchor_lang::solana_program::program_pack::Pack;
     use spl_token_2022::extension::memo_transfer::MemoTransfer;
-    use spl_token_2022::extension::permanent_delegate::PermanentDelegate;
     use spl_token_2022::extension::{
         AccountType, BaseStateWithExtensionsMut, Extension, StateWithExtensionsMut,
     };
@@ -204,16 +223,12 @@ mod tests {
         data
     }
 
-    fn is_delegate_rejection(result: Result<()>) -> bool {
-        result.unwrap_err() == ErrorCode::PermanentDelegateMintNotAllowed.into()
-    }
-
-    fn is_extension_rejection(result: Result<()>) -> bool {
+    fn is_extension_rejection<T: std::fmt::Debug>(result: Result<T>) -> bool {
         result.unwrap_err() == ErrorCode::MintExtensionNotAllowed.into()
     }
 
     // The policy, restated so a change to `check_mint_extension` has to change a test too.
-    const ACCEPTED: [ExtensionType; 9] = [
+    const ACCEPTED: [ExtensionType; 10] = [
         ExtensionType::TransferFeeConfig,
         ExtensionType::TransferHook,
         ExtensionType::Pausable,
@@ -223,10 +238,12 @@ mod tests {
         ExtensionType::ConfidentialTransferFeeConfig,
         ExtensionType::MetadataPointer,
         ExtensionType::TokenMetadata,
+        ExtensionType::PermanentDelegate,
     ];
 
     // A mint listing `extensions` in order. The extension walk reads only type and length, so every
-    // entry is empty except TransferFeeConfig, which the fee check reads and gets the given fee.
+    // entry is empty except TransferFeeConfig, which the fee check reads and gets the given fee, and
+    // PermanentDelegate, which is read and gets a cleared (all zero) delegate.
     fn mint_listing(extensions: &[ExtensionType], transfer_fee: TransferFee) -> Vec<u8> {
         let mut data = legacy_mint();
         data.resize(Mint2022::LEN.max(165), 0);
@@ -234,6 +251,10 @@ mod tests {
         for ext in extensions {
             if *ext == ExtensionType::TransferFeeConfig {
                 data.extend_from_slice(&fee_mint(transfer_fee, transfer_fee)[166..]);
+            } else if *ext == ExtensionType::PermanentDelegate {
+                data.extend_from_slice(&u16::from(*ext).to_le_bytes());
+                data.extend_from_slice(&32u16.to_le_bytes());
+                data.extend_from_slice(&[0u8; 32]);
             } else {
                 data.extend_from_slice(&u16::from(*ext).to_le_bytes());
                 data.extend_from_slice(&0u16.to_le_bytes());
@@ -261,7 +282,7 @@ mod tests {
             let Ok(ext) = ExtensionType::try_from(n) else {
                 continue;
             };
-            if ACCEPTED.contains(&ext) || ext == ExtensionType::PermanentDelegate {
+            if ACCEPTED.contains(&ext) {
                 continue;
             }
             let data = mint_listing(&[ext], fee(0, 0));
@@ -271,14 +292,14 @@ mod tests {
             );
             refused += 1;
         }
-        // 27 known types past Uninitialized, less the 9 accepted and the permanent delegate.
+        // 27 known types past Uninitialized, less the 10 accepted.
         assert_eq!(refused, 17);
     }
 
     #[test]
     fn accepts_every_accepted_extension_together() {
         let data = mint_listing(&ACCEPTED, fee(0, 0));
-        assert!(check_escrowable_mint_data(&data, LATE).is_ok());
+        assert_eq!(check_escrowable_mint_data(&data, LATE).unwrap(), None);
         let charging = mint_listing(&ACCEPTED, fee(100, 1_000_000));
         assert!(is_fee_rejection(check_escrowable_mint_data(
             &charging, LATE
@@ -298,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn reports_a_refused_extension_listed_after_a_permanent_delegate() {
+    fn refuses_a_refused_extension_next_to_a_permanent_delegate() {
         let data = mint_listing(
             &[
                 ExtensionType::MintCloseAuthority,
@@ -329,27 +350,40 @@ mod tests {
     }
 
     #[test]
-    fn mainnet_stablecoin_mints_are_refused_only_for_their_permanent_delegate() {
-        for (name, data) in [
-            ("PYUSD", &include_bytes!("fixtures/pyusd.bin")[..]),
-            ("USDG", &include_bytes!("fixtures/usdg.bin")[..]),
-            ("AUSD", &include_bytes!("fixtures/ausd.bin")[..]),
-            ("GBPA", &include_bytes!("fixtures/gbpa.bin")[..]),
+    fn mainnet_stablecoin_mints_are_accepted_with_their_permanent_delegate() {
+        // Delegates read from Solana mainnet on 2026-11-25, matching these fixtures.
+        for (name, data, delegate) in [
+            (
+                "PYUSD",
+                &include_bytes!("fixtures/pyusd.bin")[..],
+                "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+            ),
+            (
+                "USDG",
+                &include_bytes!("fixtures/usdg.bin")[..],
+                "2apBGMsS6ti9RyF5TwQTDswXBWskiJP2LD4cUEDqYJjk",
+            ),
+            (
+                "AUSD",
+                &include_bytes!("fixtures/ausd.bin")[..],
+                "6HAFLav8Qn2QfeSRVPLwtmPKHMm8f93uWSQMp2n1MyoU",
+            ),
+            (
+                "GBPA",
+                &include_bytes!("fixtures/gbpa.bin")[..],
+                "AkRcEoab3ECQ4GoDgVb9jE9wVMVeSksR3TwGCmdNEtB8",
+            ),
             // DefaultAccountState and Pausable, and no TransferFeeConfig.
-            ("OUSD", &include_bytes!("fixtures/ousd.bin")[..]),
+            (
+                "OUSD",
+                &include_bytes!("fixtures/ousd.bin")[..],
+                "Aj2gxCSQ7A7eTnUL2VnyT3KQa79AcZi5x15rPRSnw6RA",
+            ),
         ] {
-            assert!(
-                is_delegate_rejection(check_escrowable_mint_data(data, LATE)),
-                "{name}"
-            );
-            // Relabel the delegate entry as a second MintCloseAuthority: every other extension of
-            // the real mint then passes, so accepting the permanent delegate admits the mint.
-            let mut relabelled = data.to_vec();
-            let at = tlv_offset(&relabelled, ExtensionType::PermanentDelegate);
-            relabelled[at..at + 2]
-                .copy_from_slice(&u16::from(ExtensionType::MintCloseAuthority).to_le_bytes());
-            assert!(
-                check_escrowable_mint_data(&relabelled, LATE).is_ok(),
+            let expected: Pubkey = delegate.parse().unwrap();
+            assert_eq!(
+                check_escrowable_mint_data(data, LATE).unwrap(),
+                Some(expected),
                 "{name}"
             );
         }
@@ -357,58 +391,146 @@ mod tests {
             ("USDC", &include_bytes!("fixtures/usdc.bin")[..]),
             ("USDT", &include_bytes!("fixtures/usdt.bin")[..]),
         ] {
-            assert!(check_escrowable_mint_data(data, LATE).is_ok(), "{name}");
+            assert_eq!(
+                check_escrowable_mint_data(data, LATE).unwrap(),
+                None,
+                "{name}"
+            );
         }
     }
 
     #[test]
-    fn refuses_a_mint_with_a_permanent_delegate() {
-        let data = mint_with(
-            &[ExtensionType::PermanentDelegate],
-            Some(Pubkey::new_unique()),
+    fn returns_the_permanent_delegate_of_a_mint() {
+        let delegate = Pubkey::new_unique();
+        let data = mint_with(&[ExtensionType::PermanentDelegate], Some(delegate));
+        assert_eq!(
+            check_escrowable_mint_data(&data, LATE).unwrap(),
+            Some(delegate)
         );
-        assert!(is_delegate_rejection(check_escrowable_mint_data(
-            &data, LATE
-        )));
     }
 
     #[test]
-    fn refuses_a_permanent_delegate_on_a_mint_whose_fees_compute_to_zero() {
+    fn returns_the_permanent_delegate_on_a_mint_whose_fees_compute_to_zero() {
         // The shape of PYUSD and USDG: a zero-fee TransferFeeConfig next to a PermanentDelegate.
+        let delegate = Pubkey::new_unique();
         let data = mint_with(
             &[
                 ExtensionType::TransferFeeConfig,
                 ExtensionType::PermanentDelegate,
             ],
-            Some(Pubkey::new_unique()),
+            Some(delegate),
         );
-        assert!(check_zero_transfer_fee_data(&data, LATE).is_ok());
-        assert!(is_delegate_rejection(check_escrowable_mint_data(
-            &data, LATE
-        )));
+        assert_eq!(
+            check_escrowable_mint_data(&data, LATE).unwrap(),
+            Some(delegate)
+        );
     }
 
     #[test]
-    fn refuses_a_permanent_delegate_extension_with_no_delegate_set() {
-        // Presence is what is refused: the extension is the issuer's standing power over the account.
+    fn a_cleared_permanent_delegate_reads_as_none() {
         let data = mint_with(&[ExtensionType::PermanentDelegate], None);
-        assert!(is_delegate_rejection(check_escrowable_mint_data(
-            &data, LATE
-        )));
+        assert_eq!(check_escrowable_mint_data(&data, LATE).unwrap(), None);
+    }
+
+    #[test]
+    fn the_fee_check_still_refuses_a_permanent_delegate_mint() {
+        let mut data = mint_listing(
+            &[
+                ExtensionType::TransferFeeConfig,
+                ExtensionType::PermanentDelegate,
+            ],
+            fee(100, 1_000_000),
+        );
+        assert!(is_fee_rejection(check_escrowable_mint_data(&data, LATE)));
+        // An unreadable delegate next to a charging fee reports the fee, which is checked first.
+        let at = tlv_offset(&data, ExtensionType::PermanentDelegate);
+        data[at + 2..at + 4].copy_from_slice(&31u16.to_le_bytes());
+        data.truncate(at + 4 + 31);
+        assert!(is_fee_rejection(check_escrowable_mint_data(&data, LATE)));
+    }
+
+    #[test]
+    fn refuses_an_unreadable_permanent_delegate() {
+        // A listed delegate entry that is not exactly one key must never read as "no delegate".
+        for len in [0u16, 31, 33] {
+            let mut data = legacy_mint();
+            data.resize(Mint2022::LEN.max(165), 0);
+            data.push(AccountType::Mint as u8);
+            data.extend_from_slice(&u16::from(ExtensionType::PermanentDelegate).to_le_bytes());
+            data.extend_from_slice(&len.to_le_bytes());
+            data.extend(std::iter::repeat_n(7u8, len as usize));
+            // Token-2022 refuses the wrong length when it reads the delegate, never earlier.
+            assert_eq!(
+                check_escrowable_mint_data(&data, LATE).unwrap_err(),
+                ProgramError::InvalidArgument.into(),
+                "{len}"
+            );
+        }
+    }
+
+    #[test]
+    fn pinned_delegate_check() {
+        let pinned = Pubkey::new_unique();
+        let other = Pubkey::new_unique();
+        let none = Pubkey::default();
+        for (live, stored, ok) in [
+            // The pinned key, including after a rotation away and back.
+            (Some(pinned), pinned, true),
+            // Cleared: no key holds the power, whatever was pinned.
+            (None, pinned, true),
+            (None, none, true),
+            // Rotated to a key nobody reviewed.
+            (Some(other), pinned, false),
+            // A delegate on a mint pinned without one, e.g. closed and re-created at the address.
+            (Some(other), none, false),
+        ] {
+            let result = check_pinned_delegate(live, &stored);
+            if ok {
+                assert!(result.is_ok(), "{live:?} {stored}");
+            } else {
+                assert_eq!(
+                    result.unwrap_err(),
+                    ErrorCode::PermanentDelegateChanged.into(),
+                    "{live:?} {stored}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn expected_delegate_check() {
+        let key = Pubkey::new_unique();
+        let other = Pubkey::new_unique();
+        let none = Pubkey::default();
+        assert_eq!(check_expected_delegate(Some(key), key).unwrap(), key);
+        assert_eq!(check_expected_delegate(None, none).unwrap(), none);
+        for (live, expected) in [(Some(key), other), (Some(key), none), (None, key)] {
+            assert_eq!(
+                check_expected_delegate(live, expected).unwrap_err(),
+                ErrorCode::PermanentDelegateChanged.into(),
+                "{live:?} {expected}"
+            );
+        }
     }
 
     #[test]
     fn still_allows_mints_without_a_permanent_delegate() {
-        assert!(check_escrowable_mint_data(&legacy_mint(), LATE).is_ok());
-        assert!(check_escrowable_mint_data(&fee_mint(fee(0, 0), fee(0, 0)), LATE).is_ok());
+        assert_eq!(
+            check_escrowable_mint_data(&legacy_mint(), LATE).unwrap(),
+            None
+        );
+        assert_eq!(
+            check_escrowable_mint_data(&fee_mint(fee(0, 0), fee(0, 0)), LATE).unwrap(),
+            None
+        );
     }
 
     #[test]
-    fn refuses_a_mint_that_does_not_parse_when_checking_for_a_permanent_delegate() {
+    fn refuses_a_mint_that_does_not_parse() {
         assert!(check_escrowable_mint_data(&[], LATE).is_err());
     }
 
-    fn is_fee_rejection(result: Result<()>) -> bool {
+    fn is_fee_rejection<T: std::fmt::Debug>(result: Result<T>) -> bool {
         result.unwrap_err() == ErrorCode::TransferFeeMintNotAllowed.into()
     }
 
