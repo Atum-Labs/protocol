@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use crate::errors::ErrorCode;
 use crate::state::ProtocolConfig;
 use anchor_lang::prelude::*;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Byte layouts of every signed or stored digest. The normative description is
 //! `docs/witness-layouts.md`; the golden digests are pinned in `test_anchors.rs`.
 //!

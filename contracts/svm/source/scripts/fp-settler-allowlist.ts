@@ -4,7 +4,7 @@
  * FulfillmentProxy: strict_fulfill settler allowlist administration.
  *
  * Wraps the three default_admin-gated instructions (all take the shared SetRoleKey context —
- * programs/fulfillment_proxy/src/instructions/protocol.rs:203) plus a read-only view:
+ * programs/fulfillment_proxy/src/instructions/protocol.rs:204) plus a read-only view:
  *   set_enforce_settler_allowlist(enforced)  <- enforce-on / enforce-off
  *   add_authorized_settler(settler)          <- add
  *   remove_authorized_settler(settler)       <- remove
@@ -61,7 +61,7 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "..");
 
 // Mirrors ProtocolConfig::MAX_AUTHORIZED_SETTLERS and ::SIZE
-// (programs/fulfillment_proxy/src/state.rs:41 and :54) so the arithmetic stays comparable to the Rust
+// (programs/fulfillment_proxy/src/state.rs:42 and :55) so the arithmetic stays comparable to the Rust
 // side line for line: 8 discriminator + 32 default_admin + 32 pauser + 1 paused
 // + 4 delay + 33 Option<Pubkey> + 9 Option<i64> + 1 enforce flag + 4 vec len + 32 per settler.
 const MAX_AUTHORIZED_SETTLERS = 16;
@@ -171,7 +171,7 @@ function parseArgs(): Args {
 /**
  * Decide on the account's byte length before letting Anchor decode it.
  *
- * state.rs:6 records that this struct grew ~119 -> 636 bytes to hold the allowlist, with no realloc and no
+ * state.rs:7 records that this struct grew ~119 -> 636 bytes to hold the allowlist, with no realloc and no
  * migration instruction, so a config created by an older program physically cannot hold the
  * allowlist. A short account does not reliably fail the decode: a 119-byte ProtocolConfig has been
  * observed decoding against the 636-byte IDL as "enforcement off, 0 of 16 settlers" — which is
@@ -202,7 +202,7 @@ function assertAllowlistCapableLayout(
             ? ""
             : " (or another older one)"
         }: the struct grew ~${PRE_ALLOWLIST_PROTOCOL_CONFIG_SIZE} -> ${PROTOCOL_CONFIG_SIZE} bytes ` +
-        `to hold enforce_settler_allowlist and the pre-sized authorized_settlers vec (state.rs:6).\n` +
+        `to hold enforce_settler_allowlist and the pre-sized authorized_settlers vec (state.rs:7).\n` +
         `  There is intentionally NO realloc and NO migration instruction, so this account cannot ` +
         `hold an allowlist and nothing in this script can fix that.\n` +
         `  The settler allowlist can only be provisioned on a config created at the full size by a ` +

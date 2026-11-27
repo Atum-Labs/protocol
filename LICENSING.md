@@ -18,7 +18,8 @@ Apache-2.0.
 | --- | --- |
 | `contracts/evm/source` (Atum `.sol`, not `lib/`) | MIT |
 | `contracts/tvm/source` (Atum `.sol`, not `lib/`) | MIT |
-| `contracts/svm/source` (Atum programs under `programs/`) | MIT |
+| `contracts/svm/source` (Atum programs under `programs/` and `crates/`) | MIT |
+| `contracts/stellar/source` (Atum contracts under `contracts/`) | MIT |
 
 Everything else Atum-authored — schemas, bindings, encoders, SDKs, key-management,
 tooling — is Apache-2.0.

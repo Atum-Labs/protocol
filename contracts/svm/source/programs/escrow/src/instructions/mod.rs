@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pub mod delegate;
 pub mod escrow;
 pub mod mint_config;

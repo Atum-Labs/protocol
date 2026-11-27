@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::{contracttype, Address, BytesN, Env};
 
 // Ledgers close about every 5s. Live entries are topped up whenever they fall under the threshold.

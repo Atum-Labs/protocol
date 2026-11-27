@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use crate::errors::Error;
 use crate::types::TokenConfig;
 

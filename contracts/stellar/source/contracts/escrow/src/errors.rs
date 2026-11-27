@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::contracterror;
 
 /// Codes are append-only: clients map them by number.

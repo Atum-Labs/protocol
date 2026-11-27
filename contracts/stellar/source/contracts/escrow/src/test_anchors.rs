@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Hash-anchor tests for every signed or stored digest.
 //!
 //! Every constant below was derived OUT OF BAND: the layout in `docs/witness-layouts.md` was

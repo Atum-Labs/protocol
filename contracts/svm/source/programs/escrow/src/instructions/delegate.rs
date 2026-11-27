@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use crate::errors::ErrorCode;
 use crate::events::{DelegateRenounced, DelegateRevoked};
 use crate::state::{EscrowDelegate, MintFeeConfig, ProtocolConfig};

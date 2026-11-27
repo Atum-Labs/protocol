@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{program::invoke_signed, system_instruction};
 use spl_discriminator::SplDiscriminate;

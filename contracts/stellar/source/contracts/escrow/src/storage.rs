@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Storage keys and the TTL policy.
 //!
 //! TTL POLICY. A persistent entry that outlives its TTL is archived and cannot be read until

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use crate::errors::ReplayError;
 use crate::{REPLAY_HORIZON_SECS, REPLAY_SLICE_SHIFT, REPLAY_SLOTS};
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /// Why a replay check refused a nonce.
 ///
 /// This crate owns the wording. Anchor's `#[msg]` takes a string literal and cannot read a const or

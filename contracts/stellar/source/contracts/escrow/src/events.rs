@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::{contractevent, Address, BytesN};
 
 use crate::types::Role;

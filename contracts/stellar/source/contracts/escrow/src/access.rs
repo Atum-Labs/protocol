@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Roles, the delayed default-admin transfer and pause: the AccessControlDefaultAdminRules and
 //! Pausable behaviour of the EVM escrow, minus `renounceRole`/`grantRole` of the admin role itself
 //! (the admin only moves through the two-step transfer).

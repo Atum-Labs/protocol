@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use anchor_lang::prelude::*;
 
 /// Global protocol configuration PDA.

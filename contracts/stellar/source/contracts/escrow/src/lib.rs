@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #![no_std]
 //! Atum Protocol escrow for Soroban.
 //!

@@ -231,7 +231,7 @@ else
   # On the fresh-id route the BPF loader does not need the old authority — but deploy.ts does.
   # Verified 2026-08-24: ESCROW_PROGRAM_ID / FULFILLMENT_PROXY_PROGRAM_ID are `const` at
   # deploy.ts:46-53 with no env override, so step 3 sends initializeProtocol to the OLD program and
-  # derives programData from the OLD id; on-chain verify_upgrade_authority (protocol.rs:93-126) then
+  # derives programData from the OLD id; on-chain verify_upgrade_authority (protocol.rs:94-127) then
   # requires the OLD authority to sign. Also deploy.ts:435-456 verifies the OLD ids, so it reports a
   # FALSE GREEN. Until those constants are repointed, deploy.ts cannot perform a fresh-id deploy.
   # With no checkout the grep fails, the condition is false, and the else branch below
