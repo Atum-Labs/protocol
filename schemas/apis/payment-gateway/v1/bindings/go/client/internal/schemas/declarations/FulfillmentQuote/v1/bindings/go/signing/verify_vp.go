@@ -1,13 +1,22 @@
 // Package-level SECURITY NOTE (VerifyVP):
 //
 // VerifyVP cryptographically verifies the OUTER VP holder signature,
-// applies POLICY checks on each embedded VerifiableCredential (date
+// applies POLICY checks on each CHECKED VerifiableCredential (date
 // window, issuer-in-trust-anchors, required VC types, the
 // subject-holder binding), AND — when the caller
 // supplies a `VerifyVCProofs` resolver — cryptographically
-// verifies each VC's own `proof.jws` against the issuer's published
-// `verificationMethod` key, resolved via the `did:web` document at
-// `https://<issuer-host>/.well-known/did.json`.
+// verifies each checked VC's own `proof.jws` against the issuer's
+// published `verificationMethod` key, resolved via the `did:web` document
+// at `https://<issuer-host>/.well-known/did.json`.
+//
+// Which VCs are checked: every VC when there is no reserved set; with one
+// (ReservedVCTypes together with RequiredVCTypes), every VC declaring a
+// reserved type in any spelling, or a type that can't be resolved. Any
+// other VC is passed through untouched for the counterparties to judge:
+// none of the gates below applies to it, its issuer is never resolved, and
+// it is returned in VPResult.PassThroughClaims, never in AttestedClaims.
+// The holder signature covers it only in the terms a loaded context
+// defines.
 //
 // Residual threat-model that operators MUST understand:
 //
@@ -79,7 +88,7 @@ const defaultMaxVerifiableCredentials = 16
 const expectedVPProofPurpose = "authentication"
 
 // IsIssuerTrustedFunc is the trust-anchor probe VerifyVP calls for each
-// embedded VC's issuer DID. Returns (allowed, enforced) — VerifyVP rejects
+// checked VC's issuer DID (a passed-through VC's issuer is never probed). Returns (allowed, enforced) — VerifyVP rejects
 // the VC when allowed=false AND enforced=true (strict mode); other
 // combinations are pass-through (mirroring the trusted-issuers
 // registry's IsTrusted probe).
@@ -226,15 +235,18 @@ type VerifyVPOptions struct {
 	// envelope schema's `verifiableCredential.maxItems`.
 	MaxVerifiableCredentials int
 
-	// IsIssuerTrusted gates each VC by its declared issuer DID. Nil
+	// IsIssuerTrusted gates each checked VC by its declared issuer DID; a
+	// passed-through VC is never probed (see ReservedVCTypes). Nil
 	// disables the check (matches trustedissuers.ModeDisabled at the
 	// caller). When non-nil, the callback's enforced=true return rejects
 	// the VC; enforced=false is a permissive/audit pass-through.
 	IsIssuerTrusted IsIssuerTrustedFunc
 
 	// VerifyVCProofs, when non-nil, runs cryptographic VC-proof
-	// verification on every embedded VC via VerifyVCProof. Each VC's
-	// proof block is verified against the issuer's published key
+	// verification on every checked VC via VerifyVCProof; a
+	// passed-through VC's issuer is never resolved (see ReservedVCTypes).
+	// Each checked VC's proof block is verified against the issuer's
+	// published key
 	// resolved through this IssuerKeyResolver — the load-bearing
 	// VC-signature gate. Nil opts the check out (matches the
 	// earlier contract + the disabled-mode pass-through at the
@@ -330,9 +342,9 @@ type VerifyVPOptions struct {
 // derivation code.
 //
 // When `VerifyVPOptions.VerifyVCProofs` is supplied,
-// cryptographic verification of each embedded VC's own proof block is
-// performed inline; the threat-model framing is in the top-of-file
-// SECURITY NOTE.
+// cryptographic verification of each checked VC's own proof block is
+// performed inline; passed-through VCs are not verified at all. The
+// threat-model framing is in the top-of-file SECURITY NOTE.
 type VPResult struct {
 	// Holder is the bare did:pkh URI parsed from envelope.holder, with
 	// any fragment stripped.
@@ -811,8 +823,8 @@ func vpProofContext(rawProof map[string]any, suiteCtxURL string) any {
 //     coverage check, not a per-VC predicate, and only a checked VC can
 //     satisfy it.
 //
-// AttestedClaims returns every checked VC (i.e. every checked VC when all
-// VALIDITY checks pass), NOT just the required-type matches. Callers that
+// AttestedClaims returns every checked VC once all VALIDITY checks pass,
+// NOT just the required-type matches. Callers that
 // need the required-type-matching subset filter downstream — the contract
 // here is "the set of VCs this verifier examined and accepted as valid."
 // Pass-through VCs are never in it, so claim extraction over

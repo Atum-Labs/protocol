@@ -13,13 +13,22 @@
 // SECURITY NOTE:
 //
 // verifyVP cryptographically verifies the OUTER VP holder signature
-// and applies POLICY checks on each embedded VerifiableCredential
-// (date window, issuer-in-trust-anchors, required types, and — when
-// it lands cross-language — the subject-holder binding).
+// and applies POLICY checks on each CHECKED VerifiableCredential
+// (subject-holder binding, date window, issuer-in-trust-anchors,
+// required types).
+//
+// Which VCs are checked: every VC when there is no reserved set; with one
+// (reservedVCTypes together with requiredVCTypes), every VC declaring a
+// reserved type in any spelling, a type that can't be resolved, or a shape
+// Go refuses. Any other VC is passed through untouched for the
+// counterparties to judge: none of the gates applies to it, its issuer is
+// never resolved, and it is returned in VPResult.passThroughClaims, never in
+// attestedClaims. The holder signature covers it only in the terms a loaded
+// context defines. Mirror of the Go canonical's package SECURITY NOTE.
 //
 // When the caller supplies a `verifyVCProofs` resolver (parity with
 // the Go canonical's `VerifyVCProofs IssuerKeyResolver`),
-// verifyVP ALSO cryptographically verifies each embedded VC's own
+// verifyVP ALSO cryptographically verifies each checked VC's own
 // `proof` block (`jws` for secp256k1, `proofValue` for ed25519)
 // against the issuer's published `verificationMethod` key resolved
 // via `did:web`. Without the resolver, the trust gate is the
@@ -76,7 +85,7 @@ const expectedVPProofPurpose = "authentication";
 const multibaseBase58btcPrefix = "z";
 
 // IsIssuerTrustedFunc is the trust-anchor probe verifyVP calls for each
-// embedded VC's issuer DID. Returns (allowed, enforced) — verifyVP
+// checked VC's issuer DID (a passed-through VC's issuer is never probed). Returns (allowed, enforced) — verifyVP
 // rejects when allowed=false AND enforced=true (strict mode); other
 // combinations are pass-through. Mirrors trustedissuers.Service.IsTrusted
 // (the trusted-issuers service).
@@ -160,8 +169,9 @@ export interface VerifyVPOptions {
   // cryptographic computation — pure log-correlation.
   requestId?: string;
   // When supplied, verifyVP cryptographically verifies
-  // each embedded VC's own proof block against the issuer's
-  // published verificationMethod key (resolved via this resolver).
+  // each checked VC's own proof block against the issuer's
+  // published verificationMethod key (resolved via this resolver); a
+  // passed-through VC's issuer is never resolved.
   // Undefined opts out — matches the Go canonical's
   // `VerifyVCProofs IssuerKeyResolver` contract. Production callers
   // wire `did-web-resolver.ts`'s `DIDWebResolver` instance here.
@@ -588,22 +598,22 @@ async function verifyVPEd25519(
 // required-type check (which passes when at least one VC matches) is
 // intentional. They answer different questions:
 //
-//   - per-VC VALIDITY tier (date window, issuer trust): every VC the
-//     producer chose to include MUST be individually valid. Including
+//   - per-VC VALIDITY tier (date window, issuer trust): every checked VC
+//     the producer chose to include MUST be individually valid. Including
 //     a VC is the producer's explicit assertion of intent to present
 //     it — the verifier doesn't drop VCs it finds inconvenient.
 //   - per-policy POLICY tier (required-type): the verifier's operator
 //     declares "at least one VC of type X must be present." A coverage
 //     check, not a per-VC predicate.
 //
-// `attestedClaims` returns every VC examined (the full input set when
-// all VALIDITY checks pass), NOT just the required-type matches.
+// `attestedClaims` returns every checked VC once all VALIDITY checks pass,
+// NOT just the required-type matches; a passed-through VC is never in it.
 // Callers that need the matching subset filter downstream — the
 // contract is "the set of VCs this verifier examined and accepted."
 //
 // SCOPE NOTE: when `options.verifyVCProofs` is supplied,
-// each embedded VC's own cryptographic proof is verified against the
-// issuer's published key. Undefined opts out — matches the Go
+// each checked VC's own cryptographic proof is verified against the
+// issuer's published key; a passed-through VC's never is. Undefined opts out — matches the Go
 // canonical's `VerifyVCProofs IssuerKeyResolver` contract. The
 // per-VC subject-holder binding is always enforced;
 // holder is threaded in from the caller after the OUTER VP
