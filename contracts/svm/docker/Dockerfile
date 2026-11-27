@@ -28,7 +28,7 @@
 # =====================================================================
 FROM scratch AS escrow-v4-source
 ARG ESCROW_V4_REPO=https://github.com/Atum-Labs/protocol.git
-ARG ESCROW_V4_REF=56e374a0bbbb224cf440dab0f3744bc66dcadcee
+ARG ESCROW_V4_REF=8b6c17901ffd855eb84ed5ed1d2e24a9c7b5ac62
 ADD ${ESCROW_V4_REPO}#${ESCROW_V4_REF} /
 
 # =====================================================================

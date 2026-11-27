@@ -23,7 +23,7 @@ token, or hand the stage a local copy of that commit:
 
 ```bash
 GIT_AUTH_TOKEN=<token> docker build --secret id=GIT_AUTH_TOKEN,env=GIT_AUTH_TOKEN ...
-git archive 56e374a0bbbb224cf440dab0f3744bc66dcadcee contracts/svm/source | tar -x -C /tmp/escrow-v4
+git archive 8b6c17901ffd855eb84ed5ed1d2e24a9c7b5ac62 contracts/svm/source | tar -x -C /tmp/escrow-v4
 docker build --build-context escrow-v4-source=/tmp/escrow-v4 ...
 ```
 
