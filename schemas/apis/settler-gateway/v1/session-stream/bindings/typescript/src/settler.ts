@@ -311,6 +311,19 @@ export enum DeclineReason {
    * which is about award_deadline.
    */
   DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT = 20,
+  /**
+   * DECLINE_REASON_ASSET_PAUSED - The token issuer has paused all transfers of the source or destination asset, for example a
+   * Solana Token-2022 mint with the Pausable extension, so no deposit or payout in it can move.
+   * Retry once the issuer resumes transfers.
+   */
+  DECLINE_REASON_ASSET_PAUSED = 21,
+  /**
+   * DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED - The destination account cannot receive the payout in this asset, for example it is frozen or
+   * blocked by the issuer, requires a memo on incoming transfers, accepts only confidential
+   * transfers, or would be created frozen. The requester sends to an account that can receive the
+   * asset, or has the restriction lifted first.
+   */
+  DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED = 22,
   UNRECOGNIZED = -1,
 }
 
@@ -373,6 +386,12 @@ export function declineReasonFromJSON(object: any): DeclineReason {
     case 20:
     case "DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT":
       return DeclineReason.DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT;
+    case 21:
+    case "DECLINE_REASON_ASSET_PAUSED":
+      return DeclineReason.DECLINE_REASON_ASSET_PAUSED;
+    case 22:
+    case "DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED":
+      return DeclineReason.DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -420,6 +439,10 @@ export function declineReasonToJSON(object: DeclineReason): string {
       return "DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW";
     case DeclineReason.DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT:
       return "DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT";
+    case DeclineReason.DECLINE_REASON_ASSET_PAUSED:
+      return "DECLINE_REASON_ASSET_PAUSED";
+    case DeclineReason.DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED:
+      return "DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED";
     case DeclineReason.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

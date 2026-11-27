@@ -273,3 +273,27 @@ func TestAwardWindowTooShortNamesTheHoldAndAsksForALaterFulfillmentDeadline(t *t
 		t.Errorf("DocsUrl = %q, want a link ending in #award-window-too-short", got.DocsUrl)
 	}
 }
+
+// Each token transfer restriction gets its own public code with the retry advice its fix needs: a
+// paused asset clears when the issuer resumes, a restricted destination needs a changed request.
+func TestTokenRestrictionReasonsProjectToTheirOwnCodes(t *testing.T) {
+	for _, tc := range []struct{ code, retry, slug, advice string }{
+		{"ASSET_PAUSED", "RETRY_AFTER_DELAY", "#asset-paused", "once the issuer resumes"},
+		{"DESTINATION_ACCOUNT_RESTRICTED", "NOT_RETRYABLE_FIX_REQUEST", "#destination-account-restricted", "destination account that can receive"},
+	} {
+		got := ReasonFor(tc.code)
+		if got.Code != tc.code {
+			t.Errorf("%s: Code = %q, want its own public code", tc.code, got.Code)
+		}
+		if got.RetryClassification != tc.retry {
+			t.Errorf("%s: RetryClassification = %q, want %s", tc.code, got.RetryClassification, tc.retry)
+		}
+		if !strings.HasSuffix(got.DocsUrl, tc.slug) {
+			t.Errorf("%s: DocsUrl = %q, want a link ending in %s", tc.code, got.DocsUrl, tc.slug)
+		}
+		// The payer only sees this message, so it says what to do next.
+		if !strings.Contains(got.Message, tc.advice) {
+			t.Errorf("%s: Message = %q, want it to advise %q", tc.code, got.Message, tc.advice)
+		}
+	}
+}

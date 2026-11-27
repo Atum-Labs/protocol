@@ -90,3 +90,18 @@ test('AWARD_WINDOW_TOO_SHORT names the hold and asks for a later fulfillment_dea
   // A different cause from DEADLINE_TOO_SHORT, so the two cannot share a message.
   assert.notStrictEqual(pub.message, reasonFor('DEADLINE_TOO_SHORT').message);
 });
+
+test('token transfer restrictions project to their own codes and retry advice', () => {
+  // A paused asset clears when the issuer resumes; a restricted destination needs a changed request.
+  for (const [code, retry, slug, advice] of [
+    ['ASSET_PAUSED', 'RETRY_AFTER_DELAY', '#asset-paused', 'once the issuer resumes'],
+    ['DESTINATION_ACCOUNT_RESTRICTED', 'NOT_RETRYABLE_FIX_REQUEST', '#destination-account-restricted', 'destination account that can receive'],
+  ]) {
+    const pub = reasonFor(code);
+    assert.strictEqual(pub.code, code);
+    assert.strictEqual(pub.retry_classification, retry);
+    assert.ok(pub.docs_url.endsWith(slug), `${code} docs_url ${pub.docs_url} does not end in ${slug}`);
+    // The payer only sees this message, so it says what to do next.
+    assert.ok(pub.message.includes(advice), `${code} message does not advise ${advice}: ${pub.message}`);
+  }
+});
