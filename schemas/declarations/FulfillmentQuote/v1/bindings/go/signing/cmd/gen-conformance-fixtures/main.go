@@ -10,6 +10,13 @@
 //	  - ed25519-go-vp.json
 //	  - secp256k1-go-vp-null-issuance-date.json  (negative: VerifyVP must refuse)
 //	  - ed25519-go-vp-null-issuance-date.json    (negative: VerifyVP must refuse)
+//	  - {secp256k1,ed25519}-go-vp-pass-through.json (a third-party VC a reserved set passes through)
+//	  - secp256k1-go-vp-reserved-{iri,compact,compact-no-context,undefined}.json
+//	    (a reserved type in another spelling, or a type nothing defines: checked)
+//	  - secp256k1-go-vp-partner-context.json (a partner credential under its own
+//	    context, which passes through when the verifier is given that context)
+//	  - secp256k1-go-vp-partner-alias.json (a partner context term standing for the
+//	    reserved type's IRI: checked)
 //
 //	VC-proof side:
 //	  - secp256k1-go-vc-proof.json
@@ -113,6 +120,26 @@ func main() {
 	if err := genEd25519VP(outDir, "ed25519-go-vp-null-issuance-date.json", nil); err != nil {
 		die("ed25519 VP, null issuanceDate: %v", err)
 	}
+	// Pass-through fixtures: the pinned Known-to-Atum credential plus a
+	// third-party credential from an unlisted issuer that a verifier with
+	// a reserved set must pass through unchecked.
+	if err := genPassThroughVP(outDir, "secp256k1-go-vp-pass-through.json", ldverification.ProofTypeSecp256k1Recovery2020); err != nil {
+		die("secp256k1 VP, pass-through: %v", err)
+	}
+	if err := genPassThroughVP(outDir, "ed25519-go-vp-pass-through.json", ldverification.ProofTypeEd25519Signature2020); err != nil {
+		die("ed25519 VP, pass-through: %v", err)
+	}
+	for _, sp := range reservedSpellings {
+		if err := genReservedSpellingVP(outDir, "secp256k1-go-vp-reserved-"+sp.name+".json", sp.context, sp.types); err != nil {
+			die("secp256k1 VP, reserved spelling %s: %v", sp.name, err)
+		}
+	}
+	if err := genPartnerVP(outDir, "secp256k1-go-vp-partner-context.json", partnerContextURL, partnerContextFile, partnerAttestationVC); err != nil {
+		die("secp256k1 VP, partner context: %v", err)
+	}
+	if err := genPartnerVP(outDir, "secp256k1-go-vp-partner-alias.json", partnerMembershipContextURL, partnerMembershipContextFile, partnerMembershipVC); err != nil {
+		die("secp256k1 VP, partner alias: %v", err)
+	}
 	if err := genSecp256k1PREVP(outDir); err != nil {
 		die("secp256k1 PRE VP: %v", err)
 	}
@@ -136,7 +163,7 @@ func main() {
 	if err := genJWKSidecars(outDir); err != nil {
 		die("JWK sidecars: %v", err)
 	}
-	fmt.Printf("wrote %d fixtures to %s\n", 13+2*len(knownToAtumV2Fixtures), outDir)
+	fmt.Printf("wrote %d fixtures to %s\n", 15+2*len(knownToAtumV2Fixtures), outDir)
 }
 
 func genSecp256k1(outDir string) error {
@@ -724,6 +751,276 @@ func pinnedVCsFor(holder, cryptosuite string, issuanceDate any) ([]json.RawMessa
 		return nil, fmt.Errorf("marshal VC: %w", err)
 	}
 	return []json.RawMessage{raw}, nil
+}
+
+// The third-party credential in the pass-through fixtures. Its issuer is on
+// no trust list and resolves nowhere, it expired before the conformance
+// clock, and its subject is another account, so it fails every per-VC
+// check; its type is an absolute IRI so both JSON-LD libraries expand it
+// the same way. A verifier whose reserved set excludes that type must pass
+// it through unchecked. MUST exactly mirror the TS generator's
+// pinnedThirdPartyVC.
+const (
+	pinnedThirdPartyVCID      = "urn:uuid:8d3f6a2c-1b4e-4f7a-9c2d-5e6f7a8b9c0d"
+	pinnedThirdPartyIssuer    = "did:web:unlisted-issuer.example"
+	pinnedThirdPartyType      = "https://example.org/credentials#PartnerAttestationCredential"
+	pinnedThirdPartySubject   = "did:pkh:eip155:1:0x00000000000000000000000000000000000000aa"
+	pinnedThirdPartyIssued    = "2026-01-02T00:00:00Z"
+	pinnedThirdPartyExpiresAt = "2026-02-01T00:00:00Z"
+)
+
+func pinnedThirdPartyVC(cryptosuite string) (json.RawMessage, error) {
+	vc := map[string]any{
+		"@context": []any{
+			ldverification.W3CVCV1ContextURL,
+			"https://schemas.atum.xyz/credentials/known-to-atum/v1",
+		},
+		"id":             pinnedThirdPartyVCID,
+		"type":           []any{"VerifiableCredential", pinnedThirdPartyType},
+		"issuer":         pinnedThirdPartyIssuer,
+		"issuanceDate":   pinnedThirdPartyIssued,
+		"expirationDate": pinnedThirdPartyExpiresAt,
+		"credentialSubject": map[string]any{
+			"id":   pinnedThirdPartySubject,
+			"role": "partner",
+		},
+		"proof": map[string]any{
+			"type":               cryptosuite,
+			"created":            pinnedThirdPartyIssued,
+			"verificationMethod": pinnedThirdPartyIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+	return json.Marshal(vc)
+}
+
+// genPassThroughVP signs an envelope carrying the pinned Known-to-Atum
+// credential followed by the third-party credential, with the same keys,
+// holders and pinned bindings as genSecp256k1VP / genEd25519VP.
+func genPassThroughVP(outDir, name, cryptosuite string) error {
+	third, err := pinnedThirdPartyVC(cryptosuite)
+	if err != nil {
+		return fmt.Errorf("marshal third-party VC: %w", err)
+	}
+	var signed []byte
+	switch cryptosuite {
+	case ldverification.ProofTypeSecp256k1Recovery2020:
+		keyBytes, err := hex.DecodeString(hardhatPrivKeyHex)
+		if err != nil {
+			return fmt.Errorf("decode privkey: %w", err)
+		}
+		priv, err := crypto.ToECDSA(keyBytes)
+		if err != nil {
+			return fmt.Errorf("ToECDSA: %w", err)
+		}
+		holder := "did:pkh:eip155:1:" + strings.ToLower(crypto.PubkeyToAddress(priv.PublicKey).Hex())
+		vcs, err := pinnedVCsFor(holder, cryptosuite, pinnedVCIssuanceDate)
+		if err != nil {
+			return err
+		}
+		signed, err = ldverification.SignVPWithCreatedString(append(vcs, third), priv, ldverification.SignVPOptions{
+			Holder:             holder,
+			VerificationMethod: holder + "#blockchainAccountId",
+			Challenge:          pinnedVPChallenge,
+			Domain:             pinnedVPDomain,
+		}, pinnedCreated)
+		if err != nil {
+			return fmt.Errorf("SignVP: %w", err)
+		}
+	case ldverification.ProofTypeEd25519Signature2020:
+		var seed [32]byte
+		priv := ed25519.NewKeyFromSeed(seed[:])
+		holder := "did:pkh:solana:devnet:" + base58.Encode(priv.Public().(ed25519.PublicKey))
+		vcs, err := pinnedVCsFor(holder, cryptosuite, pinnedVCIssuanceDate)
+		if err != nil {
+			return err
+		}
+		signed, err = ldverification.SignVPEd25519WithCreatedString(append(vcs, third), priv, ldverification.SignVPEd25519Options{
+			Holder:             holder,
+			VerificationMethod: holder + "#blockchainAccountId",
+			Challenge:          pinnedVPChallenge,
+			Domain:             pinnedVPDomain,
+		}, pinnedCreated)
+		if err != nil {
+			return fmt.Errorf("SignVPEd25519: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported cryptosuite %q", cryptosuite)
+	}
+	return os.WriteFile(filepath.Join(outDir, name), append(signed, '\n'), 0o644)
+}
+
+// reservedSpellings are the reserved-type spelling fixtures: the pinned
+// Known-to-Atum credential followed by a credential from an issuer on no
+// trust list whose type is the reserved type in another JSON-LD spelling,
+// or a short name no context defines. Its subject is the holder and its
+// dates are valid, so only the issuer check can refuse it, and it must be
+// checked rather than passed through. MUST exactly mirror the TS
+// generator's RESERVED_SPELLINGS.
+var reservedSpellings = []struct {
+	name    string
+	context []any
+	types   []any
+}{
+	{"iri", []any{ldverification.W3CVCV1ContextURL, "https://schemas.atum.xyz/credentials/known-to-atum/v1"},
+		[]any{"VerifiableCredential", "https://schemas.atum.xyz/credentials/known-to-atum/v1#KnownToAtumVerifiableCredential"}},
+	{"compact", []any{ldverification.W3CVCV1ContextURL, "https://schemas.atum.xyz/credentials/known-to-atum/v1"},
+		[]any{"VerifiableCredential", "kta:KnownToAtumVerifiableCredential"}},
+	{"compact-no-context", []any{ldverification.W3CVCV1ContextURL},
+		[]any{"VerifiableCredential", "kta:KnownToAtumVerifiableCredential"}},
+	{"undefined", []any{ldverification.W3CVCV1ContextURL, "https://schemas.atum.xyz/credentials/known-to-atum/v1"},
+		[]any{"VerifiableCredential", "PartnerAttestationCredential"}},
+}
+
+const (
+	pinnedSpelledVCID     = "urn:uuid:3c6b9e1a-7d2f-4b8e-9a1c-2e4f6a8b0c1d"
+	pinnedSpelledVCIssuer = "did:web:impersonator.example"
+)
+
+// genReservedSpellingVP signs a secp256k1 envelope carrying the pinned
+// Known-to-Atum credential followed by the spelled credential.
+func genReservedSpellingVP(outDir, name string, context, types []any) error {
+	keyBytes, err := hex.DecodeString(hardhatPrivKeyHex)
+	if err != nil {
+		return fmt.Errorf("decode privkey: %w", err)
+	}
+	priv, err := crypto.ToECDSA(keyBytes)
+	if err != nil {
+		return fmt.Errorf("ToECDSA: %w", err)
+	}
+	holder := "did:pkh:eip155:1:" + strings.ToLower(crypto.PubkeyToAddress(priv.PublicKey).Hex())
+	vcs, err := pinnedVCsFor(holder, ldverification.ProofTypeSecp256k1Recovery2020, pinnedVCIssuanceDate)
+	if err != nil {
+		return err
+	}
+	spelled, err := json.Marshal(map[string]any{
+		"@context":     context,
+		"id":           pinnedSpelledVCID,
+		"type":         types,
+		"issuer":       pinnedSpelledVCIssuer,
+		"issuanceDate": pinnedVCIssuanceDate,
+		"credentialSubject": map[string]any{
+			"id":   holder,
+			"role": "settler",
+		},
+		"proof": map[string]any{
+			"type":               ldverification.ProofTypeSecp256k1Recovery2020,
+			"created":            pinnedVCIssuanceDate,
+			"verificationMethod": pinnedSpelledVCIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("marshal spelled VC: %w", err)
+	}
+	signed, err := ldverification.SignVPWithCreatedString(append(vcs, spelled), priv, ldverification.SignVPOptions{
+		Holder:             holder,
+		VerificationMethod: holder + "#blockchainAccountId",
+		Challenge:          pinnedVPChallenge,
+		Domain:             pinnedVPDomain,
+	}, pinnedCreated)
+	if err != nil {
+		return fmt.Errorf("SignVP: %w", err)
+	}
+	return os.WriteFile(filepath.Join(outDir, name), append(signed, '\n'), 0o644)
+}
+
+// The partner-context fixtures carry a credential under a partner's own
+// JSON-LD context, which a verifier reads only when the caller supplies it
+// (VerifyVPOptions.ExtraCredentialContexts). The context documents are the
+// two *-context.jsonld files beside the fixtures, read by both generators and
+// both conformance suites. MUST exactly mirror the TS generator.
+const (
+	partnerContextURL            = "https://partner.example/credentials/v1"
+	partnerContextFile           = "partner-credentials-v1-context.jsonld"
+	partnerMembershipContextURL  = "https://partner.example/membership/v1"
+	partnerMembershipContextFile = "partner-membership-v1-context.jsonld"
+)
+
+// partnerAttestationVC is a partner credential under its own context, from
+// an issuer on no trust list, expired before the conformance clock and about
+// another account: a verifier with that context supplied passes it through.
+func partnerAttestationVC(string) map[string]any {
+	return map[string]any{
+		"@context":       []any{ldverification.W3CVCV1ContextURL, partnerContextURL},
+		"id":             "urn:uuid:7f1e2d3c-4b5a-4c6d-8e9f-0a1b2c3d4e5f",
+		"type":           []any{"VerifiableCredential", "PartnerAttestationCredential"},
+		"issuer":         pinnedThirdPartyIssuer,
+		"issuanceDate":   pinnedThirdPartyIssued,
+		"expirationDate": pinnedThirdPartyExpiresAt,
+		"credentialSubject": map[string]any{
+			"id":        pinnedThirdPartySubject,
+			"riskScore": "low",
+		},
+		"proof": map[string]any{
+			"type":               ldverification.ProofTypeSecp256k1Recovery2020,
+			"created":            pinnedThirdPartyIssued,
+			"verificationMethod": pinnedThirdPartyIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+}
+
+// partnerMembershipVC is typed with the partner membership context's term
+// for the reserved type's IRI, from an issuer on no trust list, about the
+// holder and valid by date: only the issuer check can refuse it.
+func partnerMembershipVC(holder string) map[string]any {
+	return map[string]any{
+		"@context":          []any{ldverification.W3CVCV1ContextURL, partnerMembershipContextURL},
+		"id":                "urn:uuid:2b4d6f8a-1c3e-4a5b-9d7f-6e8c0a2b4d6f",
+		"type":              []any{"VerifiableCredential", "PartnerMembershipCredential"},
+		"issuer":            pinnedSpelledVCIssuer,
+		"issuanceDate":      pinnedVCIssuanceDate,
+		"credentialSubject": map[string]any{"id": holder},
+		"proof": map[string]any{
+			"type":               ldverification.ProofTypeSecp256k1Recovery2020,
+			"created":            pinnedVCIssuanceDate,
+			"verificationMethod": pinnedSpelledVCIssuer + "#key-1",
+			"proofPurpose":       "assertionMethod",
+		},
+	}
+}
+
+// genPartnerVP signs a secp256k1 envelope carrying the pinned Known-to-Atum
+// credential followed by build(holder), canonicalized with the partner
+// context read from contextFile.
+func genPartnerVP(outDir, name, contextURL, contextFile string, build func(holder string) map[string]any) error {
+	raw, err := os.ReadFile(filepath.Join(outDir, contextFile))
+	if err != nil {
+		return fmt.Errorf("read %s: %w", contextFile, err)
+	}
+	var partnerCtx any
+	if err := json.Unmarshal(raw, &partnerCtx); err != nil {
+		return fmt.Errorf("parse %s: %w", contextFile, err)
+	}
+	keyBytes, err := hex.DecodeString(hardhatPrivKeyHex)
+	if err != nil {
+		return fmt.Errorf("decode privkey: %w", err)
+	}
+	priv, err := crypto.ToECDSA(keyBytes)
+	if err != nil {
+		return fmt.Errorf("ToECDSA: %w", err)
+	}
+	holder := "did:pkh:eip155:1:" + strings.ToLower(crypto.PubkeyToAddress(priv.PublicKey).Hex())
+	vcs, err := pinnedVCsFor(holder, ldverification.ProofTypeSecp256k1Recovery2020, pinnedVCIssuanceDate)
+	if err != nil {
+		return err
+	}
+	partner, err := json.Marshal(build(holder))
+	if err != nil {
+		return fmt.Errorf("marshal partner VC: %w", err)
+	}
+	signed, err := ldverification.SignVPWithCreatedString(append(vcs, partner), priv, ldverification.SignVPOptions{
+		Holder:                holder,
+		VerificationMethod:    holder + "#blockchainAccountId",
+		Challenge:             pinnedVPChallenge,
+		Domain:                pinnedVPDomain,
+		ExtraEnvelopeContexts: map[string]any{contextURL: partnerCtx},
+	}, pinnedCreated)
+	if err != nil {
+		return fmt.Errorf("SignVP: %w", err)
+	}
+	return os.WriteFile(filepath.Join(outDir, name), append(signed, '\n'), 0o644)
 }
 
 // resolveOutDir walks up from the binary's current working directory to

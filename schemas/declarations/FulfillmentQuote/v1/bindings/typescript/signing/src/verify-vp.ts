@@ -13,13 +13,22 @@
 // SECURITY NOTE:
 //
 // verifyVP cryptographically verifies the OUTER VP holder signature
-// and applies POLICY checks on each embedded VerifiableCredential
-// (date window, issuer-in-trust-anchors, required types, and — when
-// it lands cross-language — the subject-holder binding).
+// and applies POLICY checks on each CHECKED VerifiableCredential
+// (subject-holder binding, date window, issuer-in-trust-anchors,
+// required types).
+//
+// Which VCs are checked: every VC when there is no reserved set; with one
+// (reservedVCTypes together with requiredVCTypes), every VC declaring a
+// reserved type in any spelling, a type that can't be resolved, or a shape
+// Go refuses. Any other VC is passed through untouched for the
+// counterparties to judge: none of the gates applies to it, its issuer is
+// never resolved, and it is returned in VPResult.passThroughClaims, never in
+// attestedClaims. The holder signature covers it only in the terms a loaded
+// context defines. Mirror of the Go canonical's package SECURITY NOTE.
 //
 // When the caller supplies a `verifyVCProofs` resolver (parity with
 // the Go canonical's `VerifyVCProofs IssuerKeyResolver`),
-// verifyVP ALSO cryptographically verifies each embedded VC's own
+// verifyVP ALSO cryptographically verifies each checked VC's own
 // `proof` block (`jws` for secp256k1, `proofValue` for ed25519)
 // against the issuer's published `verificationMethod` key resolved
 // via `did:web`. Without the resolver, the trust gate is the
@@ -58,8 +67,10 @@ import { hashQuote, type Cryptosuite } from "./hash.js";
 import { parseDetachedJws } from "./jws.js";
 import { decodeStellarAccount, encodeStellarAccount } from "./strkey.js";
 import { verifyVCProof, type IssuerKeyResolver } from "./verify-vc.js";
+import { newReservedTypeMatcher } from "./reserved-types.js";
 import {
   assertDeclarationContextSupplied,
+  fqLoader,
   FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
   SECP256K1_RECOVERY_CONTEXT_URL,
   ED25519_2020_CONTEXT_URL,
@@ -74,7 +85,7 @@ const expectedVPProofPurpose = "authentication";
 const multibaseBase58btcPrefix = "z";
 
 // IsIssuerTrustedFunc is the trust-anchor probe verifyVP calls for each
-// embedded VC's issuer DID. Returns (allowed, enforced) — verifyVP
+// checked VC's issuer DID (a passed-through VC's issuer is never probed). Returns (allowed, enforced) — verifyVP
 // rejects when allowed=false AND enforced=true (strict mode); other
 // combinations are pass-through. Mirrors trustedissuers.Service.IsTrusted
 // (the trusted-issuers service).
@@ -114,6 +125,34 @@ export interface VerifyVPOptions {
   // VC types at least one verified VC must declare. Empty disables the
   // type check.
   requiredVCTypes?: string[];
+  // Credential types only trusted issuers may issue. A VC declaring one of
+  // them, or one of requiredVCTypes, walks every per-VC check:
+  // subject-holder binding, date window, issuer trust and, when
+  // verifyVCProofs is supplied, its own proof. A VC claiming a reserved
+  // type from an issuer outside the trust list is refused as before.
+  //
+  // Any other VC is the counterparties' to judge: the presentation carries
+  // it to the parties who decide whom they trust as an issuer. It is passed
+  // through untouched (no issuer-trust check, no issuer resolution or proof
+  // verification, no subject-holder binding, no date-window check),
+  // returned in VPResult.passThroughClaims and never in attestedClaims, and
+  // it never satisfies requiredVCTypes. The holder's signature over the
+  // presentation still covers it, but only the terms a loaded context
+  // defines: canonicalization drops a member no context defines, so such a
+  // member can change after signing without breaking the signature, and
+  // passThroughClaims returns it changed.
+  //
+  // The reserved set is reservedVCTypes together with requiredVCTypes.
+  // Undefined or empty, it is requiredVCTypes alone; when both are empty
+  // every VC walks every check, as before. Mirror of Go
+  // VerifyVPOptions.ReservedVCTypes.
+  //
+  // Types are matched on what they mean, not on how they are spelled: a VC
+  // whose type is a reserved name, a JSON-LD spelling of the IRI a reserved
+  // name stands for (the full IRI, a compact `prefix:` form, a context term
+  // aliasing it), or a type that can't be resolved to an absolute IRI at
+  // all, is reserved and checked. See reserved-types.ts.
+  reservedVCTypes?: string[];
   // Cap on envelope.verifiableCredential length. Schema enforces
   // minItems: 1 but no maxItems; an attacker submitting a 10k-VC bid
   // would amplify URDNA2015 cost into a DoS. Zero or undefined disables
@@ -130,8 +169,9 @@ export interface VerifyVPOptions {
   // cryptographic computation — pure log-correlation.
   requestId?: string;
   // When supplied, verifyVP cryptographically verifies
-  // each embedded VC's own proof block against the issuer's
-  // published verificationMethod key (resolved via this resolver).
+  // each checked VC's own proof block against the issuer's
+  // published verificationMethod key (resolved via this resolver); a
+  // passed-through VC's issuer is never resolved.
   // Undefined opts out — matches the Go canonical's
   // `VerifyVCProofs IssuerKeyResolver` contract. Production callers
   // wire `did-web-resolver.ts`'s `DIDWebResolver` instance here.
@@ -151,6 +191,20 @@ export interface VerifyVPOptions {
   // no-network loader. REQUIRED when verifying an envelope whose context the
   // shared loader doesn't know. Mirror of Go VerifyVPOptions.ExtraEnvelopeContexts.
   extraEnvelopeContexts?: Record<string, unknown>;
+  // The JSON-LD contexts of credentials that are not Atum's, so a
+  // presentation can carry them to the counterparties: context URL → parsed
+  // context document. The loader never fetches a context, so a credential
+  // whose @context names a URL that is neither bundled nor supplied here makes
+  // the whole presentation fail canonicalization. The caller supplies each
+  // document as content it holds and pins, never as a URL to fetch.
+  //
+  // Overlaid on the per-call loader together with extraEnvelopeContexts, for
+  // the holder signature and for reserved-type matching. A key that equals a
+  // bundled context URL or an extraEnvelopeContexts key is refused before
+  // anything is verified, so a supplied context can never replace one of
+  // Atum's; a term it defines that stands for a reserved type's IRI makes the
+  // credential reserved. Mirror of Go VerifyVPOptions.ExtraCredentialContexts.
+  extraCredentialContexts?: Record<string, unknown>;
   // Also accept a secp256k1 holder proof in the typed form a payer's wallet signs: a signature
   // over the EIP-712 digest of PaymentRequestEnvelopeProof{proofHash, docHash}, the same two
   // hashes the raw form signs as keccak256(proofHash || docHash), so it binds the same challenge,
@@ -185,6 +239,15 @@ export interface VPResult {
   // resolver, every VC in this slice ALSO had its proof
   // cryptographically verified against the issuer's published key.
   attestedClaims: unknown[];
+  // VCs passed through unchecked because they declare none of the reserved
+  // types (see VerifyVPOptions.reservedVCTypes), in envelope order and as
+  // they arrived. Nothing about them was verified beyond the holder's
+  // signature over the presentation, and that signature covers only the
+  // terms a loaded context defines: a member no context defines is not
+  // signed and may have changed since. The counterparties verify the
+  // credential's own proof themselves. Empty when there is no reserved set or
+  // every VC declares a reserved type. Mirror of Go VPResult.PassThroughClaims.
+  passThroughClaims: unknown[];
   // Count of VCs whose cryptographic proof was verified.
   // Zero indicates the verifyVCProofs path did not run (caller
   // opted out by leaving the resolver undefined). Non-zero is a
@@ -236,6 +299,7 @@ async function verifyVPInner(
   if (!options.expectedHolder) {
     throw new Error("verifyVP: options.expectedHolder is required");
   }
+  checkExtraCredentialContexts(options);
 
   // Refused before anything reads the envelope, as Go's VerifyVP refuses it.
   // A member named twice, exactly or under the case folding Go's encoding/json
@@ -405,7 +469,7 @@ async function verifyVPSecp256k1(
       domain: stringField(proof, "domain"),
     },
     keepVerifiableCredential: true,
-    extraEnvelopeContexts: options.extraEnvelopeContexts,
+    extraEnvelopeContexts: verifyContexts(options),
     proofContext: proof["@context"] ?? [
       options.envelopeContextUrl ?? FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
       SECP256K1_RECOVERY_CONTEXT_URL,
@@ -436,7 +500,7 @@ async function verifyVPSecp256k1(
   // which an attacker controls both sides of.
   signerMatchesHolderSecp256k1(recovered, holder);
 
-  const { accepted, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
+  const { accepted, passThrough, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
 
   return {
     holder: stripDIDFragment(holder),
@@ -446,6 +510,7 @@ async function verifyVPSecp256k1(
     didNetwork: parseDIDNetwork(holder),
     created,
     attestedClaims: accepted,
+    passThroughClaims: passThrough,
     vcProofsVerifiedCount,
   };
 }
@@ -483,7 +548,7 @@ async function verifyVPEd25519(
       domain: stringField(proof, "domain"),
     },
     keepVerifiableCredential: true,
-    extraEnvelopeContexts: options.extraEnvelopeContexts,
+    extraEnvelopeContexts: verifyContexts(options),
     proofContext: proof["@context"] ?? [
       options.envelopeContextUrl ?? FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
       ED25519_2020_CONTEXT_URL,
@@ -500,7 +565,7 @@ async function verifyVPEd25519(
   // verificationMethod field, not the holder.
   signerMatchesHolderEd25519(pubkey, holder);
 
-  const { accepted, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
+  const { accepted, passThrough, vcProofsVerifiedCount } = await applyVCPolicies(doc, options, holder);
 
   return {
     holder: stripDIDFragment(holder),
@@ -510,13 +575,21 @@ async function verifyVPEd25519(
     didNetwork: parseDIDNetwork(holder),
     created,
     attestedClaims: accepted,
+    passThroughClaims: passThrough,
     vcProofsVerifiedCount,
   };
 }
 
 // applyVCPolicies runs the per-VC checks from design doc §5 (date window),
 // §6 (trust anchors), and §8 (RequiredVCTypes). Returns the VCs that
-// passed; throws on any failure that makes the envelope unacceptable.
+// passed and the VCs it passed through unchecked; throws on any failure
+// that makes the envelope unacceptable.
+//
+// RESERVED AND PASS-THROUGH VCs: when the reserved set (reservedVCTypes
+// together with requiredVCTypes) is non-empty, a VC that declares none of
+// its types is passed through for the counterparties to judge, with no
+// check at all. The checks below apply to every other VC, and to every VC
+// when the reserved set is empty.
 //
 // TWO-TIER POLICY MODEL:
 //
@@ -525,22 +598,22 @@ async function verifyVPEd25519(
 // required-type check (which passes when at least one VC matches) is
 // intentional. They answer different questions:
 //
-//   - per-VC VALIDITY tier (date window, issuer trust): every VC the
-//     producer chose to include MUST be individually valid. Including
+//   - per-VC VALIDITY tier (date window, issuer trust): every checked VC
+//     the producer chose to include MUST be individually valid. Including
 //     a VC is the producer's explicit assertion of intent to present
 //     it — the verifier doesn't drop VCs it finds inconvenient.
 //   - per-policy POLICY tier (required-type): the verifier's operator
 //     declares "at least one VC of type X must be present." A coverage
 //     check, not a per-VC predicate.
 //
-// `attestedClaims` returns every VC examined (the full input set when
-// all VALIDITY checks pass), NOT just the required-type matches.
+// `attestedClaims` returns every checked VC once all VALIDITY checks pass,
+// NOT just the required-type matches; a passed-through VC is never in it.
 // Callers that need the matching subset filter downstream — the
 // contract is "the set of VCs this verifier examined and accepted."
 //
 // SCOPE NOTE: when `options.verifyVCProofs` is supplied,
-// each embedded VC's own cryptographic proof is verified against the
-// issuer's published key. Undefined opts out — matches the Go
+// each checked VC's own cryptographic proof is verified against the
+// issuer's published key; a passed-through VC's never is. Undefined opts out — matches the Go
 // canonical's `VerifyVCProofs IssuerKeyResolver` contract. The
 // per-VC subject-holder binding is always enforced;
 // holder is threaded in from the caller after the OUTER VP
@@ -549,17 +622,37 @@ async function applyVCPolicies(
   doc: Record<string, unknown>,
   options: VerifyVPOptions,
   holder: string
-): Promise<{ accepted: unknown[]; vcProofsVerifiedCount: number }> {
+): Promise<{ accepted: unknown[]; passThrough: unknown[]; vcProofsVerifiedCount: number }> {
   const vcs = doc.verifiableCredential;
   if (!Array.isArray(vcs) || vcs.length === 0) {
     throw new Error("verifyVP: envelope.verifiableCredential is missing or empty");
   }
 
+  const matcher = await newReservedTypeMatcher(
+    reservedVCTypes(options),
+    "@context" in doc ? doc["@context"] : undefined,
+    verifyLoader(options).toJsonldLoader()
+  );
   let matchedRequired = !options.requiredVCTypes || options.requiredVCTypes.length === 0;
   const accepted: unknown[] = [];
+  const passThrough: unknown[] = [];
   let vcProofsVerifiedCount = 0;
   for (let i = 0; i < vcs.length; i++) {
     const vc = vcs[i] as Record<string, unknown>;
+    // Pass-through. A VC that declares no reserved type is for the
+    // counterparties to judge: no check here, and it never reaches
+    // attestedClaims or the coverage gate. A VC declaring any reserved
+    // type, in any spelling, or a type that can't be resolved, is checked
+    // (see reserved-types.ts), so one claiming a reserved type from an
+    // untrusted issuer is still refused. A pass-through VC's issuer is
+    // never resolved: resolving an arbitrary issuer's DID would let any
+    // presenter make the verifier fetch a host of its choosing. A null
+    // matcher means no reserved set: every VC is checked. Mirror of the Go
+    // canonical.
+    if (matcher && !(await matcher.reserved(vcs[i]))) {
+      passThrough.push(vc);
+      continue;
+    }
     // Subject-holder is the cheapest check (single did:pkh segment
     // compare, no allocations, no callback) AND the most diagnostic
     // when an attacker is trying to attach a captured VC, so it fires
@@ -587,7 +680,62 @@ async function applyVCPolicies(
       `verifyVP: no VC declared all requiredVCTypes ${JSON.stringify(options.requiredVCTypes)}`
     );
   }
-  return { accepted, vcProofsVerifiedCount };
+  return { accepted, passThrough, vcProofsVerifiedCount };
+}
+
+// reservedVCTypes is the set of credential types only trusted issuers may
+// issue: reservedVCTypes together with requiredVCTypes, so a required type
+// is always verified. Empty when both are, which checks every VC. Mirror of
+// the Go canonical's reservedVCTypes.
+function reservedVCTypes(options: VerifyVPOptions): string[] {
+  const required = options.requiredVCTypes ?? [];
+  if (!options.reservedVCTypes || options.reservedVCTypes.length === 0) {
+    return required;
+  }
+  const reserved = [...options.reservedVCTypes];
+  for (const t of required) {
+    if (!reserved.includes(t)) reserved.push(t);
+  }
+  return reserved;
+}
+
+// verifyContexts is the caller's extraEnvelopeContexts and
+// extraCredentialContexts together: what the per-call loader overlays.
+function verifyContexts(options: VerifyVPOptions): Record<string, unknown> | undefined {
+  const credential = options.extraCredentialContexts;
+  if (!credential || Object.keys(credential).length === 0) return options.extraEnvelopeContexts;
+  return { ...(options.extraEnvelopeContexts ?? {}), ...credential };
+}
+
+// verifyLoader is the per-call document loader for verification: the shared
+// loader overlaid with verifyContexts. The reserved-type matcher expands
+// credential types with the same loader the holder signature is canonicalized
+// with. Mirror of the Go canonical's verifyLoader.
+function verifyLoader(options: VerifyVPOptions): typeof fqLoader {
+  const extra = verifyContexts(options);
+  if (!extra || Object.keys(extra).length === 0) return fqLoader;
+  return fqLoader.withExtraContexts(extra as Parameters<typeof fqLoader.withExtraContexts>[0]);
+}
+
+// checkExtraCredentialContexts refuses a supplied credential context whose
+// URL is a bundled context or an extraEnvelopeContexts key: a supplied
+// context may add a vocabulary, never replace one of Atum's. Mirror of the Go
+// canonical's checkExtraCredentialContexts.
+function checkExtraCredentialContexts(options: VerifyVPOptions): void {
+  for (const url of Object.keys(options.extraCredentialContexts ?? {})) {
+    let bundled = true;
+    try {
+      fqLoader.load(url);
+    } catch {
+      bundled = false;
+    }
+    if (bundled) {
+      throw new Error(`verifyVP: extraCredentialContexts: ${JSON.stringify(url)} is a bundled context and can't be replaced`);
+    }
+    if (options.extraEnvelopeContexts && Object.prototype.hasOwnProperty.call(options.extraEnvelopeContexts, url)) {
+      throw new Error(`verifyVP: extraCredentialContexts: ${JSON.stringify(url)} is also an extraEnvelopeContexts key`);
+    }
+  }
 }
 
 // ZERO_INSTANT_MS is 0001-01-01T00:00:00Z, the instant Go's zero time.Time

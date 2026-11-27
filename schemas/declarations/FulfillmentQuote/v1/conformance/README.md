@@ -53,6 +53,85 @@ byte-identical like the others.
 | `ed25519-go-vp-null-issuance-date.json` | `Ed25519Signature2020` | Go (`SignVPEd25519`) |
 | `ed25519-ts-vp-null-issuance-date.json` | `Ed25519Signature2020` | TS (`signVPEd25519`) |
 
+## Pass-through FulfillmentQuoteEnvelope fixtures
+
+The envelopes above with a second, third-party credential after the pinned one.
+Its issuer is on no trust list and resolves nowhere, it expired before the
+conformance clock, and its subject is another account, so it fails every per-VC
+check; its type is an absolute IRI, so both JSON-LD libraries expand it the same
+way. With the pinned credential's type required (and so reserved) and issuer
+trust strict on the pinned issuer, both verifiers accept every fixture and return
+the third-party credential, unchecked, in their pass-through claims. With no
+reserved set both refuse it, as before reserved types existed. The ed25519 pair
+is byte-identical like the others.
+
+| File | Cryptosuite | Signed by |
+|---|---|---|
+| `secp256k1-go-vp-pass-through.json` | `EcdsaSecp256k1RecoverySignature2020` | Go (`SignVP`) |
+| `secp256k1-ts-vp-pass-through.json` | `EcdsaSecp256k1RecoverySignature2020` | TS (`signVP`) |
+| `ed25519-go-vp-pass-through.json` | `Ed25519Signature2020` | Go (`SignVPEd25519`) |
+| `ed25519-ts-vp-pass-through.json` | `Ed25519Signature2020` | TS (`signVPEd25519`) |
+
+## Reserved-spelling FulfillmentQuoteEnvelope fixtures
+
+The pinned credential followed by a credential from an issuer on no trust list
+(`did:web:impersonator.example`), about the holder and valid by date, whose type
+is the reserved type in another JSON-LD spelling, or a short name no context
+defines. A verifier must check it, not pass it through: with Known-to-Atum
+required and issuer trust strict on the pinned issuer both verifiers refuse it on
+its issuer, and trusting that issuer too makes it verify with both credentials
+checked. A short name no context defines canonicalizes differently in json-gold
+and jsonld.js, so the other language's `undefined` fixture is refused on its
+holder signature instead; it is refused either way.
+
+| File | The second credential's type | Signed by |
+|---|---|---|
+| `secp256k1-{go,ts}-vp-reserved-iri.json` | the full IRI, `https://schemas.atum.xyz/credentials/known-to-atum/v1#KnownToAtumVerifiableCredential` | Go, TS |
+| `secp256k1-{go,ts}-vp-reserved-compact.json` | `kta:KnownToAtumVerifiableCredential`, with the known-to-atum context | Go, TS |
+| `secp256k1-{go,ts}-vp-reserved-compact-no-context.json` | `kta:KnownToAtumVerifiableCredential`, without it | Go, TS |
+| `secp256k1-{go,ts}-vp-reserved-undefined.json` | `PartnerAttestationCredential`, which no loaded context defines | Go, TS |
+
+## Partner-context FulfillmentQuoteEnvelope fixtures
+
+The pinned credential followed by a credential under a partner's own JSON-LD
+context, which a verifier reads only when its caller supplies that context
+(`ExtraCredentialContexts` in Go, `extraCredentialContexts` in TypeScript). The
+context documents are `partner-credentials-v1-context.jsonld`
+(`https://partner.example/credentials/v1`) and
+`partner-membership-v1-context.jsonld` (`https://partner.example/membership/v1`),
+read by both generators and both conformance suites.
+
+| File | The second credential | Both verifiers |
+|---|---|---|
+| `secp256k1-{go,ts}-vp-partner-context.json` | a `PartnerAttestationCredential` from an unlisted issuer, expired, about another account | pass it through, byte-identical, with the context supplied; refuse the presentation without it |
+| `secp256k1-{go,ts}-vp-partner-alias.json` | a `PartnerMembershipCredential`, a partner term for the Known-to-Atum type's IRI, from an unlisted issuer about the holder | refuse it on its issuer: it is reserved |
+
+## Which credentials can ride along
+
+A verifier with a reserved set passes a credential through to the counterparties
+only when all of these hold:
+
+- **Its type isn't reserved in any spelling.** No type is a reserved name or ends
+  in one after its last `#`, `/` or `:`, and none expands to the IRI a reserved
+  name stands for.
+- **Every type resolves to an absolute IRI.** It is written out as one, or it is a
+  term a context the verifier knows defines. A short name no context defines is
+  checked like a reserved type, and it doesn't verify across the two languages
+  either.
+- **Every `@context` it names is one the verifier knows.** That is a bundled
+  context (W3C credentials v1, known-to-atum v1 and v2, kyc v1, sender-compliance
+  v1) or one the verifier's caller supplies as content it holds and pins. The
+  loader never fetches a context: any other URL makes the whole presentation fail
+  canonicalization. Contexts are named by URL only; an inline context object is
+  refused. A supplied context can't replace a bundled one, and can't redefine one
+  of Atum's protected terms.
+- **It is a JSON object whose `type` is an array of strings.**
+
+Passing through means nothing about the credential was verified beyond the
+holder's signature over the presentation, and that signature covers only the
+terms a loaded context defines: a member no context defines can change after
+signing without breaking it.
+
 ## PaymentRequestEnvelope fixtures
 
 The same VP signer/verifier, exercised through the **envelope-context-overlay
