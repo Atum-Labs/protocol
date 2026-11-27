@@ -223,6 +223,35 @@ describe("verifyVP: reserved and pass-through credentials", () => {
     await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(/verifiableCredential\[1\]/);
   });
 
+  // The reserved set is reservedVCTypes together with requiredVCTypes:
+  // listing another type keeps the required type reserved, so a Known-to-Atum
+  // credential from an issuer outside the trust list beside Atum's is still
+  // checked and refused. Mirror of Go
+  // TestVerifyVP_ReservedVCTypesKeepsRequiredTypesReserved.
+  it("keeps the required type reserved when reservedVCTypes lists another", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const foreign = spelledVC(IMPOSTOR, holder, [W3C_VC_V1_CONTEXT_URL, KNOWN_TO_ATUM_V1_CONTEXT_URL], [
+      "VerifiableCredential",
+      KTA,
+    ]);
+    const signed = await signPresentation(wallet, holder, [kta, foreign]);
+    await expect(verifyVP(signed, strictOpts(holder, { reservedVCTypes: [THIRD_PARTY_TYPE] }))).rejects.toThrow(
+      /verifiableCredential\[1\] issuer .* not in trust anchors/
+    );
+  });
+
+  // passThroughClaims returns the credential the envelope carried, the same
+  // object, never a copy or a re-parse.
+  it("returns the very credential object it passed through", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta, vmSet } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const signed = await signPresentation(wallet, holder, [kta, thirdPartyVC(["VerifiableCredential", THIRD_PARTY_TYPE])]);
+    const res = await verifyVP(signed, strictOpts(holder, { verifyVCProofs: new GuardResolver(vmSet) }));
+    expect(res.passThroughClaims).toHaveLength(1);
+    expect(res.passThroughClaims[0]).toBe((signed.verifiableCredential as unknown[])[1]);
+  });
+
   // Only a plain object whose `type` is an array of strings can pass through.
   // Go refuses any other shape while decoding the envelope; here it walks
   // every check, so a bare-string reserved type from an untrusted issuer is

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	lddataintegrity "github.com/atum-labs/protocol/schemas/declarations/common/ld-data-integrity/go"
 )
 
 // Reserved and pass-through credentials (VerifyVPOptions.ReservedVCTypes).
@@ -306,5 +308,98 @@ func TestVerifyVP_ReservedTypeSpellings_AreChecked(t *testing.T) {
 				t.Fatalf("got %d attested and %d passed through, want both credentials checked", len(res.AttestedClaims), len(res.PassThroughClaims))
 			}
 		})
+	}
+}
+
+// The reserved set is ReservedVCTypes together with RequiredVCTypes: listing
+// another type in ReservedVCTypes keeps the required type reserved, so a
+// Known-to-Atum credential from an issuer outside the trust list beside
+// Atum's is still checked and refused.
+func TestVerifyVP_ReservedVCTypesKeepsRequiredTypesReserved(t *testing.T) {
+	const impostor = "did:web:impersonator.example"
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+	foreign := spelledVCForTest(t, impostor, holderDID,
+		[]any{"https://www.w3.org/2018/credentials/v1", lddataintegrity.KnownToAtumV1ContextURL},
+		[]string{"VerifiableCredential", "KnownToAtumVerifiableCredential"})
+	envelope := signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, foreign})
+
+	opts := happyOpts(holderDID)
+	opts.IsIssuerTrusted = strictTrust(reservedTrustedIssuer)
+	opts.ReservedVCTypes = []string{thirdPartyType}
+	_, err := VerifyVP(envelope, opts)
+	if !errors.Is(err, ErrVPIssuerNotTrusted) || !strings.Contains(err.Error(), "verifiableCredential[1]") {
+		t.Fatalf("VerifyVP: want ErrVPIssuerNotTrusted on verifiableCredential[1], got %v", err)
+	}
+}
+
+// PassThroughClaims holds the credential exactly as it sits on the wire,
+// whitespace included, never a re-marshal. The holder signature covers the
+// canonical form, so the indented envelope still verifies.
+func TestVerifyVP_PassThroughClaims_AreTheWireBytes(t *testing.T) {
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+	third := thirdPartyVCForTest(t, []string{"VerifiableCredential", thirdPartyType})
+	compact := signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, third})
+	var indented bytes.Buffer
+	if err := json.Indent(&indented, compact, "", "    "); err != nil {
+		t.Fatalf("indent envelope: %v", err)
+	}
+	envelope := indented.Bytes()
+
+	resolver := &mockResolver{issuerDID: reservedTrustedIssuer, vmSet: issuerVMSet(t, issuerPriv, reservedTrustedIssuer)}
+	res, err := VerifyVP(envelope, strictReservedOpts(t, holderDID, resolver))
+	if err != nil {
+		t.Fatalf("VerifyVP(indented): %v", err)
+	}
+	want := wireVC(t, envelope, 1)
+	if !bytes.Contains(want, []byte("\n    ")) {
+		t.Fatalf("the wire credential isn't indented, so this proves nothing: %s", want)
+	}
+	if len(res.PassThroughClaims) != 1 || !bytes.Equal(res.PassThroughClaims[0], want) {
+		t.Fatalf("PassThroughClaims isn't the wire bytes:\n got %s\nwant %s", res.PassThroughClaims, want)
+	}
+}
+
+// A pass-through credential's issuer isn't judged at all, so in audit mode
+// it records no IssuerTrustObservation. A checked credential from the same
+// kind of issuer does, which shows the audit path is live.
+func TestVerifyVP_PassThroughVC_RecordsNoAuditObservation(t *testing.T) {
+	const impostor = "did:web:impersonator.example"
+	audit := func(d string) (bool, bool) { return d == reservedTrustedIssuer, false }
+
+	holderPriv := newSecpKey(t)
+	holderDID := holderDIDForKey(holderPriv)
+	issuerPriv := newSecpKey(t)
+	trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+
+	third := thirdPartyVCForTest(t, []string{"VerifiableCredential", thirdPartyType})
+	envelope := signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, third})
+	opts := happyOpts(holderDID)
+	opts.IsIssuerTrusted = audit
+	res, err := VerifyVP(envelope, opts)
+	if err != nil {
+		t.Fatalf("VerifyVP (audit, pass-through): %v", err)
+	}
+	if len(res.PassThroughClaims) != 1 || len(res.IssuerTrustObservations) != 0 {
+		t.Fatalf("got %d passed through and observations %+v, want 1 and none", len(res.PassThroughClaims), res.IssuerTrustObservations)
+	}
+
+	foreign := spelledVCForTest(t, impostor, holderDID,
+		[]any{"https://www.w3.org/2018/credentials/v1", lddataintegrity.KnownToAtumV1ContextURL},
+		[]string{"VerifiableCredential", "KnownToAtumVerifiableCredential"})
+	envelope = signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, foreign})
+	res, err = VerifyVP(envelope, opts)
+	if err != nil {
+		t.Fatalf("VerifyVP (audit, checked): %v", err)
+	}
+	if len(res.IssuerTrustObservations) != 1 || res.IssuerTrustObservations[0].VCIndex != 1 || res.IssuerTrustObservations[0].IssuerDID != impostor {
+		t.Fatalf("observations = %+v, want one for verifiableCredential[1] from %s", res.IssuerTrustObservations, impostor)
 	}
 }
