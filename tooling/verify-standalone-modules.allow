@@ -6,6 +6,7 @@
 # for a consumer, but its own tests read files from outside the module directory.
 
 test contracts/evm/bindings/go/escrow-encoding
+test contracts/registry
 test contracts/stellar/bindings/go/escrow-encoding
 test contracts/svm/bindings/go/escrow-encoding
 test contracts/tvm/bindings/go/escrow-encoding

@@ -1,0 +1,20 @@
+{
+  "chain": "tron:shasta",
+  "name": "Tron Shasta",
+  "mainnet": false,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/tvm/deployments-v4.json",
+      "escrow": "TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw",
+      "fulfillmentProxies": [
+        "TH88i2DKyLwjtH8hMzXTqSzGLr7U6eprbZ"
+      ],
+      "permit2": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    }
+  ]
+}

@@ -61,6 +61,9 @@ export { EscrowRefundParams, computeRefundHash, computeRefundHashV2 } from './re
 // Nonce generator
 export { generateNonce, REPLAY_SLOTS, MAX_VALID_SLOT, REPLAY_BUCKETS, DEPOSIT_COMPUTE_UNIT_LIMIT } from './nonce-generator';
 
+// Message scheme: what an ed25519 signer signs over a witness hash
+export { MessageScheme, SCHEME_RAW_HASH, WitnessKind, signingBytes, acceptedForms } from './scheme';
+
 // Anchor IDL and type helper for program interaction
 export type { Escrow } from './generated/escrow';
 export type { FulfillmentProxy } from './generated/fulfillment_proxy';

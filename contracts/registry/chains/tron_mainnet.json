@@ -1,0 +1,20 @@
+{
+  "chain": "tron:mainnet",
+  "name": "Tron Mainnet",
+  "mainnet": true,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/tvm/deployments-v4.json",
+      "escrow": "TYj48kPL31aMpJfm2LKi96e9hEfVKGmv5Y",
+      "fulfillmentProxies": [
+        "TB32KsTZ9WKozgfgKtDVaJLu7f49qS88yo"
+      ],
+      "permit2": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    }
+  ]
+}

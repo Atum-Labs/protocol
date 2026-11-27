@@ -1,0 +1,18 @@
+{
+  "chain": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  "name": "Solana Mainnet",
+  "mainnet": true,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/svm/deployments-v4.json",
+      "escrow": "5BD9UAUCRCg6Chv6CS5k4sBHGd7CciWpng9u7iJxJFjx",
+      "fulfillmentProxies": [
+        "CMxMPzpmeJPJbyUK4DDSDEhEYdCCAUt7w5cr5SWEHoNJ"
+      ],
+      "signature": {
+        "svmDomainVersion": 5
+      }
+    }
+  ]
+}

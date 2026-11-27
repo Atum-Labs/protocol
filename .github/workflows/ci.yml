@@ -106,6 +106,11 @@ jobs:
               - 'schemas/declarations/BidDecline/**'
               - 'schemas/apis/settler-gateway/v1/session-stream/settler.proto'
               - 'schemas/apis/decline/v1/catalog.json'
+              # The contract registry's chain files, and the deployments files its tests check them
+              # against, are JSON, so a registry-only or deployments-only PR would skip its tests.
+              - 'contracts/registry/**'
+              - 'contracts/*/deployments-*.json'
+              - 'contracts/stellar/deploy/deployments-*.json'
             ts:
               - '**/*.ts'
               - '**/*.mjs'
@@ -142,6 +147,8 @@ jobs:
               # PR touching only it skips the lane that would have caught the
               # breakage, and it lands on the next unrelated TypeScript PR instead.
               - '.prettierignore'
+              # The TypeScript registry reader bundles chains/*.json and rebuilds published.txt.
+              - 'contracts/registry/**'
             schemas:
               - 'schemas/**'
               - 'pnpm-lock.yaml'
@@ -209,6 +216,19 @@ jobs:
             (cd "$d" && go build ./... && go test $race ./...)
             echo "::endgroup::"
           done
+      # published.txt is append only. The Go tests compare it with this PR's own chain files, so
+      # they can't see a version removed from both. Compare it with the base branch's copy instead.
+      - name: Published registry versions survive
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          # The base commit of the same event the checkout came from, so a rerun after another PR
+          # merges doesn't compare against a newer base.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          bash contracts/registry/check-published.sh "$BASE_SHA"
       # contracts/{evm,tvm}/bindings/go/escrow-encoding/generated is committed abigen output. Regenerate it
       # from the committed ABIs and fail on any diff, so a hand-edit or an ABI change without
       # `make generate` cannot merge. TestGeneratedBindingsMatchSourceABI above only compares event

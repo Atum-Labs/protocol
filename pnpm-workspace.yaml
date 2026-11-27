@@ -19,6 +19,7 @@ packages:
   - 'schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow'
   - 'schemas/apis/payment-gateway/v1/bindings/typescript/client'
   - 'contracts/*/bindings/typescript/escrow-encoding'
+  - 'contracts/registry/typescript'
   # Stellar deploy + smoke scripts (CORE-3092); lives under source/ like the SVM scripts
   - 'contracts/stellar/source/scripts'
   - 'key-management/common/typescript'

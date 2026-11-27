@@ -1,0 +1,21 @@
+{
+  "chain": "eip155:5042",
+  "name": "Arc Mainnet",
+  "mainnet": true,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/evm/deployments-v4.json",
+      "escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+      "fulfillmentProxies": [
+        "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+        "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932"
+      ],
+      "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    }
+  ]
+}

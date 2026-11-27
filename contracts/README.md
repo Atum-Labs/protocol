@@ -76,7 +76,8 @@ so `authorizeFulfillment` does not pause on it. It stays in the services' trust 
 last payment created on it has finished, then comes out in a follow-up. Its deployer holds
 `PAUSER_ROLE` on all 8 testnets since CORE-2817 (a direct `grantRole`, because the runner refuses an
 address the current tree doesn't build). The mainnet cutover and what adopting a new address takes
-(settler Turnkey policies, and a cutover that scans both proxies for the refund window) are in
+(settler Turnkey policies, regenerating the contract registry (`registry/README.md`), and a cutover that
+scans both proxies for the refund window) are in
 protocol#178's `evm/deploy/README.md` section "Bytecode-only FulfillmentProxy redeploy".
 
 Two chains present in v3 have no v4 entry: BNB Chain Testnet (97) has no v4 bytecode
