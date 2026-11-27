@@ -122,6 +122,18 @@ export const catalog = {
       "public_message": "The request's quote_deadline left the settler too little time to produce a quote. Reissue the request with a longer quote_deadline.",
       "retry_classification": "NOT_RETRYABLE_FIX_REQUEST",
       "docs_slug": "quote-window-too-short"
+    },
+    "ASSET_PAUSED": {
+      "public_code": "ASSET_PAUSED",
+      "public_message": "The token issuer has paused transfers of the source or destination asset. Retry the request once the issuer resumes transfers.",
+      "retry_classification": "RETRY_AFTER_DELAY",
+      "docs_slug": "asset-paused"
+    },
+    "DESTINATION_ACCOUNT_RESTRICTED": {
+      "public_code": "DESTINATION_ACCOUNT_RESTRICTED",
+      "public_message": "The destination account cannot receive this asset, for example because it is frozen or blocked by the issuer or only accepts certain transfers. Use a destination account that can receive this asset, or have the recipient or the issuer lift the restriction first.",
+      "retry_classification": "NOT_RETRYABLE_FIX_REQUEST",
+      "docs_slug": "destination-account-restricted"
     }
   }
 }

@@ -286,6 +286,15 @@ const (
 	// reason. The mirror image of QUOTE_WINDOW_TOO_LONG; distinct from AWARD_WINDOW_TOO_SHORT,
 	// which is about award_deadline.
 	DeclineReason_DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT DeclineReason = 20
+	// The token issuer has paused all transfers of the source or destination asset, for example a
+	// Solana Token-2022 mint with the Pausable extension, so no deposit or payout in it can move.
+	// Retry once the issuer resumes transfers.
+	DeclineReason_DECLINE_REASON_ASSET_PAUSED DeclineReason = 21
+	// The destination account cannot receive the payout in this asset, for example it is frozen or
+	// blocked by the issuer, requires a memo on incoming transfers, accepts only confidential
+	// transfers, or would be created frozen. The requester sends to an account that can receive the
+	// asset, or has the restriction lifted first.
+	DeclineReason_DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED DeclineReason = 22
 )
 
 // Enum value maps for DeclineReason.
@@ -310,27 +319,31 @@ var (
 		18: "DECLINE_REASON_VERIFIER_UNSUPPORTED_ESCROW",
 		19: "DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW",
 		20: "DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT",
+		21: "DECLINE_REASON_ASSET_PAUSED",
+		22: "DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED",
 	}
 	DeclineReason_value = map[string]int32{
-		"DECLINE_REASON_UNSPECIFIED":                   0,
-		"DECLINE_REASON_DEADLINE_TOO_SHORT":            1,
-		"DECLINE_REASON_NO_SETTLEMENT_HORIZON":         2,
-		"DECLINE_REASON_AUCTION_CLOSED":                3,
-		"DECLINE_REASON_QUOTE_INVALID":                 4,
-		"DECLINE_REASON_DRAINING":                      5,
-		"DECLINE_REASON_HOOK_DECLINED":                 7,
-		"DECLINE_REASON_INTERNAL":                      8,
-		"DECLINE_REASON_INSUFFICIENT_LIQUIDITY":        9,
-		"DECLINE_REASON_UNTRUSTED_VERIFIER":            10,
-		"DECLINE_REASON_AGENT_NOT_READY":               11,
-		"DECLINE_REASON_UNSUPPORTED_DESTINATION_ASSET": 12,
-		"DECLINE_REASON_QUOTE_GENERATION_FAILED":       13,
-		"DECLINE_REASON_AWARD_WINDOW_TOO_SHORT":        14,
-		"DECLINE_REASON_QUOTE_WINDOW_TOO_LONG":         15,
-		"DECLINE_REASON_SETTLER_UNSUPPORTED_ESCROW":    17,
-		"DECLINE_REASON_VERIFIER_UNSUPPORTED_ESCROW":   18,
-		"DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW":     19,
-		"DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT":        20,
+		"DECLINE_REASON_UNSPECIFIED":                    0,
+		"DECLINE_REASON_DEADLINE_TOO_SHORT":             1,
+		"DECLINE_REASON_NO_SETTLEMENT_HORIZON":          2,
+		"DECLINE_REASON_AUCTION_CLOSED":                 3,
+		"DECLINE_REASON_QUOTE_INVALID":                  4,
+		"DECLINE_REASON_DRAINING":                       5,
+		"DECLINE_REASON_HOOK_DECLINED":                  7,
+		"DECLINE_REASON_INTERNAL":                       8,
+		"DECLINE_REASON_INSUFFICIENT_LIQUIDITY":         9,
+		"DECLINE_REASON_UNTRUSTED_VERIFIER":             10,
+		"DECLINE_REASON_AGENT_NOT_READY":                11,
+		"DECLINE_REASON_UNSUPPORTED_DESTINATION_ASSET":  12,
+		"DECLINE_REASON_QUOTE_GENERATION_FAILED":        13,
+		"DECLINE_REASON_AWARD_WINDOW_TOO_SHORT":         14,
+		"DECLINE_REASON_QUOTE_WINDOW_TOO_LONG":          15,
+		"DECLINE_REASON_SETTLER_UNSUPPORTED_ESCROW":     17,
+		"DECLINE_REASON_VERIFIER_UNSUPPORTED_ESCROW":    18,
+		"DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW":      19,
+		"DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT":         20,
+		"DECLINE_REASON_ASSET_PAUSED":                   21,
+		"DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED": 22,
 	}
 )
 
@@ -2412,7 +2425,7 @@ const file_settler_proto_rawDesc = "" +
 	"\x1fSETTLEMENT_STEP_OUTCOME_SUCCESS\x10\x01\x12!\n" +
 	"\x1dSETTLEMENT_STEP_OUTCOME_ERROR\x10\x02\x12)\n" +
 	"%SETTLEMENT_STEP_OUTCOME_INDETERMINATE\x10\x03\x12&\n" +
-	"\"SETTLEMENT_STEP_OUTCOME_FINALIZING\x10\x04*\xd0\x06\n" +
+	"\"SETTLEMENT_STEP_OUTCOME_FINALIZING\x10\x04*\xa4\a\n" +
 	"\rDeclineReason\x12\x1e\n" +
 	"\x1aDECLINE_REASON_UNSPECIFIED\x10\x00\x12%\n" +
 	"!DECLINE_REASON_DEADLINE_TOO_SHORT\x10\x01\x12(\n" +
@@ -2433,7 +2446,9 @@ const file_settler_proto_rawDesc = "" +
 	")DECLINE_REASON_SETTLER_UNSUPPORTED_ESCROW\x10\x11\x12.\n" +
 	"*DECLINE_REASON_VERIFIER_UNSUPPORTED_ESCROW\x10\x12\x12,\n" +
 	"(DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW\x10\x13\x12)\n" +
-	"%DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT\x10\x14\"\x04\b\x06\x10\x06\"\x04\b\x10\x10\x10*\x1dDECLINE_REASON_NOT_CONFIGURED*!DECLINE_REASON_UNSUPPORTED_ESCROW2o\n" +
+	"%DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT\x10\x14\x12\x1f\n" +
+	"\x1bDECLINE_REASON_ASSET_PAUSED\x10\x15\x121\n" +
+	"-DECLINE_REASON_DESTINATION_ACCOUNT_RESTRICTED\x10\x16\"\x04\b\x06\x10\x06\"\x04\b\x10\x10\x10*\x1dDECLINE_REASON_NOT_CONFIGURED*!DECLINE_REASON_UNSUPPORTED_ESCROW2o\n" +
 	"\x15SettlerGatewayService\x12V\n" +
 	"\rSessionStream\x12\x1f.atum.settler.v1.SessionRequest\x1a .atum.settler.v1.SessionResponse(\x010\x01BdZbgithub.com/atum-labs/protocol/schemas/apis/settler-gateway/v1/session-stream/bindings/go;settlerv1b\x06proto3"
 

@@ -269,6 +269,34 @@
       "content_hash": "0x8f950ef5393772a139f9050bb01ddfabb69730aba0ad08c16d6f1ede7794f28a"
     },
     {
+      "name": "reason-ASSET_PAUSED",
+      "declaration": {
+        "@context": [
+          "https://schemas.atum.network/declarations/BidDecline/v1/context.jsonld"
+        ],
+        "issued_at": "2026-10-13T12:00:00.000Z",
+        "message": "declined: ASSET_PAUSED",
+        "payment_id": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+        "quote_request_id": "",
+        "reason_code": "ASSET_PAUSED"
+      },
+      "content_hash": "0x7db036429f17a3cc494fd08f31dc662a9e79514663f2ec19e5b7dcbdb17444a3"
+    },
+    {
+      "name": "reason-DESTINATION_ACCOUNT_RESTRICTED",
+      "declaration": {
+        "@context": [
+          "https://schemas.atum.network/declarations/BidDecline/v1/context.jsonld"
+        ],
+        "issued_at": "2026-10-13T12:00:00.000Z",
+        "message": "declined: DESTINATION_ACCOUNT_RESTRICTED",
+        "payment_id": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+        "quote_request_id": "",
+        "reason_code": "DESTINATION_ACCOUNT_RESTRICTED"
+      },
+      "content_hash": "0xe8d3330ca240dc6a3b2b06eb10e314b8463acae123ec7b3628fb4acf2fbea7ff"
+    },
+    {
       "name": "quote-request-flow",
       "declaration": {
         "@context": [

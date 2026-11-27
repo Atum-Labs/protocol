@@ -1,9 +1,11 @@
 // Code generated from apis/decline/v1/catalog.json by make generate-decline. DO NOT EDIT.
 export type DeclineReasonCode =
   | "AGENT_NOT_READY"
+  | "ASSET_PAUSED"
   | "AUCTION_CLOSED"
   | "AWARD_WINDOW_TOO_SHORT"
   | "DEADLINE_TOO_SHORT"
+  | "DESTINATION_ACCOUNT_RESTRICTED"
   | "DRAINING"
   | "HOOK_DECLINED"
   | "INSUFFICIENT_LIQUIDITY"
@@ -23,9 +25,11 @@ export type DeclineReasonCode =
 /** Every reason the catalog names, sorted. */
 export const ALL_DECLINE_REASON_CODES: DeclineReasonCode[] = [
   "AGENT_NOT_READY",
+  "ASSET_PAUSED",
   "AUCTION_CLOSED",
   "AWARD_WINDOW_TOO_SHORT",
   "DEADLINE_TOO_SHORT",
+  "DESTINATION_ACCOUNT_RESTRICTED",
   "DRAINING",
   "HOOK_DECLINED",
   "INSUFFICIENT_LIQUIDITY",
