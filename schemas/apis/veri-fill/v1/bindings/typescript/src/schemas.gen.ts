@@ -1533,6 +1533,26 @@ deposits and another program can write a \`Refunded\`-shaped log line.
             pattern: '^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$',
             example: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
         },
+        refunded_amount: {
+            type: 'string',
+            description: `What the escrow paid out in the refund, in the token's base units, as read from the
+escrow's own \`Refunded\` event on \`solana:*\`. The Solana escrow refunds the deposit
+account's whole balance: less than the deposit when the mint's permanent delegate
+took from it, more when tokens were sent to the account on top. A transfer fee the
+mint charges on the refund is not deducted. Present only with
+\`refund_transaction_hash\` on \`solana:*\`. Unsigned, like \`refund_transaction_hash\`.
+`,
+            pattern: '^[0-9]+$',
+            example: '1000000'
+        },
+        refund_partial: {
+            type: 'boolean',
+            description: `True when \`refunded_amount\` is less than the deposit, as read from the escrow's own
+\`Deposited\` event for this payment; false when it is not. Absent whenever the deposit
+amount could not be read, so absent means unknown, never full. Present only with
+\`refunded_amount\`.
+`
+        },
         error: {
             type: 'string',
             description: `Error code if signature generation failed.

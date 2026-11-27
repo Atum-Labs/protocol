@@ -1848,6 +1848,12 @@ type RefundSignatureResponse struct {
 	// PaymentId Hash of deposit data. Uniquely matches the given deposit
 	PaymentId string `json:"payment_id"`
 
+	// RefundPartial True when `refunded_amount` is less than the deposit, as read from the escrow's own
+	// `Deposited` event for this payment; false when it is not. Absent whenever the deposit
+	// amount could not be read, so absent means unknown, never full. Present only with
+	// `refunded_amount`.
+	RefundPartial *bool `json:"refund_partial,omitempty"`
+
 	// RefundTransactionHash The source-chain transaction that refunded the deposit: lowercase 0x-prefixed hex
 	// on `eip155:*` and `tron:*`, a base58 signature on `solana:*`. Hex is 0x-prefixed on
 	// every chain including `tron:*`, so that one value has one spelling.
@@ -1861,6 +1867,14 @@ type RefundSignatureResponse struct {
 	// transaction touching the escrow is not enough, since one `RefundedMany` covers many
 	// deposits and another program can write a `Refunded`-shaped log line.
 	RefundTransactionHash *string `json:"refund_transaction_hash,omitempty"`
+
+	// RefundedAmount What the escrow paid out in the refund, in the token's base units, as read from the
+	// escrow's own `Refunded` event on `solana:*`. The Solana escrow refunds the deposit
+	// account's whole balance: less than the deposit when the mint's permanent delegate
+	// took from it, more when tokens were sent to the account on top. A transfer fee the
+	// mint charges on the refund is not deducted. Present only with
+	// `refund_transaction_hash` on `solana:*`. Unsigned, like `refund_transaction_hash`.
+	RefundedAmount *string `json:"refunded_amount,omitempty"`
 
 	// Signature Cryptographic signature that authorizes the refund of escrowed funds.
 	// This can be submitted to the escrow contract to claim the refund.
