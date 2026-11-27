@@ -51,11 +51,11 @@ pub struct DepositInfo {
     // parity with EVM and TVM, which call the same value `depositRequestHash`. Its derivation is
     // defined by the offchain protocol layer, not by this program.
     pub deposit_request_hash: [u8; 32],
-    // keccak256 of the depositor-committed destination string. Only the hash is stored: it keeps
-    // this account fixed-width. See MAX_DESTINATION_LEN for the transaction-size ceiling.
+    // keccak256 of the depositor-committed destination string. The deposit instruction carries only
+    // this hash, so the account stays fixed-width and the string never reaches the program.
     //
-    // RECOVERING THE PLAINTEXT: the deposit INSTRUCTION DATA is the only source. This program emits
-    // no event carrying either commitment -- `Deposited` (events.rs) carries neither
+    // RECOVERING THE PLAINTEXT: it is not on chain; it lives in the off-chain deposit request. This
+    // program emits no event carrying either commitment -- `Deposited` (events.rs) carries neither
     // `deposit_request_hash` nor `destination_hash`, and there is no sibling commitments event. An
     // earlier revision of this comment pointed at a `DepositCommitments` event; that event exists on
     // EVM and TVM and was never ported here, so the reference was unresolvable.

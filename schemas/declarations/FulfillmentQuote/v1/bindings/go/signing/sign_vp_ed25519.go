@@ -33,6 +33,10 @@ type SignVPEd25519Options struct {
 	// (ed25519) PRE producer MUST set "PaymentRequestEnvelope" or the
 	// type-asserting PRE perimeters reject it.
 	DeclarationType string
+
+	// TextProof signs lddataintegrity.Ed25519ProofMessage(SigningInput)
+	// instead of the raw SigningInput. VerifyVP accepts both.
+	TextProof bool
 }
 
 // SignVPEd25519 produces a W3C Data Integrity-signed FulfillmentQuoteEnvelope
@@ -101,7 +105,13 @@ func SignVPEd25519WithCreatedString(vcs []json.RawMessage, priv ed25519.PrivateK
 		return nil, fmt.Errorf("SignVPEd25519: hash: %w", err)
 	}
 
-	sig := ed25519.Sign(priv, hash.SigningInput)
+	msg := hash.SigningInput
+	if opts.TextProof {
+		if msg, err = lddataintegrity.Ed25519ProofMessage(hash.SigningInput); err != nil {
+			return nil, fmt.Errorf("SignVPEd25519: proof message: %w", err)
+		}
+	}
+	sig := ed25519.Sign(priv, msg)
 	proofValue, err := lddataintegrity.EncodeEd25519ProofValue(sig)
 	if err != nil {
 		return nil, fmt.Errorf("SignVPEd25519: encode proofValue: %w", err)

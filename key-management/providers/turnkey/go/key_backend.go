@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -151,7 +152,11 @@ func (b *KeyBackend) key(keyID, chainID string) (backendKey, error) {
 	return k, nil
 }
 
-// Sign signs message as a raw ed25519 payload. It refuses every secp256k1 key with
+// escrowTextPattern matches a Solana escrow text: label then the base64url (no padding) hash.
+var escrowTextPattern = regexp.MustCompile(`^atum (deposit|reserve|release|refund) v1 [A-Za-z0-9_-]{43}$`)
+
+// Sign signs a 32-byte Solana escrow hash or a Solana escrow text as a raw ed25519 payload, sent
+// as HEXADECIMAL either way (ed25519 signs the same bytes). It refuses every secp256k1 key with
 // ErrDigestSigningRefused: the verifier sub-org denies raw digest signing on secp256k1, and
 // refusing here keeps a wiring bug from reaching Turnkey as a policy denial.
 func (b *KeyBackend) Sign(ctx context.Context, message []byte, keyID string, chainID string) ([]byte, error) {
@@ -162,10 +167,10 @@ func (b *KeyBackend) Sign(ctx context.Context, message []byte, keyID string, cha
 	if k.ed25519 == nil {
 		return nil, ErrDigestSigningRefused
 	}
-	// The Solana release and refund hashes are 32 bytes. Anything else is a wiring bug, and
-	// refusing it keeps this path from signing arbitrary bytes.
-	if len(message) != 32 {
-		return nil, fmt.Errorf("turnkey: ed25519 message is %d bytes, expected a 32-byte digest", len(message))
+	// Anything but an escrow hash or text is a wiring bug, and refusing it keeps this path from
+	// signing arbitrary bytes.
+	if len(message) != 32 && !escrowTextPattern.Match(message) {
+		return nil, fmt.Errorf("turnkey: ed25519 message is %d bytes, expected a 32-byte digest or a Solana escrow text", len(message))
 	}
 	res, err := b.signRawPayload(ctx, signRawPayloadParameters{
 		SignWith:     k.signWith,

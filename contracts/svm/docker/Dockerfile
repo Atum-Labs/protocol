@@ -4,10 +4,32 @@
 # them deployed. Here the builder compiles the escrow programs with the SAME
 # toolchain the source pins (Anchor 0.32.1 / Solana 2.3.0, per Anchor.toml), runs
 # `anchor keys sync` against our committed THROWAWAY localnet program keypairs so
-# the .so binaries carry LOCAL declare_id!s, then `anchor build`
+# the .so binaries carry LOCAL declare_id!s, then `anchor build`.
+#
+# Two escrows are deployed: v4 (raw hash signing) from the protocol commit ESCROW_V4_REF, at the
+# same local ids as always, and v5 (readable text signing) from the current source, escrow only,
+# at its own local id beside the v4 fulfillment proxy.
+#
+# ESCROW_V4_REF is fetched from ESCROW_V4_REPO. While that repository is private, pass a token
+# (`--secret id=GIT_AUTH_TOKEN,env=GIT_AUTH_TOKEN`), or replace the stage with a local checkout of
+# that commit (`--build-context escrow-v4-source=<dir holding contracts/svm/source>`).
 #
 # platform: linux/amd64 — cargo-build-sbf / the Solana toolchain target x86_64;
 # on Apple Silicon this builds under emulation.
+
+# =====================================================================
+# Stage 0: the v4 escrow source, pinned. The build checks that the v4 IDL it
+# compiles equals the frozen v4 IDL (idl-history/v4/escrow.json).
+# This ref is the frozen v4 IDL's source, which carries #271 and #272. The v4 programs served on
+# devnet and mainnet predate both (idl-history/v4/README.md), so localnet v4 is stricter than
+# deployed v4: it refuses a mismatched depositor token account and permanent delegate mints, and
+# takes memo_program on release and refund. A localnet run says nothing about those paths on
+# deployed v4.
+# =====================================================================
+FROM scratch AS escrow-v4-source
+ARG ESCROW_V4_REPO=https://github.com/Atum-Labs/protocol.git
+ARG ESCROW_V4_REF=56e374a0bbbb224cf440dab0f3744bc66dcadcee
+ADD ${ESCROW_V4_REPO}#${ESCROW_V4_REF} /
 
 # =====================================================================
 # Stage 1: builder — Rust + Solana 2.3.0 + Anchor 0.32.1 + Node/pnpm
@@ -47,8 +69,9 @@ RUN cargo install --git https://github.com/coral-xyz/anchor --tag v${ANCHOR_VERS
 
 WORKDIR /build
 
-# Bring in the escrow submodule source and our docker assets.
-COPY contracts/svm/source /build/source
+# Bring in the v4 escrow source (pinned), the v5 source (this checkout) and our docker assets.
+COPY --from=escrow-v4-source /contracts/svm/source /build/source
+COPY contracts/svm/source /build/source-v5
 COPY contracts/svm/accounts /build/accounts
 COPY contracts/svm/docker/deploy-local-mint-keypair.patch /build/docker/deploy-local-mint-keypair.patch
 
@@ -77,6 +100,23 @@ RUN mkdir -p /build/source/.keys /build/source/target/deploy \
 # the keypairs above), then build the SBF binaries + IDL carrying those IDs.
 RUN anchor keys sync \
   && anchor build
+
+# The v4 build must be the frozen v4 IDL, byte for byte once the frozen program id is
+# swapped for the local one.
+COPY contracts/svm/bindings/typescript/escrow-encoding/idl-history/v4/escrow.json /build/idl-history-v4.json
+RUN node -e ' \
+  const fs = require("fs"); \
+  const frozen = fs.readFileSync("/build/idl-history-v4.json", "utf8"); \
+  const built = fs.readFileSync("target/idl/escrow.json", "utf8"); \
+  const want = frozen.split(JSON.parse(frozen).address).join(JSON.parse(built).address); \
+  if (built !== want) { console.error("v4 IDL differs from idl-history/v4/escrow.json"); process.exit(1); }'
+
+# v5: the current source, escrow only, at the v5 local id.
+WORKDIR /build/source-v5
+RUN mkdir -p target/deploy \
+  && cp /build/accounts/escrow_v5.json target/deploy/escrow-keypair.json \
+  && anchor keys sync --program-name escrow \
+  && anchor build --program-name escrow
 
 # =====================================================================
 # Stage 2: runtime — solana-test-validator + spl-token + Node/ts-node
@@ -115,11 +155,19 @@ RUN npm install -g tsx@4
 
 WORKDIR /contracts/svm
 
-# Escrow source + the built artifacts (target/{deploy,idl,types}) from the builder.
-COPY contracts/svm/source /contracts/svm/source
+# v4 escrow source + the built artifacts (target/{deploy,idl,types}) from the builder.
+COPY --from=escrow-v4-source /contracts/svm/source /contracts/svm/source
 COPY --from=builder /build/source/target /contracts/svm/source/target
 COPY --from=builder /build/source/Anchor.toml /contracts/svm/source/Anchor.toml
 COPY --from=builder /build/source/node_modules /contracts/svm/source/node_modules
+# .keys/ comes from the builder: without it deploy-local.ts takes its fresh deploy path and runs
+# `anchor keys sync`, which the runtime anchor shim refuses, so the container never comes up.
+COPY --from=builder /build/source/.keys /contracts/svm/source/.keys
+
+# v5 escrow binary + IDL, and its deploy step (placed in the v4 scripts/ so its imports resolve).
+COPY --from=builder /build/source-v5/target/deploy/escrow.so /contracts/svm/escrow-v5/escrow.so
+COPY --from=builder /build/source-v5/target/idl/escrow.json /contracts/svm/escrow-v5/escrow.json
+COPY contracts/svm/docker/deploy-escrow-v5.ts /contracts/svm/source/scripts/deploy-escrow-v5.ts
 
 # Re-apply the patch so the runtime deploy-local.ts honors the mint-keypair
 # env. The submodule source copied above is unpatched; apply it here too.

@@ -8,7 +8,10 @@ FulfillmentQuotes. Dispatches by cryptosuite:
 - `Ed25519Signature2020` — multibase z-base58btc `proofValue`, SHA-256
   hash construction, ed25519 signature verification against the pubkey
   embedded in the `did:pkh:solana:…` or `did:pkh:stellar:…` (a `G…` account strkey)
-  verificationMethod.
+  verificationMethod. Quote and VP proofs sign the raw SigningInput, or
+  `lddataintegrity.Ed25519ProofMessage(SigningInput)` (`"atum ld-proof v1 "` +
+  base64url of the 64-byte SigningInput) with `TextProof` (off by default); `Verify`
+  and `VerifyVP` accept both. VC proofs sign the raw SigningInput. `QuoteHash` stays `keccak256(SigningInput)`.
 
 ## API
 

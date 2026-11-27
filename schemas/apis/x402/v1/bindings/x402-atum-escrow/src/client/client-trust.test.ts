@@ -186,6 +186,19 @@ describe('AtumEscrowClientScheme — trusted roles (EVM source)', () => {
     expect(trust.mock.calls.every(([n]) => n === SOURCE)).toBe(true);
   });
 
+  it('signs on a non Solana source even when its roles carry a text message scheme', async () => {
+    const trust = trustTable({
+      [SOURCE]: { ...sourceRoles, svmMessageScheme: 'escrow-text-v1' },
+      [DEST]: destRoles,
+    });
+    const { signer, signTypedData } = spyingSigner();
+    const scheme = new AtumEscrowClientScheme({ signer, now: NOW, trust });
+
+    await scheme.createPaymentPayload(2, requirementWith(), named);
+
+    expect(signTypedData).toHaveBeenCalledTimes(1);
+  });
+
   it('builds and signs the payment unchanged when every role matches', async () => {
     const trust = trustTable({ [SOURCE]: sourceRoles, [DEST]: destRoles });
     const { signer, signTypedData } = spyingSigner();
@@ -695,6 +708,36 @@ describe('AtumEscrowClientScheme — trusted roles (Solana source)', () => {
     expect(err.expected).toBe(SOLANA_RELEASER);
     expect(err.actual).toBe(SOLANA_RESERVER);
     expect(sign).not.toHaveBeenCalled();
+  });
+
+  it('refuses a trusted escrow that signs text (escrow-text-v1), without signing', async () => {
+    const trust = trustTable({
+      [SOLANA]: { ...solanaRoles, svmMessageScheme: 'escrow-text-v1' },
+      [DEST]: destRoles,
+    });
+    const { signer, sign } = spyingSolanaSigner();
+    const scheme = new AtumEscrowClientScheme({ signer, now: NOW, trust, solanaClockReader });
+
+    const err = await trustFailure(scheme.createPaymentPayload(2, solanaRequirement, named));
+
+    expect(err.code).toBe('UNSUPPORTED_ESCROW_SCHEME');
+    expect(err.network).toBe(SOLANA);
+    expect(err.actual).toBe('escrow-text-v1');
+    expect(sign).not.toHaveBeenCalled();
+  });
+
+  it('signs for a trusted escrow whose scheme is the raw hash', async () => {
+    const trust = trustTable({
+      [SOLANA]: { ...solanaRoles, svmMessageScheme: '' },
+      [DEST]: destRoles,
+    });
+    const { signer, sign } = spyingSolanaSigner();
+    const scheme = new AtumEscrowClientScheme({ signer, now: NOW, trust, solanaClockReader });
+
+    const pr = prOf(await scheme.createPaymentPayload(2, solanaRequirement, named));
+
+    expect(pr.escrow_contract_address).toBe(SOLANA_ESCROW);
+    expect(sign).toHaveBeenCalledTimes(1);
   });
 });
 

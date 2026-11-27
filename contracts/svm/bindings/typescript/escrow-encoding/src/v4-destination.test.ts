@@ -6,6 +6,7 @@ import {
   computeDepositHash,
   computeDepositHashV2,
   computeDestinationHash,
+  validateAndHashDestination,
   MAX_DESTINATION_LEN,
 } from './deposit-encoder';
 import { computeReserveHashV2 } from './reserve-encoder';
@@ -195,6 +196,20 @@ describe('destination commitment (domain version 4)', () => {
     const multibyte = 'é'.repeat(MAX_DESTINATION_LEN); // 2 bytes each
     expect(multibyte.length).toBe(MAX_DESTINATION_LEN);
     expect(() => computeDepositHashV2(depositParams(), multibyte, domain)).toThrow(
+      DestinationTooLongError,
+    );
+  });
+
+  it('validates and hashes the deposit instruction destination', () => {
+    expect(toHex(validateAndHashDestination(DESTINATION))).toBe(
+      toHex(computeDestinationHash(DESTINATION)),
+    );
+    expect(() => validateAndHashDestination('')).toThrow(EmptyDestinationError);
+    expect(() => validateAndHashDestination('a'.repeat(MAX_DESTINATION_LEN))).not.toThrow();
+    expect(() => validateAndHashDestination('a'.repeat(MAX_DESTINATION_LEN + 1))).toThrow(
+      DestinationTooLongError,
+    );
+    expect(() => validateAndHashDestination('é'.repeat(MAX_DESTINATION_LEN))).toThrow(
       DestinationTooLongError,
     );
   });

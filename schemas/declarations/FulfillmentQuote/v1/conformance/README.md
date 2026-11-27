@@ -143,6 +143,14 @@ use RFC-6979 deterministic nonces — go-ethereum's `crypto.Sign` and ethers'
 `SigningKey.sign` — so the committed go/ts secp256k1 pairs *happen* to be
 byte-identical; the tests deliberately do not depend on that.)
 
+The ed25519 quote and VP fixtures sign the raw SigningInput, what the signers
+sign by default. The `ed25519-*-text.json` fixtures (`ed25519-{go,ts}-signed-text.json`,
+`-pre-vp-text.json`, `-vp-text.json`) sign `Ed25519ProofMessage(SigningInput)`
+(`"atum ld-proof v1 "` + base64url of the 64-byte SigningInput, pinned by
+`common/ld-data-integrity/conformance/ed25519-proof-message.json`), what the
+signers sign with the text proof option; the verifiers accept both. The
+`ed25519-*-vc-proof.json` fixtures sign the raw SigningInput.
+
 The ed25519 signatures are deterministic per RFC 8032, so each
 Go-signed / TS-signed pair MUST be byte-identical (modulo JSON key
 ordering, which both serializers produce alphabetically). Both the Go

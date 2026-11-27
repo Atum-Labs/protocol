@@ -43,3 +43,11 @@ TypeScript: `@atum-labs/contract-registry` in `typescript/`, which bundles the f
 Anyone else: read the JSON files in this directory at the protocol commit you pin.
 
 `go test ./...` here checks every rule above. Both readers rebuild `published.txt` from `chains/`.
+
+## Overlays (local test chains)
+
+`overlays/<name>/` holds chain files that are not embedded, such as `overlays/localnet` for the
+docker localnet (`solana:localnet`, v4 and v5 at the ids in `contracts/svm/docker/accounts.sh`).
+Go `LoadWithOverlay(dir)` and TypeScript `loadWithOverlay(dir)` (Node only, imported from
+`@atum-labs/contract-registry/overlay`) load the embedded registry plus every `*.json` file in `dir`.
+An overlay file passes the same checks and may only add a chain the embedded set lacks.

@@ -18,6 +18,9 @@ import { TypedDataEncoder } from 'ethers';
 // (ethers' domain is the wider of the two, so it still accepts what we hand it.)
 import type { TypedDataDomain, TypedDataTypes } from '@atum-labs/km-core';
 
+import { signingBytes } from '@atum-labs/solana-escrow-encoding';
+import { solanaWitnessKind } from '@atum-labs/payment-request-sender-auth';
+
 import { requirePinnedSender } from './pinned-address';
 import { STELLAR_TURNKEY_UNSUPPORTED } from './stellar-turnkey';
 
@@ -63,6 +66,7 @@ export async function turnkeySign(
   cfg: TurnkeyImplConfig,
   message: string,
   messagePrehash: string | undefined,
+  svmMessageScheme?: string,
 ): Promise<TurnkeySignResult> {
   const client = getOrCreateTurnkeyClient({
     organizationId: cfg.organizationId,
@@ -74,7 +78,7 @@ export async function turnkeySign(
     log: cfg.logger ?? noopLogger,
     meter: cfg.meter ?? noopMeter,
   });
-  return signWithTurnkeyClient(client, chainPrefix, cfg, message, messagePrehash);
+  return signWithTurnkeyClient(client, chainPrefix, cfg, message, messagePrehash, svmMessageScheme);
 }
 
 /** A Turnkey wallet account address with the format tag Turnkey returns. */
@@ -116,6 +120,7 @@ export async function signWithTurnkeyClient(
   cfg: TurnkeyImplConfig,
   message: string,
   messagePrehash: string | undefined,
+  svmMessageScheme?: string,
 ): Promise<TurnkeySignResult> {
   // A blank pin would be dropped by the spread below and take the sender-vs-wallet
   // comparison with it, so it is rejected before any network call.
@@ -146,7 +151,16 @@ export async function signWithTurnkeyClient(
       return { signature: await signer.signTypedData(domain, types, typedMessage) };
     }
     case 'solana': {
-      const bytes = decodeSolanaMessageHex(message);
+      // The raw hash by default; the escrow text when the escrow's message scheme says so.
+      let bytes = decodeSolanaMessageHex(message);
+      if (svmMessageScheme) {
+        if (bytes.length !== 32) {
+          throw new Error(
+            'Turnkey Solana signing requires signed_messages[0].message to be the 32-byte escrow hash',
+          );
+        }
+        bytes = signingBytes(svmMessageScheme, solanaWitnessKind(messagePrehash), bytes);
+      }
       const signer = new TurnkeySolanaSigner(client, deps);
       await signer.initialize();
       const sig = await signer.signMessage(bytes);

@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   admits.
 
 ### Changed
+- The client refuses a Solana escrow that signs text (`svm_message` `escrow-text-v1` in the trust
+  source's `escrows`) with `UNSUPPORTED_ESCROW_SCHEME` before signing, since x402 signs only the
+  32-byte hash and such an escrow refuses it on chain. `TrustedRoles` gains `svmMessageScheme`.
+  `atumGatewayTrust` reads `escrows` only on a `solana:*` network, and there a malformed `escrows`
+  member (not an array, an entry that is not an object, a non string `escrow_contract` or
+  `svm_message`) makes the answer unusable, `TRUST_SOURCE_UNAVAILABLE`, for the client and the
+  facilitator alike. Other networks ignore the member. A custom `TrustResolver` must set
+  `svmMessageScheme` itself for the refusal to apply.
+- A Solana `SolanaSigner` still signs the raw 32-byte deposit hash. Solana escrow v5, which takes readable text, is refused as above until x402 signs text.
 - The bundled Solana escrow encoding keeps a frozen copy of the v4 escrow IDL and names the raw 32 byte hash signing scheme its v4 deposits use. What is signed and sent is unchanged.
 - The bundled signing libraries can verify a payer's wallet-signed (EIP-712) payment request and payment request envelope where the verifier asks, and no longer accept the settler identity typed form on a payment request envelope. The facilitator verifies neither, so payments behave as before.
 - The bundled PaymentRequest schema describes `quote_selector` as the account that picks the settler and signs the reserve. Only the description changed: payments are validated as before.

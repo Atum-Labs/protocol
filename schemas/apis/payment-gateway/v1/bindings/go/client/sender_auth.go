@@ -42,6 +42,14 @@ var ErrNoSignedMessages = errors.New("pgclient: sender_auth.signed_messages must
 // from a complete one to a caller that ignores the error, and the gateway would reject it
 // with an error about the wrong message. Output on success is identical.
 func SignSenderAuth(req *PaymentRequest, signer senderauth.SenderSigner) error {
+	return SignSenderAuthWithScheme(req, signer, "")
+}
+
+// SignSenderAuthWithScheme is SignSenderAuth for a request whose Solana escrow signs with
+// svmMessageScheme, the svm_message /v1/defaults lists for req.EscrowContractAddress in its
+// escrows. "" signs the 32-byte hash itself, as SignSenderAuth does; "escrow-text-v1" signs the
+// escrow text over it. The scheme is handed to the signer only and is never part of the request.
+func SignSenderAuthWithScheme(req *PaymentRequest, signer senderauth.SenderSigner, svmMessageScheme string) error {
 	if req == nil {
 		return errors.New("pgclient: req must not be nil")
 	}
@@ -63,10 +71,11 @@ func SignSenderAuth(req *PaymentRequest, signer senderauth.SenderSigner) error {
 		// call them. That mapping is unexported in senderauth, so it is repeated here —
 		// as its own documentation anticipates.
 		sig, err := signer.Sign(senderauth.SignedMessageInput{
-			Message:        m.Message,
-			Signature:      m.Signature,
-			MessagePrehash: &m.MessagePrehash,
-			Payload:        m.Payload,
+			Message:          m.Message,
+			Signature:        m.Signature,
+			MessagePrehash:   &m.MessagePrehash,
+			Payload:          m.Payload,
+			SvmMessageScheme: svmMessageScheme,
 		})
 		if err != nil {
 			return fmt.Errorf("pgclient: signing sender_auth.signed_messages[%d]: %w", i, err)

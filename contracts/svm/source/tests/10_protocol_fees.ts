@@ -8,7 +8,10 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   createValidNonce,
   TOKEN_PROGRAM_ID,
@@ -30,7 +33,6 @@ import {
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -80,7 +82,7 @@ describe("10. Protocol Fees", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -102,7 +104,7 @@ describe("10. Protocol Fees", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         amount,
         reserver.publicKey,
         releaser.publicKey,
@@ -240,7 +242,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     // Get balances before release
@@ -285,7 +287,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -414,7 +416,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -457,7 +459,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -586,7 +588,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -629,7 +631,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -758,7 +760,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -801,7 +803,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -933,7 +935,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -976,7 +978,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -1113,7 +1115,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -1157,7 +1159,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -1285,7 +1287,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -1333,7 +1335,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -1485,7 +1487,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, refundMessage)])
+      .preInstructions([refundSigIx(releaser, refundMessage)])
       .signers([payer])
       .rpc();
 
@@ -1592,7 +1594,7 @@ describe("10. Protocol Fees", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -1615,7 +1617,7 @@ describe("10. Protocol Fees", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           amount,
           reserver.publicKey,
           releaser.publicKey,
@@ -1764,7 +1766,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const recipientAta = await getOrCreateAssociatedTokenAccount(
@@ -1807,7 +1809,7 @@ describe("10. Protocol Fees", () => {
         systemProgram: SystemProgram.programId,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(releaser, releaseMessage)])
+      .preInstructions([releaseSigIx(releaser, releaseMessage)])
       .signers([payer])
       .rpc();
 
@@ -2090,7 +2092,7 @@ describe("10. Protocol Fees", () => {
         protocolConfig,
         instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
       })
-      .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+      .preInstructions([reserveSigIx(reserver, reserveMessage)])
       .rpc();
 
     const afterReserve = await escrowProgram.account.depositInfo.fetch(deposit);
@@ -2199,7 +2201,7 @@ describe("10. Protocol Fees", () => {
           protocolConfig,
           instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         })
-        .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+        .preInstructions([reserveSigIx(reserver, reserveMessage)])
         .rpc();
       expect.fail("Should have thrown SourceAmountExceedsDeposit");
     } catch (err: any) {
@@ -2297,7 +2299,7 @@ describe("10. Protocol Fees", () => {
           protocolConfig,
           instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
         })
-        .preInstructions([createEd25519Instruction(reserver, reserveMessage)])
+        .preInstructions([reserveSigIx(reserver, reserveMessage)])
         .rpc();
       expect.fail("Should have rejected the mismatched reserve signature");
     } catch (err: any) {

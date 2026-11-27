@@ -43,7 +43,6 @@
 //     `verifyVCProofs`) is the canonical pre-rollout safety valve.
 
 import bs58 from "bs58";
-import nacl from "tweetnacl";
 
 import {
   PAYMENT_REQUEST_ENVELOPE_TYPE,
@@ -51,6 +50,7 @@ import {
   recoverSecp256k1ProofSignerFrom,
   settlerProofTypedDigest,
   type TypedProofDigest,
+  verifyEd25519Proof,
 } from "@atum-labs/ld-data-integrity";
 import { firstAmbiguousMember } from "@atum-labs/payment-request-sender-auth";
 
@@ -490,7 +490,8 @@ async function verifyVPEd25519(
     ],
   });
 
-  if (!nacl.sign.detached.verify(signingInput, sig, pubkey)) {
+  // The proof signs the raw signingInput or its ed25519ProofMessage text.
+  if (!verifyEd25519Proof(pubkey, signingInput, sig)) {
     throw new Error("verifyVP: ed25519 signature verification failed");
   }
 

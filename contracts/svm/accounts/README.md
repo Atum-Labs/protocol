@@ -56,6 +56,7 @@ design — it is accidental reuse. Keep them confined to the local cluster.
 | File | Role |
 | ---- | ---- |
 | `escrow.json` | escrow program ID (deploy keypair; matches the local `declare_id!`) |
+| `escrow_v5.json` | v5 escrow program ID, deployed beside v4 (deploy keypair) |
 | `fulfillment_proxy.json` | fulfillment_proxy program ID (deploy keypair) |
 | `mock_transfer_hook.json` | mock_transfer_hook program ID (test-only program, off the payment path) |
 | `usdc-mint.json` / `usdt-mint.json` | local USDC / USDT mint account keypairs (fix the token addresses) |

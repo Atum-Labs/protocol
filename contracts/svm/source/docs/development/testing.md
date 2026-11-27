@@ -26,6 +26,7 @@
 | `12_token2022_integration.ts`      | Token-2022 support                 | 6     |
 | `13_signature_domain.ts`           | Signature-domain hardening         | 7     |
 | `15_real_token_compat.ts`          | Real mainnet/devnet mints          | 23    |
+| `16_signed_text_forms.ts`          | Signed text: bare, v1, v0 forms    | 11    |
 
 ## Running Tests
 
@@ -57,7 +58,10 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | `createStrictFulfillArgs`             | `(paymentId: Uint8Array \| Buffer, amount: anchor.BN, replayArgs?: StrictFulfillReplayArgs): StrictFulfillArgs` | Builds strict method args in ABI order                               |
 | `deriveReplayBucketSelectorFromNonce` | `(nonce: anchor.BN \| Uint8Array \| Buffer): Buffer`                                                            | Extracts selector bytes `nonce[4..8]`                                |
 | `createMessage`                       | `(action: string, params: (Buffer \| Uint8Array)[], options?: EscrowMessageOptions): Promise<Buffer>`           | Creates escrow message hash using `ProtocolConfig` domain by default |
-| `createEd25519Instruction`            | `(signer: Keypair, message: Buffer): TransactionInstruction`                                                    | Creates Ed25519 verification instruction                             |
+| `depositSigIx` / `reserveSigIx`       | `(signer: Keypair, hash: Buffer \| Uint8Array): TransactionInstruction`                                         | Ed25519 instruction over the escrow text for that label              |
+| `releaseSigIx` / `refundSigIx`        | `(signer: Keypair, hash: Buffer \| Uint8Array): TransactionInstruction`                                         | Ed25519 instruction over the escrow text for that label              |
+| `escrowSignedText`                    | `(label: string, hash: Buffer \| Uint8Array): Buffer`                                                           | `<label> <base64url-nopad(hash)>`                                    |
+| `rawSigIx`                            | `(signer: Keypair, message: Buffer \| Uint8Array): TransactionInstruction`                                      | Ed25519 instruction over the message as given (negative tests)       |
 | `createPaymentId`                     | `(): Buffer`                                                                                                    | Generates random 32-byte payment ID                                  |
 | `deriveFulfillmentReplayBucket`       | `(nonce: anchor.BN \| Uint8Array \| Buffer, settler: PublicKey): [PublicKey, number]`                           | Derives replay bucket PDA for strict fulfillment                     |
 | `ensureProtocolInitialized`           | `(program: Program<Escrow>, provider: AnchorProvider): Promise<PublicKey>`                                      | Initializes escrow protocol config (idempotent)                      |
@@ -154,14 +158,14 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | 5.7  | Reject set_default_admin_delay_seconds by non-admin |
 | 5.8  | Reject begin_default_admin_transfer by non-admin    |
 
-### 6. Fulfillment Proxy (28 tests)
+### 6. Fulfillment Proxy (32 tests)
 
 | Group           | Coverage focus                                                                   |
 | --------------- | -------------------------------------------------------------------------------- |
 | `6.1`-`6.4`     | Core fulfill/strict flows, deadline checks, account validation, payer behavior   |
 | `6.5.*`         | Strict replay suite (nonce-based coordinates, temporal guards, event assertions) |
 | `6.6.1`-`6.6.4` | Non-strict compatibility + pause/admin controls                                  |
-| `6.7.*`         | Token-2022 TransferHook forwarding for `fulfill` and `strict_fulfill`            |
+| `6.7.*`         | Token-2022 TransferHook forwarding for `fulfill` and `strict_fulfill`, and refusal of a signing hook account other than the settler |
 | `6.8.*`         | Token-2022 TransferFee: short credit rejected, zero fee credits exactly          |
 
 #### 6.5 Strict Replay Coverage (Required)
@@ -275,21 +279,24 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | 11.13b | Reject premature admin transfer (delay > 0) |
 | 11.14  | Unauthorized role/config changes rejected   |
 
-### 12. Token-2022 Integration (11 tests)
+### 12. Token-2022 Integration (14 tests)
 
-| Test | Description                                                  |
-| ---- | ------------------------------------------------------------ |
-| 12.1 | Token-2022 happy path (deposit → reserve → release)          |
-| 12.2 | TransferHook fails without remaining_accounts                |
-| 12.3 | TransferHook succeeds with remaining_accounts                |
-| 12.4 | Chargeable TransferFee mint rejected on allowMint            |
-| 12.5 | Zero TransferFee mint allowed, deposit and release are exact |
-| 12.6 | Scheduled TransferFee blocks deposit and setMintFeeConfig    |
-| 12.7 | Deposits open before a fee is scheduled settle exactly       |
-| 12.8 | Depositor ATA requiring memos gets the surplus and refund    |
-| 12.9 | Frozen depositor ATA: payout lands, surplus to the treasury  |
-| 12.10 | Reassigned classic depositor ATA does not block settlement  |
-| 12.11 | Hooked mint releases and refunds with the hook accounts     |
+| Test  | Description                                                  |
+| ----- | ------------------------------------------------------------ |
+| 12.1  | Token-2022 happy path (deposit → reserve → release)          |
+| 12.2  | TransferHook fails without remaining_accounts                |
+| 12.3  | TransferHook succeeds with remaining_accounts                |
+| 12.4  | Chargeable TransferFee mint rejected on allowMint            |
+| 12.5  | Zero TransferFee mint allowed, deposit and release are exact |
+| 12.6  | Scheduled TransferFee blocks deposit and setMintFeeConfig    |
+| 12.7  | Deposits open before a fee is scheduled settle exactly       |
+| 12.8  | Depositor ATA requiring memos gets the surplus and refund    |
+| 12.9  | Frozen depositor ATA: payout lands, surplus to the treasury  |
+| 12.10 | Reassigned classic depositor ATA does not block settlement   |
+| 12.11 | Hooked mint releases and refunds with the hook accounts      |
+| 12.12 | PermanentDelegate mint rejected on allowMint                 |
+| 12.13 | NonTransferable mint rejected on allowMint                   |
+| 12.14 | Hooked deposit refused when the hook names a signer          |
 
 ### 13. Signature Domain (7 tests)
 
@@ -302,6 +309,20 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | 13.5 | Reject reserve signature with wrong `cluster_id` |
 | 13.6 | Reject release signature with wrong version byte |
 | 13.7 | Reject refund signature with wrong `program_id`  |
+
+### 16. Signed Text Forms (11 tests)
+
+Instruction data is built with the shared `escrow-encoding` TypeScript builder.
+
+| Test | Description                                                                     |
+| ---- | ------------------------------------------------------------------------------- |
+| 16.1 | Deposit, reserve and release with the bare, `v1` and `v0` forms                 |
+| 16.2 | Deposit and refund with the bare, `v1` and `v0` forms                           |
+| 16.3 | Reject the raw 32-byte hash on deposit, reserve, refund and release             |
+| 16.4 | Reject text signed under another instruction's label                            |
+| 16.5 | Accept an envelope whose instruction pubkey sits outside the message            |
+| 16.6 | Reject an envelope that names another signer                                    |
+| 16.7 | Report the deposit transaction size for each form                               |
 
 ### 15. Real Token Compatibility (23 tests)
 
@@ -364,7 +385,7 @@ import {
 import {
   createValidNonce,
   createMessage,
-  createEd25519Instruction,
+  depositSigIx,
   createPaymentId,
 } from "./helpers";
 

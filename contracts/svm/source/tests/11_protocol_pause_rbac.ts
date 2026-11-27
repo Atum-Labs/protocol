@@ -25,7 +25,10 @@ import {
   topUp,
   generateFundedKeypair,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  refundSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   createValidNonce,
   createMessage,
@@ -33,7 +36,6 @@ import {
   DEFAULT_QUOTE_HASH,
   ZERO_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -372,7 +374,7 @@ describe("11 Pause + RBAC", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       newDelegateSigner,
       message
     );
@@ -395,7 +397,7 @@ describe("11 Pause + RBAC", () => {
       await program.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -482,7 +484,7 @@ describe("11 Pause + RBAC", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519 = createEd25519Instruction(
+    const depositEd25519 = depositSigIx(
       newDelegateSigner,
       depositMessage
     );
@@ -504,7 +506,7 @@ describe("11 Pause + RBAC", () => {
     await program.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -548,7 +550,7 @@ describe("11 Pause + RBAC", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519 = createEd25519Instruction(reserver, reserveMessage);
+    const reserveEd25519 = reserveSigIx(reserver, reserveMessage);
 
     try {
       await program.methods
@@ -578,7 +580,7 @@ describe("11 Pause + RBAC", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519 = createEd25519Instruction(releaser, refundMessage);
+    const refundEd25519 = refundSigIx(releaser, refundMessage);
 
     await program.methods
       .refund()
@@ -644,7 +646,7 @@ describe("11 Pause + RBAC", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519 = createEd25519Instruction(
+    const depositEd25519 = depositSigIx(
       newDelegateSigner,
       depositMessage
     );
@@ -666,7 +668,7 @@ describe("11 Pause + RBAC", () => {
     await program.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -703,7 +705,7 @@ describe("11 Pause + RBAC", () => {
       DEFAULT_QUOTE_HASH,
       DEPOSIT_AMOUNT.toBuffer("le", 8),
     ]);
-    const reserveEd25519 = createEd25519Instruction(reserver, reserveMessage);
+    const reserveEd25519 = reserveSigIx(reserver, reserveMessage);
 
     await program.methods
       .reserve(recipient.publicKey, Array.from(DEFAULT_QUOTE_HASH), DEPOSIT_AMOUNT)
@@ -727,7 +729,7 @@ describe("11 Pause + RBAC", () => {
       depositHash,
       DEFAULT_QUOTE_HASH,
     ]);
-    const releaseEd25519 = createEd25519Instruction(releaser, releaseMessage);
+    const releaseEd25519 = releaseSigIx(releaser, releaseMessage);
     const recipientAta = await getOrCreateAssociatedTokenAccount(
       mint,
       recipient.publicKey
@@ -842,7 +844,7 @@ describe("11 Pause + RBAC", () => {
     ]);
     const depositHash = depositMessage;
 
-    const depositEd25519 = createEd25519Instruction(
+    const depositEd25519 = depositSigIx(
       newDelegateSigner,
       depositMessage
     );
@@ -864,7 +866,7 @@ describe("11 Pause + RBAC", () => {
     await program.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -905,7 +907,7 @@ describe("11 Pause + RBAC", () => {
       depositHash,
       ZERO_QUOTE_HASH,
     ]);
-    const refundEd25519 = createEd25519Instruction(releaser, refundMessage);
+    const refundEd25519 = refundSigIx(releaser, refundMessage);
 
     try {
       await program.methods

@@ -8,7 +8,9 @@ import {
   PublicKey,
   SystemProgram,
   createDelegate,
-  createEd25519Instruction,
+  depositSigIx,
+  releaseSigIx,
+  reserveSigIx,
   createPaymentId,
   createValidNonce,
   DEPOSIT_AMOUNT,
@@ -27,7 +29,6 @@ import {
   treasurerKeypair,
   DEFAULT_QUOTE_HASH,
   destinationHash,
-  TEST_DESTINATION,
   depositComputeBudgetIx,
 } from "./helpers";
 import {
@@ -119,7 +120,7 @@ describe("3. Deposit Lifecycle", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -149,7 +150,7 @@ describe("3. Deposit Lifecycle", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -242,7 +243,7 @@ describe("3. Deposit Lifecycle", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -269,7 +270,7 @@ describe("3. Deposit Lifecycle", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -346,9 +347,9 @@ describe("3. Deposit Lifecycle", () => {
       DEFAULT_QUOTE_HASH,
     ]);
 
-    const depositSig = createEd25519Instruction(delegateSigner, depositMessage);
-    const reserveSig = createEd25519Instruction(reserver, reserveMessage);
-    const releaseSig = createEd25519Instruction(releaser, releaseMessage);
+    const depositSig = depositSigIx(delegateSigner, depositMessage);
+    const reserveSig = reserveSigIx(reserver, reserveMessage);
+    const releaseSig = releaseSigIx(releaser, releaseMessage);
 
     // Get PDAs
     const [deposit] = PublicKey.findProgramAddressSync(
@@ -383,7 +384,7 @@ describe("3. Deposit Lifecycle", () => {
     const depositIx = await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -619,7 +620,7 @@ describe("3. Deposit Lifecycle", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -642,7 +643,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -707,7 +708,7 @@ describe("3. Deposit Lifecycle", () => {
     ]);
     const depositHash = message;
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -730,7 +731,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -787,7 +788,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -810,7 +811,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           largeAmount,
           reserver.publicKey,
           releaser.publicKey,
@@ -864,7 +865,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(invalidSigner, message);
+    const ed25519Instruction = depositSigIx(invalidSigner, message);
 
     const [deposit] = PublicKey.findProgramAddressSync(
       [DEPOSIT_SEED, message],
@@ -884,7 +885,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -938,7 +939,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -960,7 +961,7 @@ describe("3. Deposit Lifecycle", () => {
     await escrowProgram.methods
       .deposit(
         Array.from(paymentId),
-        TEST_DESTINATION,
+        Array.from(await destinationHash()),
         DEPOSIT_AMOUNT,
         reserver.publicKey,
         releaser.publicKey,
@@ -994,7 +995,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -1051,7 +1052,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -1078,7 +1079,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -1134,7 +1135,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -1157,7 +1158,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -1210,7 +1211,7 @@ describe("3. Deposit Lifecycle", () => {
       deadline.toBuffer("le", 8),
     ]);
 
-    const ed25519Instruction = createEd25519Instruction(
+    const ed25519Instruction = depositSigIx(
       delegateSigner,
       message
     );
@@ -1233,7 +1234,7 @@ describe("3. Deposit Lifecycle", () => {
       await escrowProgram.methods
         .deposit(
           Array.from(paymentId),
-          TEST_DESTINATION,
+          Array.from(await destinationHash()),
           DEPOSIT_AMOUNT,
           reserver.publicKey,
           releaser.publicKey,
@@ -1264,6 +1265,169 @@ describe("3. Deposit Lifecycle", () => {
       expect.fail("Should have failed with DeadlineTooFarInFuture error");
     } catch (err: any) {
       expect(err.error.errorCode.code).to.equal("DeadlineTooFarInFuture");
+    }
+  });
+
+  for (const [label, emptyDestinationHash] of [
+    ["a zero destination hash", async () => Buffer.alloc(32)],
+    ["keccak256 of an empty destination", () => destinationHash("")],
+  ] as const) {
+    it(`3.12. Should fail a deposit with ${label}`, async () => {
+      const paymentId = createPaymentId();
+      const nonce = createValidNonce();
+      const issuedAt = new anchor.BN(Math.floor(Date.now() / 1000) - 5);
+      const deadline = new anchor.BN(issuedAt.toNumber() + 60);
+      const emptyHash = await emptyDestinationHash();
+
+      const message = await createMessage("deposit", [
+        paymentId,
+        emptyHash,
+        depositor.publicKey.toBuffer(),
+        mint.toBuffer(),
+        DEPOSIT_AMOUNT.toBuffer("le", 8),
+        reserver.publicKey.toBuffer(),
+        releaser.publicKey.toBuffer(),
+        nonce.toBuffer("le", 8),
+        issuedAt.toBuffer("le", 8),
+        deadline.toBuffer("le", 8),
+      ]);
+
+      const ed25519Instruction = depositSigIx(delegateSigner, message);
+
+      const [deposit] = PublicKey.findProgramAddressSync(
+        [DEPOSIT_SEED, message],
+        escrowProgram.programId
+      );
+      const [replayBucket] = PublicKey.findProgramAddressSync(
+        [
+          REPLAY_SEED,
+          depositor.publicKey.toBuffer(),
+          nonce.toBuffer("le", 8).slice(4),
+        ],
+        escrowProgram.programId
+      );
+      const escrowAta = await getAssociatedTokenAddress(mint, deposit, true);
+
+      try {
+        await escrowProgram.methods
+          .deposit(
+            Array.from(paymentId),
+            Array.from(emptyHash),
+            DEPOSIT_AMOUNT,
+            reserver.publicKey,
+            releaser.publicKey,
+            nonce,
+            issuedAt,
+            deadline,
+            Array.from(message)
+          )
+          .accountsPartial({
+            escrowDelegate: delegate,
+            authority: depositor.publicKey,
+            replayBucket,
+            authorityAta,
+            deposit,
+            escrowAta,
+            mint,
+            protocolConfig,
+            mintFeeConfig,
+            payer: payer.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+          })
+          .preInstructions([depositComputeBudgetIx(), ed25519Instruction])
+          .signers([payer])
+          .rpc();
+        expect.fail("Should have failed with DestinationEmpty error");
+      } catch (err: any) {
+        expect(err.error.errorCode.code).to.equal("DestinationEmpty");
+      }
+    });
+  }
+
+  it("3.13. Should refuse a deposit whose destination hash differs from the signed one", async () => {
+    const paymentId = createPaymentId();
+    const nonce = createValidNonce();
+    const issuedAt = new anchor.BN(Math.floor(Date.now() / 1000) - 5);
+    const deadline = new anchor.BN(issuedAt.toNumber() + 60);
+    const signedDestinationHash = await destinationHash();
+    const otherDestinationHash = await destinationHash(
+      "eip155:1/erc20:0x01@0x02"
+    );
+    const messageFor = (destHash: Buffer) =>
+      createMessage("deposit", [
+        paymentId,
+        destHash,
+        depositor.publicKey.toBuffer(),
+        mint.toBuffer(),
+        DEPOSIT_AMOUNT.toBuffer("le", 8),
+        reserver.publicKey.toBuffer(),
+        releaser.publicKey.toBuffer(),
+        nonce.toBuffer("le", 8),
+        issuedAt.toBuffer("le", 8),
+        deadline.toBuffer("le", 8),
+      ]);
+    const signedMessage = await messageFor(signedDestinationHash);
+    const otherMessage = await messageFor(otherDestinationHash);
+    const ed25519Instruction = depositSigIx(delegateSigner, signedMessage);
+    const [replayBucket] = PublicKey.findProgramAddressSync(
+      [
+        REPLAY_SEED,
+        depositor.publicKey.toBuffer(),
+        nonce.toBuffer("le", 8).slice(4),
+      ],
+      escrowProgram.programId
+    );
+
+    // The destination_hash arg is swapped, and the deposit_hash arg is either left as signed or
+    // recomputed for the swapped destination.
+    for (const [depositHash, expected] of [
+      [signedMessage, "DepositHashMismatch"],
+      [otherMessage, "InvalidMessage"],
+    ] as const) {
+      const [deposit] = PublicKey.findProgramAddressSync(
+        [DEPOSIT_SEED, depositHash],
+        escrowProgram.programId
+      );
+      const escrowAta = await getAssociatedTokenAddress(mint, deposit, true);
+      try {
+        await escrowProgram.methods
+          .deposit(
+            Array.from(paymentId),
+            Array.from(otherDestinationHash),
+            DEPOSIT_AMOUNT,
+            reserver.publicKey,
+            releaser.publicKey,
+            nonce,
+            issuedAt,
+            deadline,
+            Array.from(depositHash)
+          )
+          .accountsPartial({
+            escrowDelegate: delegate,
+            authority: depositor.publicKey,
+            replayBucket,
+            authorityAta,
+            deposit,
+            escrowAta,
+            mint,
+            protocolConfig,
+            mintFeeConfig,
+            payer: payer.publicKey,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+          })
+          .preInstructions([depositComputeBudgetIx(), ed25519Instruction])
+          .signers([payer])
+          .rpc();
+        expect.fail(`Should have failed with ${expected} error`);
+      } catch (err: any) {
+        expect(err.error?.errorCode?.code, String(err)).to.equal(expected);
+      }
     }
   });
 });

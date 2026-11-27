@@ -157,6 +157,7 @@ describe('committed IDLs match the layouts observed on mainnet', () => {
   it.each([
     ['v4', './generated/escrow.json', { Deposited: 168, Released: 136, Reserved: 112 }],
     ['v4', './generated/fulfillment_proxy.json', { StrictFulfilled: 128 }],
+    ['v4', '../idl-history/v4/escrow.json', { Deposited: 168, Released: 136, Reserved: 112 }],
     [
       'pre-v4',
       '../idl-history/pre-v4/escrow.json',

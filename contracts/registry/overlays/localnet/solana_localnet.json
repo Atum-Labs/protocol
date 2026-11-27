@@ -1,0 +1,30 @@
+{
+  "chain": "solana:localnet",
+  "name": "Solana Localnet",
+  "mainnet": false,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/svm/docker/accounts.sh",
+      "escrow": "CFKUVjrHDt1cXXzHMTCbHj5NxFZjtCqxxTc2k61gry7R",
+      "fulfillmentProxies": [
+        "FLNuCtE9w1qsyr2wjDSf1BCy7KCR6pvnVYht2KaY2dAn"
+      ],
+      "signature": {
+        "svmDomainVersion": 5
+      }
+    },
+    {
+      "id": "v5",
+      "source": "contracts/svm/docker/accounts.sh",
+      "escrow": "AtBJCoGvJynVf4pk3XtAnn1WbyhiW7eZCtA24FCzrUqF",
+      "fulfillmentProxies": [
+        "FLNuCtE9w1qsyr2wjDSf1BCy7KCR6pvnVYht2KaY2dAn"
+      ],
+      "signature": {
+        "svmDomainVersion": 5,
+        "svmMessage": "escrow-text-v1"
+      }
+    }
+  ]
+}

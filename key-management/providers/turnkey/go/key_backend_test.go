@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -699,4 +700,52 @@ func TestKeyBackend_RejectedActivityIsMarked(t *testing.T) {
 	_, err := newTestKeyBackend(t, f).SignTypedData(context.Background(), releaseWitness(42161), evmKeyID, "eip155:42161")
 	assert.ErrorIs(t, err, ErrActivityRejected)
 	assert.ErrorIs(t, err, ErrTerminal)
+}
+
+func TestKeyBackend_SolanaSignsEscrowTextAsHex(t *testing.T) {
+	digest := crypto.Keccak256([]byte("release"))
+	for _, label := range []string{"deposit", "reserve", "release", "refund"} {
+		f := newFakeRawPayloadTurnkey(t)
+		b := newTestKeyBackend(t, f)
+		text := []byte("atum " + label + " v1 " + base64.RawURLEncoding.EncodeToString(digest))
+
+		sig, err := b.Sign(context.Background(), text, solanaKeyID, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp")
+		require.NoError(t, err, label)
+
+		reqs := f.recorded()
+		require.Len(t, reqs, 1)
+		p := reqs[0].Parameters
+		assert.Equal(t, "PAYLOAD_ENCODING_HEXADECIMAL", p.Encoding)
+		assert.Equal(t, "HASH_FUNCTION_NOT_APPLICABLE", p.HashFunction)
+		assert.Equal(t, hex.EncodeToString(text), p.Payload)
+
+		pub, err := b.GetPublicKey(context.Background(), solanaKeyID, "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp")
+		require.NoError(t, err)
+		assert.True(t, ed25519.Verify(pub.(ed25519.PublicKey), text, sig), label)
+	}
+}
+
+func TestKeyBackend_SolanaRefusesPayloadsThatAreNeitherHashNorEscrowText(t *testing.T) {
+	h := base64.RawURLEncoding.EncodeToString(crypto.Keccak256([]byte("release")))
+	for name, msg := range map[string][]byte{
+		"empty":          {},
+		"31 bytes":       make([]byte, 31),
+		"33 bytes":       make([]byte, 33),
+		"64 bytes":       make([]byte, 64),
+		"unknown label":  []byte("atum award v1 " + h),
+		"other version":  []byte("atum release v2 " + h),
+		"padded hash":    []byte("atum release v1 " + h + "="),
+		"short hash":     []byte("atum release v1 " + h[:42]),
+		"trailing byte":  []byte("atum release v1 " + h + "\n"),
+		"leading byte":   []byte(" atum release v1 " + h),
+		"std base64":     []byte("atum release v1 " + strings.Repeat("+", 43)),
+		"ld proof text":  []byte("atum ld-proof v1 " + strings.Repeat("A", 86)),
+		"handshake text": []byte("settler-agent:gw-handshake:v1\nprobe"),
+	} {
+		f := newFakeRawPayloadTurnkey(t)
+		b := newTestKeyBackend(t, f)
+		_, err := b.Sign(context.Background(), msg, solanaKeyID, "solana:x")
+		assert.ErrorContains(t, err, "expected a 32-byte digest or a Solana escrow text", name)
+		assert.Empty(t, f.recorded(), name)
+	}
 }

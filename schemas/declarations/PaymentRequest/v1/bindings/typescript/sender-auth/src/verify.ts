@@ -268,6 +268,7 @@ function solanaDomainOf(expected: VerifyPaymentRequestExpectations): SolanaDomai
     escrowProgramId: expected.escrowContract ?? '',
     clusterId: expected.svmSignatureClusterId ?? '',
     domainVersion: expected.svmSignatureDomainVersion,
+    messageScheme: expected.svmMessageScheme,
   };
 }
 

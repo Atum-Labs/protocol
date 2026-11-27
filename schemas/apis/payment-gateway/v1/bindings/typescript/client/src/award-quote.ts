@@ -20,6 +20,13 @@ import {
   normalizeAddress,
 } from '@atum-labs/tvm-escrow-encoding';
 import nacl from 'tweetnacl';
+import bs58 from 'bs58';
+import {
+  matchEscrowWitness,
+  WitnessKind,
+  type EscrowMessageForm,
+  type EscrowWitnessMatch,
+} from '@atum-labs/solana-escrow-encoding';
 import { Address, ACCOUNT_ADDRESS } from '@atum-labs/stellar-escrow-encoding';
 import { parseAssetIdentifier } from './asset-identifier';
 import type { ChainDefaults } from './chain-adapters';
@@ -32,6 +39,7 @@ import type {
   SignedMessage,
 } from './generated/types.gen';
 import { signReserveAuth } from './reserve-auth';
+import { escrowSigningOf } from './escrow-signing';
 import type { SenderSigner } from './signers';
 
 const QUOTE_ID = /^0x[0-9a-fA-F]{64}$/;
@@ -192,10 +200,15 @@ export async function signAward(params: {
     );
   }
 
+  // How the escrow the quote request names signs: its own domain version and message scheme when
+  // /v1/defaults lists it, the chain's otherwise.
+  const escrowSigning = escrowSigningOf(chainDefaults, quoteRequest.escrow_contract_address);
+  const svmMessageScheme = solana ? escrowSigning.svmMessageScheme : '';
   // The roles come from the quote request, which the deposit commits; only what the body does not
   // carry comes from /v1/defaults.
   const sourceDefaults: ChainDefaults = {
     ...chainDefaults,
+    svmSignatureDomainVersion: escrowSigning.svmSignatureDomainVersion,
     escrowContract: quoteRequest.escrow_contract_address,
     quoteSelector: inputs.selector,
     fulfillmentVerifierAccount: quoteRequest.fulfillment_verifier.account,
@@ -225,7 +238,7 @@ export async function signAward(params: {
     settler: inputs.settler,
     sourceAmount: inputs.sourceAmount,
     svmSignatureClusterId: chainDefaults.svmSignatureClusterId,
-    svmSignatureDomainVersion: chainDefaults.svmSignatureDomainVersion,
+    svmSignatureDomainVersion: escrowSigning.svmSignatureDomainVersion,
   };
   // The deposit id exists only once the depositor has signed, so the reserve's other inputs are
   // checked with a stand-in first: a quote the reserve refuses never costs a deposit signature.
@@ -248,7 +261,10 @@ export async function signAward(params: {
     }
     assertStellarSignable(unsigned, inputs.chainId, quoteRequest.escrow_contract_address);
   }
-  const { signature, delegateSigner } = await params.depositorSigner.sign(unsigned);
+  const { signature, delegateSigner } = await params.depositorSigner.sign({
+    ...unsigned,
+    svmMessageScheme,
+  });
   if (
     stellar &&
     params.stellarDelegateSigner !== undefined &&
@@ -263,6 +279,16 @@ export async function signAward(params: {
     signature,
     ...(delegateSigner ? { payload: { delegate_signer: delegateSigner } } : {}),
   };
+  let depositForm: EscrowMessageForm | undefined;
+  if (solana) {
+    depositForm = assertSolanaSigned(
+      deposit,
+      delegateSigner ?? inputs.depositor,
+      WitnessKind.Deposit,
+      svmMessageScheme,
+      'depositorSigner',
+    );
+  }
 
   // The escrow's deposit id: over the permit signature and nonce on EVM and Tron, the signed
   // deposit hash on Solana and Stellar.
@@ -276,7 +302,18 @@ export async function signAward(params: {
   const reserve = await signReserveAuth(
     { ...reserveInput, depositId: paymentId },
     params.selectorSigner ?? params.depositorSigner,
+    { svmMessageScheme },
   );
+  if (solana) {
+    const reserveForm = assertSolanaSigned(
+      reserve,
+      inputs.selector,
+      WitnessKind.Reserve,
+      svmMessageScheme,
+      params.selectorSigner ? 'selectorSigner' : 'depositorSigner',
+    );
+    assertSolanaWitnessesFit(depositForm, reserveForm);
+  }
   // The escrow checks the reserve against the reserver the deposit names. A Stellar depositor signs
   // with its delegate key, which is not necessarily the selector's, so a reserve signed by the wrong
   // key is refused here instead of reverting the deposit on chain.
@@ -300,6 +337,57 @@ export async function signAward(params: {
       reserve_auth: reserve,
     },
   };
+}
+
+/**
+ * Refuses a Solana signature the escrow would refuse: not by `account`, or not in a form the escrow's
+ * message scheme accepts. A custom `SenderSigner` that ignores `svmMessageScheme` signs the raw hash,
+ * which a text escrow (escrow-text-v1) refuses on chain after the award, so it fails here instead.
+ */
+function assertSolanaSigned(
+  signed: { message: string; signature: string },
+  account: string,
+  kind: WitnessKind,
+  scheme: string,
+  which: string,
+): EscrowMessageForm {
+  let match: EscrowWitnessMatch | undefined;
+  try {
+    match = matchEscrowWitness(
+      scheme,
+      kind,
+      Buffer.from(signed.message.replace(/^0x/, ''), 'hex'),
+      bs58.decode(account),
+      Buffer.from(signed.signature.replace(/^0x/, ''), 'hex'),
+    );
+  } catch {
+    match = undefined;
+  }
+  if (match === undefined) {
+    throw new Error(
+      `payment-gateway-client: ${which} did not sign the ${kind === WitnessKind.Deposit ? 'deposit' : 'reserve'} ` +
+        `as ${account} in a form this escrow accepts (${scheme === '' ? 'the raw hash' : scheme}): refusing to send the award`,
+    );
+  }
+  return match.form;
+}
+
+/**
+ * Refuses a deposit and a reserve both signed as v0 off-chain messages (a Ledger signs that form):
+ * the settler's deposit and reserve transaction then measures 1245 bytes with the cluster's lookup
+ * table, over Solana's 1232 byte packet, so it could never be sent after the award. Every other pair
+ * of forms fits (a v1 or bare form on either side saves at least 35 bytes).
+ */
+export function assertSolanaWitnessesFit(
+  depositForm: EscrowMessageForm | undefined,
+  reserveForm: EscrowMessageForm,
+): void {
+  if (depositForm === 'v0' && reserveForm === 'v0') {
+    throw new Error(
+      'payment-gateway-client: the deposit and the reserve are both signed as v0 off-chain messages, ' +
+        'which together do not fit in one Solana transaction: sign the reserve bare or as a v1 off-chain message: refusing to send the award',
+    );
+  }
 }
 
 /**

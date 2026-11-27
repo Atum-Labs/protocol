@@ -241,6 +241,7 @@ export class AtumEscrowClientScheme implements SchemeNetworkClient {
     // Before the payer's key is touched: these addresses decide where the deposit can go and who
     // may release it, so a corridor the payer does not trust is never signed.
     const corridor = await this.assertTrustedCorridor(paymentRequirements, atum);
+    assertRawHashEscrow(paymentRequirements.network, atum.escrow, corridor.source);
     assertCapWithinBound({
       sourceNetwork: paymentRequirements.network,
       sourceAsset: paymentRequirements.asset,
@@ -520,6 +521,24 @@ export class AtumEscrowClientScheme implements SchemeNetworkClient {
       });
     }
   }
+}
+
+/**
+ * x402 signs a Solana deposit as the 32-byte hash, so it refuses an escrow whose trusted message
+ * scheme is anything else (an `escrow-text-v1` escrow refuses the hash on chain). Other chains
+ * carry no scheme.
+ */
+function assertRawHashEscrow(network: string, escrow: string, roles: TrustedRoles): void {
+  const scheme = roles.svmMessageScheme ?? '';
+  if (network.split(':')[0] !== 'solana' || scheme === '') return;
+  throw new AtumEscrowTrustError({
+    code: 'UNSUPPORTED_ESCROW_SCHEME',
+    network,
+    field: 'extra.atum.escrow',
+    expected: '',
+    actual: scheme,
+    message: `atum-escrow: escrow ${escrow} on ${network} signs with svm_message ${JSON.stringify(scheme)}, and x402 signs only the 32-byte hash, so it refuses to pay it`,
+  });
 }
 
 /**

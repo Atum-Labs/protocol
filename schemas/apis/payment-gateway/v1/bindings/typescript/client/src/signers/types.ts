@@ -21,6 +21,14 @@ export interface SenderSignature {
   delegateSigner?: string;
 }
 
+/**
+ * What a {@link SenderSigner} signs: one signed message, plus `svmMessageScheme`, which is
+ * SDK-local and never sent. On Solana it names the escrow's message scheme: absent or `''` signs the
+ * 32-byte hash itself, the default; `'escrow-text-v1'` signs the escrow text over it (the reserve
+ * text for a reserve record). Other chains ignore it.
+ */
+export type SenderSignInput = SignedMessage & { svmMessageScheme?: string };
+
 /** Signs a single sender_auth signed message for a payment request. */
 export interface SenderSigner {
   /**
@@ -28,7 +36,7 @@ export interface SenderSigner {
    * `signPaymentRequest` refuses a request whose source is another network than a bound signer's.
    */
   readonly network?: string;
-  sign(signedMessage: SignedMessage): Promise<SenderSignature>;
+  sign(signedMessage: SenderSignInput): Promise<SenderSignature>;
 }
 
 /** Turnkey provider configuration (shared by the SDK and the CLI env loader). */

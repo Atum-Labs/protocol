@@ -1,14 +1,14 @@
 #!/usr/bin/env ts-node
 
 /**
- * Create (or extend) the per-cluster Address Lookup Table the v4 deposit transaction needs.
+ * Create (or extend) the per-cluster Address Lookup Table the v4 deposit + reserve transaction needs.
  *
- * WHY THIS EXISTS. v4 put a plaintext destination into the deposit preimage and into the
- * `deposit` instruction data. A legacy Solana transaction caps at PACKET_DATA_SIZE = 1232 bytes and
- * the v4 deposit shape sits a few bytes short of it, so a realistic destination pushes it over. The
- * overrun is not a clean error: it surfaces as `RangeError: encoding overruns Uint8Array` thrown
- * inside `simulateTransaction`, naming neither the limit nor the field that grew. An ALT replaces
- * each tabled 32-byte account key with a 1-byte index and buys that room back.
+ * WHY THIS EXISTS. A legacy Solana transaction caps at PACKET_DATA_SIZE = 1232 bytes. A v4 deposit
+ * fits on its own, but deposit and reserve in one transaction, each with its signed-text ed25519
+ * instruction, do not: `--measure` puts it at 1373 bytes with one signature. The overrun is not a
+ * clean error: it surfaces as `RangeError: encoding overruns Uint8Array` thrown inside
+ * `simulateTransaction`, naming neither the limit nor the field that grew. An ALT replaces each
+ * tabled 32-byte account key with a 1-byte index and buys that room back (1192 bytes with the table).
  *
  * ORDERING. Run this AFTER the program-id flip (deploy guide step 6a), never before. The table is
  * keyed on the escrow program id: run it against the old id and it holds the old `protocol_config`
@@ -19,7 +19,7 @@
  * is the one that catches a stale cluster: devnet's retired escrow satisfies the first three.
  *
  * Usage:
- *   # 1. offline: what the deposit costs and what the table buys back
+ *   # 1. offline: what deposit + reserve costs and what the table buys back
  *   npx ts-node scripts/create-address-lookup-table.ts --measure
  *
  *   # 2. rehearse against the live cluster — reads only, sends nothing
@@ -60,7 +60,6 @@ import {
   AddressLookupTableProgram,
   ComputeBudgetProgram,
   Connection,
-  Ed25519Program,
   Keypair,
   PACKET_DATA_SIZE,
   PublicKey,
@@ -83,6 +82,16 @@ import {
   getProtocolConfigAddress,
   resolveAnchorCluster,
 } from "./solana-admin-utils.ts";
+import {
+  ED25519_PROGRAM_ID,
+  ESCROW_LABEL_DEPOSIT,
+  ESCROW_LABEL_RESERVE,
+  ESCROW_MESSAGE_FORMS,
+  escrowEd25519Instruction,
+  escrowMessage,
+  type EscrowLabel,
+  type EscrowMessageForm,
+} from "../../bindings/typescript/escrow-encoding/src/signed-text.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,7 +145,7 @@ const EXTEND_CHUNK_SIZE = 20;
 // ─── Size model constants ────────────────────────────────────────────────────
 //
 // These describe the transaction whose size is being reported. They are the ESTIMATED half of
-// --measure: the shape of the deposit the settler sends. The encoding of that shape is measured.
+// --measure: the shape of the deposit + reserve the settler sends. The encoding of that shape is measured.
 
 // tests/helpers.ts DEPOSIT_COMPUTE_UNIT_LIMIT. Every deposit must raise the limit or it exceeds
 // the 200k default, so the instruction is part of the transaction's size.
@@ -144,14 +153,12 @@ const MODEL_COMPUTE_UNIT_LIMIT = 400_000;
 // A priority fee is not in the test path but any client on a live cluster sets one, and leaving it
 // out would understate the size — the dangerous direction. ~12 bytes.
 const MODEL_COMPUTE_UNIT_PRICE = 1_000;
-// tests/helpers.ts TEST_DESTINATION and programs/escrow/src/utils/signatures.rs: the ratified
-// canonical `<CAIP-19 asset>@<account>` form for an eip155 namespace measures 103 bytes.
-const MODEL_DESTINATION_LEN = 103;
-// programs/escrow/src/constants.rs MAX_DESTINATION_LEN.
-const MAX_DESTINATION_LEN = 256;
-// The ed25519 verify instruction carries the signed message inline. createMessage() keccaks the
-// preimage, so what is signed — and what rides in the transaction — is 32 bytes, not the preimage.
-const MODEL_SIGNED_MESSAGE_LEN = 32;
+// The deposit signature is modelled in its longest accepted form and the reserve one bare, the
+// form payment-gw's selector key signs. Both are built by the escrow-encoding signed-text builder.
+// A payer that signs its own reserve (awardQuote with no selectorSigner) may send it in any accepted
+// form, so the report also measures the worst case, a v0 reserve.
+const MODEL_RESERVE_SIGNATURE_FORM: EscrowMessageForm = "bare";
+const WORST_RESERVE_SIGNATURE_FORM: EscrowMessageForm = "v0";
 
 interface Args {
   mode: "measure" | "dry-run" | "send";
@@ -417,13 +424,13 @@ function loadEscrowIdl(): any {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function depositInstruction(idl: any): IdlInstruction {
+function escrowInstruction(idl: any, name: string): IdlInstruction {
   const ix = (idl.instructions as IdlInstruction[] | undefined)?.find(
-    (candidate) => candidate.name === "deposit"
+    (candidate) => candidate.name === name
   );
   if (!ix) {
     throw new Error(
-      "target/idl/escrow.json has no `deposit` instruction. The size model is derived from it, " +
+      `target/idl/escrow.json has no \`${name}\` instruction. The size model is derived from it, ` +
         "so there is nothing to measure — rebuild the IDL."
     );
   }
@@ -434,7 +441,7 @@ function depositInstruction(idl: any): IdlInstruction {
  * Byte width of an IDL type. Throws on anything it cannot size rather than guessing: a wrong width
  * here becomes a confident headroom number that is wrong in the direction that fails in production.
  */
-function idlTypeSize(type: unknown, stringLen: number): number {
+function idlTypeSize(type: unknown): number {
   if (typeof type === "string") {
     switch (type) {
       case "bool":
@@ -456,32 +463,22 @@ function idlTypeSize(type: unknown, stringLen: number): number {
       case "pubkey":
       case "publicKey":
         return 32;
-      case "string":
-        return 4 + stringLen; // borsh: u32 length prefix + bytes
       default:
         throw new Error(`Cannot size IDL type "${type}"; refusing to guess`);
     }
   }
   if (typeof type === "object" && type !== null && "array" in type) {
     const array = (type as { array: [unknown, number] }).array;
-    return idlTypeSize(array[0], stringLen) * array[1];
+    return idlTypeSize(array[0]) * array[1];
   }
   throw new Error(
     `Cannot size IDL type ${JSON.stringify(type)}; refusing to guess`
   );
 }
 
-function depositDataLength(ix: IdlInstruction, destinationLen: number): number {
-  const variable = ix.args.filter((arg) => arg.type === "string");
-  if (variable.length !== 1) {
-    throw new Error(
-      `deposit has ${variable.length} variable-length args, expected exactly one (destination). ` +
-        `The model can no longer attribute a destination length, so it would report a number it ` +
-        `cannot stand behind.`
-    );
-  }
+function instructionDataLength(ix: IdlInstruction): number {
   return ix.args.reduce(
-    (total, arg) => total + idlTypeSize(arg.type, destinationLen),
+    (total, arg) => total + idlTypeSize(arg.type),
     ix.discriminator.length
   );
 }
@@ -546,6 +543,34 @@ function modelAccountKey(account: IdlAccount, ctx: ModelContext): PublicKey {
   }
 }
 
+/** An Ed25519SigVerify instruction carrying `label` text in `form`, with a zero signature. */
+function escrowSigInstruction(
+  label: EscrowLabel,
+  form: EscrowMessageForm,
+  signer: string
+): TransactionInstruction {
+  const publicKey = placeholderKey(signer).toBytes();
+  const message = escrowMessage(form, label, new Uint8Array(32), publicKey);
+  return new TransactionInstruction({
+    programId: new PublicKey(ED25519_PROGRAM_ID),
+    keys: [],
+    data: Buffer.from(
+      escrowEd25519Instruction(form, publicKey, message, new Uint8Array(64))
+    ),
+  });
+}
+
+/** The deposit signature instruction in the accepted form with the most bytes. */
+function longestDepositSigInstruction(): {
+  form: EscrowMessageForm;
+  ix: TransactionInstruction;
+} {
+  return ESCROW_MESSAGE_FORMS.map((form) => ({
+    form,
+    ix: escrowSigInstruction(ESCROW_LABEL_DEPOSIT, form, "delegate_signer"),
+  })).reduce((a, b) => (b.ix.data.length > a.ix.data.length ? b : a));
+}
+
 interface SizeReport {
   staticKeyCount: number;
   legacyMessageBytes: number;
@@ -564,25 +589,27 @@ const V0_TABLE_OVERHEAD_BYTES = 32 + 1 + 1 + 1 + 1;
 const BYTES_SAVED_PER_DEREFERENCED_ADDRESS = 31;
 
 /**
- * Compile the modelled deposit both ways and report the real serialized byte counts.
+ * Compile the modelled deposit + reserve both ways and report the real serialized byte counts.
  *
  * The account list, the account flags and the argument widths all come from the escrow IDL, and the
  * encoding is done by the same @solana/web3.js compiler the settler uses — so the ALT accounting
  * (which keys are dereferenced, which must stay in static keys) is measured rather than asserted.
  */
-function measureDeposit(
+function measureDepositReserve(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   idl: any,
   ctx: ModelContext,
   tabled: TabledAddress[],
-  destinationLen: number
+  reserveForm: EscrowMessageForm = MODEL_RESERVE_SIGNATURE_FORM
 ): SizeReport {
-  const ix = depositInstruction(idl);
-  const keys = ix.accounts.map((account) => ({
-    pubkey: modelAccountKey(account, ctx),
-    isSigner: account.signer === true,
-    isWritable: account.writable === true,
-  }));
+  const ix = escrowInstruction(idl, "deposit");
+  const reserveIx = escrowInstruction(idl, "reserve");
+  const keysOf = (instruction: IdlInstruction) =>
+    instruction.accounts.map((account) => ({
+      pubkey: modelAccountKey(account, ctx),
+      isSigner: account.signer === true,
+      isWritable: account.writable === true,
+    }));
 
   const payerAccount = ix.accounts.find((account) => account.signer === true);
   if (!payerAccount) {
@@ -599,15 +626,17 @@ function measureDeposit(
     ComputeBudgetProgram.setComputeUnitPrice({
       microLamports: MODEL_COMPUTE_UNIT_PRICE,
     }),
-    Ed25519Program.createInstructionWithPublicKey({
-      publicKey: placeholderKey("delegate_signer").toBytes(),
-      message: Buffer.alloc(MODEL_SIGNED_MESSAGE_LEN),
-      signature: Buffer.alloc(64),
-    }),
+    longestDepositSigInstruction().ix,
     new TransactionInstruction({
       programId: ctx.escrowProgramId,
-      keys,
-      data: Buffer.alloc(depositDataLength(ix, destinationLen)),
+      keys: keysOf(ix),
+      data: Buffer.alloc(instructionDataLength(ix)),
+    }),
+    escrowSigInstruction(ESCROW_LABEL_RESERVE, reserveForm, "reserver"),
+    new TransactionInstruction({
+      programId: ctx.escrowProgramId,
+      keys: keysOf(reserveIx),
+      data: Buffer.alloc(instructionDataLength(reserveIx)),
     }),
   ];
 
@@ -653,37 +682,16 @@ function transactionBytes(messageBytes: number, signatures: number): number {
   return 1 + 64 * signatures + messageBytes;
 }
 
-function largestDestinationThatFits(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  idl: any,
-  ctx: ModelContext,
-  tabled: TabledAddress[],
-  signatures: number,
-  useTable: boolean
-): number | null {
-  let best: number | null = null;
-  for (let len = 0; len <= MAX_DESTINATION_LEN; len++) {
-    const report = measureDeposit(idl, ctx, tabled, len);
-    const bytes = transactionBytes(
-      useTable ? report.v0MessageBytes : report.legacyMessageBytes,
-      signatures
-    );
-    if (bytes > PACKET_DATA_SIZE) break;
-    best = len;
-  }
-  return best;
-}
-
 function printSizeReport(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   idl: any,
   ctx: ModelContext,
   tabled: TabledAddress[]
 ): void {
-  const report = measureDeposit(idl, ctx, tabled, MODEL_DESTINATION_LEN);
+  const report = measureDepositReserve(idl, ctx, tabled);
   const rentBytes = LOOKUP_TABLE_META_SIZE + 32 * tabled.length;
 
-  console.log("Deposit transaction size");
+  console.log("Deposit + reserve transaction size");
   console.log(
     `  MEASURED — both encodings serialized by @solana/web3.js, exact for the shape below:`
   );
@@ -694,9 +702,9 @@ function printSizeReport(
   );
   for (const label of report.unusedLabels) {
     // Not a defect: an invoked program id may not be resolved through a table, and an entry this
-    // deposit does not touch still earns its place for the flows that do. Named so the operator
+    // transaction does not touch still earns its place for the flows that do. Named so the operator
     // can tell those two cases apart instead of reading a bare count.
-    console.log(`      not used by this deposit: ${label}`);
+    console.log(`      not used by this transaction: ${label}`);
   }
   console.log(
     `    legacy message:                ${report.legacyMessageBytes} bytes`
@@ -731,10 +739,12 @@ function printSizeReport(
     `  and argument widths come from target/idl/escrow.json; the rest is assumed:`
   );
   console.log(
-    `    destination length:            ${MODEL_DESTINATION_LEN} bytes (tests/helpers.ts TEST_DESTINATION)`
+    `    deposit signature:             ${
+      longestDepositSigInstruction().form
+    } escrow text (longest accepted form)`
   );
   console.log(
-    `    signed message in ed25519 ix:  ${MODEL_SIGNED_MESSAGE_LEN} bytes (keccak digest, not the preimage)`
+    `    reserve signature:             ${MODEL_RESERVE_SIGNATURE_FORM} escrow text`
   );
   console.log(
     `    compute-budget instructions:   2 (unit limit ${MODEL_COMPUTE_UNIT_LIMIT}, unit price ${MODEL_COMPUTE_UNIT_PRICE})`
@@ -755,46 +765,22 @@ function printSizeReport(
         `${String(PACKET_DATA_SIZE - v0Total).padStart(5)}`
     );
   }
-  console.log(
-    `    (base, excluding the destination: ${
-      transactionBytes(report.legacyMessageBytes, 2) - MODEL_DESTINATION_LEN
-    } + destination_len at 2 signatures.`
+  const worst = measureDepositReserve(
+    idl,
+    ctx,
+    tabled,
+    WORST_RESERVE_SIGNATURE_FORM
   );
+  const worstTotal = transactionBytes(worst.v0MessageBytes, 1);
   console.log(
-    `     programs/escrow/src/constants.rs documents ~1080 + destination_len for the same 17-key`
+    `    worst case, ${WORST_RESERVE_SIGNATURE_FORM} reserve, 1 signature, with table: ${worstTotal} ` +
+      (worstTotal > PACKET_DATA_SIZE
+        ? `— OVER by ${
+            worstTotal - PACKET_DATA_SIZE
+          }: a payer that signs its own reserve as a ` +
+          `${WORST_RESERVE_SIGNATURE_FORM} off-chain message (a Ledger) is refused after the award`
+        : `— fits, headroom ${PACKET_DATA_SIZE - worstTotal}`)
   );
-  console.log(
-    `     shape — compare the two, and treat a gap as a difference in the instruction list.)`
-  );
-
-  console.log();
-  console.log(
-    `  Largest destination that still fits (MAX_DESTINATION_LEN is ${MAX_DESTINATION_LEN}):`
-  );
-  for (const signatures of [1, 2]) {
-    const legacyMax = largestDestinationThatFits(
-      idl,
-      ctx,
-      tabled,
-      signatures,
-      false
-    );
-    const tableMax = largestDestinationThatFits(
-      idl,
-      ctx,
-      tabled,
-      signatures,
-      true
-    );
-    console.log(
-      `    ${signatures} signature(s):  legacy ${
-        legacyMax === null ? "does not fit at all" : `${legacyMax} bytes`
-      }, with table ${
-        tableMax === null ? "does not fit at all" : `${tableMax} bytes`
-      }`
-    );
-  }
-
   console.log();
   console.log(
     `  Table account size: ${rentBytes} bytes (${LOOKUP_TABLE_META_SIZE} metadata + 32 x ` +

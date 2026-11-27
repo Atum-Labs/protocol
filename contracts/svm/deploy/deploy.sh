@@ -171,7 +171,7 @@ if [ -n "${SKIP_REVOKE_AUTHORITY+x}" ]; then
 fi
 RUA_LC="$(printf '%s' "${REVOKE_UPGRADE_AUTHORITY:-}" | tr '[:upper:]' '[:lower:]')"
 case "$RUA_LC" in
-  true) ok "REVOKE_UPGRADE_AUTHORITY=true — both programs will be made PERMANENTLY IMMUTABLE after deploy. Read contracts/svm/deploy/pre-finalize.sh first." ;;
+  true) ok "REVOKE_UPGRADE_AUTHORITY=true — the deployed program(s) will be made PERMANENTLY IMMUTABLE after deploy. Read contracts/svm/deploy/pre-finalize.sh first." ;;
   "")   ok "upgrade authority RETAINED (REVOKE_UPGRADE_AUTHORITY unset — the default)" ;;
   *)    bad "REVOKE_UPGRADE_AUTHORITY='$REVOKE_UPGRADE_AUTHORITY' does not lowercase to 'true'. deploy.ts treats anything but 'true' as false, so this reads as RETAIN — set it to 'true' or remove it, rather than leaving a value that looks decisive and is not." ;;
 esac
@@ -179,8 +179,19 @@ esac
 
 # ---------- program ids: keypair == declare_id! == Anchor.toml ----------
 hdr "program ids"
-PROGRAMS="escrow fulfillment_proxy"
+# PROGRAMS=escrow deploys a new escrow beside the cluster's live proxy (the v5 checklist): the
+# proxy's keypair is not needed, and it is neither deployed, initialized nor revoked.
+PROGRAMS="${PROGRAMS:-escrow fulfillment_proxy}"
+case "$PROGRAMS" in
+  "escrow fulfillment_proxy") ESCROW_ONLY=false ;;
+  escrow)                     ESCROW_ONLY=true; ok "PROGRAMS=escrow — the proxy at FP_ID is left as it is" ;;
+  *) die "PROGRAMS='$PROGRAMS' must be unset or 'escrow'" ;;
+esac
 declare_id_of() { grep -ohE 'declare_id!\("[^"]+"\)' "$SRC_DIR/programs/$1/src/lib.rs" 2>/dev/null | sed 's/declare_id!("//;s/")//' | head -1; }
+# deploy.ts initializes whatever ESCROW_ID names, so it must be the escrow this run deploys.
+if [ -n "${ESCROW_ID:-}" ] && [ "$ESCROW_ID" != "$(declare_id_of escrow)" ]; then
+  bad "ESCROW_ID=$ESCROW_ID but escrow declare_id! is $(declare_id_of escrow) — initialization would target the wrong escrow"
+fi
 toml_id_of()    { sed -n "/^\[programs\.$2\]/,/^\[/p" "$SRC_DIR/Anchor.toml" | grep -E "^$1 *= *\"" | sed 's/.*"\(.*\)"/\1/' | head -1; }
 KP_DIR="${SVM_KEY_DIR:-$ATUM_HOME/keys}"
 for p in $PROGRAMS; do
@@ -281,6 +292,9 @@ done
 
 # ---------- duplicate-deploy guard ----------
 REC="$OUT/${ESCROW_CLUSTER_ID:-unknown}.deployed"
+# An escrow only run records itself per escrow id, so it neither trips over nor overwrites the
+# record of the cluster's earlier full deploy.
+[ "$ESCROW_ONLY" = true ] && REC="$OUT/${ESCROW_CLUSTER_ID:-unknown}.escrow-$(declare_id_of escrow).deployed"
 if [ -f "$REC" ] && [ "${FORCE:-0}" != "1" ] && [ "$MODE" = broadcast ]; then
   echo
   echo "REFUSING: $REC already records a deployment for ${ESCROW_CLUSTER_ID}:"
@@ -340,8 +354,8 @@ done
 
 # ---------- initialize ----------
 hdr "initialize (deploy.ts, build and deploy phases skipped)"
-( cd "$SRC_DIR" && SKIP_BUILD=true SKIP_DEPLOY=true npx ts-node scripts/deploy.ts ) \
-  || die "initialization failed — the programs ARE deployed. Re-run initialization with: (cd $SRC_DIR && SKIP_BUILD=true SKIP_DEPLOY=true npx ts-node scripts/deploy.ts)"
+( cd "$SRC_DIR" && SKIP_BUILD=true SKIP_DEPLOY=true ESCROW_ONLY="$ESCROW_ONLY" npx ts-node scripts/deploy.ts ) \
+  || die "initialization failed — the programs ARE deployed. Re-run initialization with: (cd $SRC_DIR && SKIP_BUILD=true SKIP_DEPLOY=true ESCROW_ONLY=$ESCROW_ONLY npx ts-node scripts/deploy.ts)"
 
 # ---------- record ----------
 # Redacted in the run record too: this file persists, and a deploy log with a live
@@ -355,7 +369,11 @@ printf '%sDEPLOYED AND INITIALIZED.%s\n' "$GRN" "$OFF"
 echo "recorded  : $REC"
 echo
 echo "Still to do, and none of it is optional — see the guide:"
-echo "  * create the per-cluster address lookup table (a deposit tx overruns without one)"
+if [ "$ESCROW_ONLY" = true ]; then
+  echo "  * add this escrow's addresses to the cluster's EXISTING lookup table (never a second one)"
+else
+  echo "  * create the per-cluster address lookup table (a deposit tx overruns without one)"
+fi
 echo "  * allowlist each mint with its fee config"
 echo "  * propagate the program ids to the hash anchors and consumers"
 echo "  * verify:  atum-verify-all svm --deployed"

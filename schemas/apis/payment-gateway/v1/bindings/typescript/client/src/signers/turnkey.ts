@@ -1,6 +1,6 @@
 import { requirePinnedSender } from './pinned-address';
-import type { SignedMessage } from '../generated/types.gen';
-import type { SenderSignature, SenderSigner, TurnkeyConfig } from './types';
+
+import type { SenderSignInput, SenderSignature, SenderSigner, TurnkeyConfig } from './types';
 import type { Logger, Meter } from '@atum-labs/turnkey-signer';
 
 /** Typed contract for the lazily-loaded ./turnkey-impl module; also the test's conformance target. */
@@ -20,6 +20,7 @@ export interface TurnkeyImplModule {
     },
     message: string,
     messagePrehash: string | undefined,
+    svmMessageScheme?: string,
   ) => Promise<SenderSignature>;
 }
 
@@ -45,7 +46,7 @@ export class TurnkeySenderSigner implements SenderSigner {
     this.pinnedAddress = requirePinnedSender(cfg.pinnedAddress);
   }
 
-  async sign(signedMessage: SignedMessage): Promise<SenderSignature> {
+  async sign(signedMessage: SenderSignInput): Promise<SenderSignature> {
     const impl = await this.loader();
     return impl.turnkeySign(
       this.chainPrefix,
@@ -60,6 +61,7 @@ export class TurnkeySenderSigner implements SenderSigner {
       },
       signedMessage.message,
       signedMessage.message_prehash,
+      signedMessage.svmMessageScheme,
     );
   }
 }

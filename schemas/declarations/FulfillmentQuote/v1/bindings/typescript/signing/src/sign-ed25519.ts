@@ -11,7 +11,7 @@
 
 import nacl from "tweetnacl";
 
-import { encodeEd25519ProofValue } from "@atum-labs/ld-data-integrity";
+import { ed25519ProofMessage, encodeEd25519ProofValue } from "@atum-labs/ld-data-integrity";
 
 import {
   ED25519_2020_CONTEXT_URL,
@@ -52,6 +52,9 @@ export interface SignEd25519Options {
   // deterministic timestamp pass an explicit ISO-8601 UTC string here;
   // production callers leave it undefined.
   created?: string;
+  // Signs ed25519ProofMessage(signingInput) instead of the raw signingInput.
+  // Verifiers accept both. Default false.
+  textProof?: boolean;
 }
 
 // signQuoteEd25519 canonicalizes the document and proof options, hashes
@@ -108,7 +111,10 @@ export async function signQuoteEd25519(
     proofOptions,
   });
 
-  const signature = nacl.sign.detached(signingInput, secretKey);
+  const signature = nacl.sign.detached(
+    options.textProof === true ? ed25519ProofMessage(signingInput) : signingInput,
+    secretKey
+  );
   if (signature.length !== 64) {
     throw new Error(`expected 64-byte ed25519 signature, got ${signature.length}`);
   }

@@ -7,16 +7,33 @@ deploy script to produce a ready-to-use local chain" pattern, adapted to Solana.
 
 ## What it does
 
-**Build (builder stage):** compiles the three escrow programs from the
-`solana-escrow` submodule with the toolchain the source pins (Anchor 0.32.1 /
-Solana 2.3.0, per `Anchor.toml`), after running `anchor keys sync` against our
-committed **throwaway localnet program keypairs** so the `.so` binaries carry
-**local** `declare_id!`s (we do not hold the canonical program keypairs).
+**Build (builder stage):** compiles the three programs from `contracts/svm/source`
+at the protocol commit `ESCROW_V4_REF` (the v4 escrow, raw hash signing), and the
+escrow alone from the current `contracts/svm/source` (v5, readable text signing),
+with the toolchain the source pins (Anchor 0.32.1 / Solana 2.3.0, per
+`Anchor.toml`), after running `anchor keys sync` against our committed
+**throwaway localnet program keypairs** so the `.so` binaries carry **local**
+`declare_id!`s (we do not hold the canonical program keypairs). The build fails
+if the v4 IDL differs from
+`bindings/typescript/escrow-encoding/idl-history/v4/escrow.json` other than in the
+program id.
+
+`ESCROW_V4_REF` is fetched from GitHub. While the repository is private, pass a
+token, or hand the stage a local copy of that commit:
+
+```bash
+GIT_AUTH_TOKEN=<token> docker build --secret id=GIT_AUTH_TOKEN,env=GIT_AUTH_TOKEN ...
+git archive 56e374a0bbbb224cf440dab0f3744bc66dcadcee contracts/svm/source | tar -x -C /tmp/escrow-v4
+docker build --build-context escrow-v4-source=/tmp/escrow-v4 ...
+```
 
 **Run:** boots a fresh validator, then runs the escrow's
 `scripts/deploy-local.ts` each start — deploy programs → `initialize_protocol`
-(`cluster_id="localnet"`, signature-domain v2) → create USDC/USDT mints →
-allowlist them. Then it airdrops SOL and mints USDC/USDT to the test accounts, and
+(`cluster_id="localnet"`, signature-domain v5) → create USDC/USDT mints →
+allowlist them. Then `deploy-escrow-v5.ts` deploys the v5 escrow at its own id
+beside v4, initializes its `ProtocolConfig` the same way, allowlists the same
+mints and adds `programs.escrowV5` to `deployment-addresses.json`. v5 shares the
+v4 fulfillment proxy. Then it airdrops SOL and mints USDC/USDT to the test accounts, and
 serves `deployment-addresses.json` over HTTP on port 80.
 
 ## Ports
@@ -36,6 +53,7 @@ local dev. A Solana keypair JSON is a 64-byte array = 32-byte ed25519 seed ‖
 | File                              | Pubkey                                         | Role                                                 |
 | --------------------------------- | ---------------------------------------------- | ---------------------------------------------------- |
 | `escrow.json`             | `CFKUVjrHDt1cXXzHMTCbHj5NxFZjtCqxxTc2k61gry7R` | escrow program ID (local `declare_id!`)              |
+| `escrow_v5.json`          | `AtBJCoGvJynVf4pk3XtAnn1WbyhiW7eZCtA24FCzrUqF` | v5 escrow program ID (readable text signing)         |
 | `fulfillment_proxy.json`  | `FLNuCtE9w1qsyr2wjDSf1BCy7KCR6pvnVYht2KaY2dAn` | fulfillment_proxy program ID                         |
 | `mock_transfer_hook.json` | `FHUH8QAmdnMTnggSeuXc1T1tAh8CSsxS31WvKb77h4jE` | mock_transfer_hook program ID (off the payment path) |
 | `payer.json`                      | `22TT1dPcRQkEEBx7Pj1ZDgS5wJHWp5Ln94opkWBKobjw` | deploy authority + mint/ATA authority                |

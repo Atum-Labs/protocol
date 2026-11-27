@@ -85,6 +85,11 @@ export interface SolanaDomain {
   escrowProgramId: string;
   clusterId: string;
   domainVersion: number;
+  /**
+   * The escrow's svm message scheme: `''` or absent (the default) accepts a deposit signed over the
+   * raw hash only, `'escrow-text-v1'` the escrow text only.
+   */
+  messageScheme?: string;
 }
 
 /** One verified `signed_messages[]` entry: the signed terms, the parsed permit and the commitment. */
@@ -138,6 +143,11 @@ export interface VerifyPaymentRequestExpectations {
   /** Solana: additionally required by the deposit-hash domain, independent of role binding. */
   svmSignatureClusterId?: string;
   svmSignatureDomainVersion?: number;
+  /**
+   * Solana: the escrow's svm message scheme, `escrowSigningOf(defaults, escrow).svmMessageScheme`.
+   * Absent or `''` accepts a deposit signed over the raw hash only, as before `escrow-text-v1`.
+   */
+  svmMessageScheme?: string;
   /** EVM/Tron: the Permit2 contract the signature is bound to. */
   permit2Contract?: string;
   /** Freshness reference, Unix seconds. Defaults to now. */

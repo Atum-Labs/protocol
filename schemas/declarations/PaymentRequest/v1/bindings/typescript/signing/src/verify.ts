@@ -12,7 +12,7 @@ import {
   recoverSecp256k1ProofSignerFrom,
 } from "@atum-labs/ld-data-integrity";
 import bs58 from "bs58";
-import nacl from "tweetnacl";
+import { verifyEd25519Proof } from "@atum-labs/ld-data-integrity";
 
 import { hashPaymentRequest, type Cryptosuite, type HashResult } from "./hash.js";
 import { parseDetachedJws } from "./jws.js";
@@ -243,7 +243,8 @@ async function verifyEd25519(
     "Ed25519Signature2020"
   );
 
-  if (!nacl.sign.detached.verify(signingInput, sig, pubkey)) {
+  // The proof signs the raw signingInput or its ed25519ProofMessage text.
+  if (!verifyEd25519Proof(pubkey, signingInput, sig)) {
     throw new Error("verify: ed25519 signature verification failed");
   }
 

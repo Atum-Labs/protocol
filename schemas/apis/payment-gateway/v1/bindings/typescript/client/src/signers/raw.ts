@@ -1,7 +1,6 @@
 import { localKeySigner } from '@atum-labs/payment-request-sender-auth';
 import { getChainAdapter } from '../chain-adapters';
-import type { SignedMessage } from '../generated/types.gen';
-import type { SenderSignature, SenderSigner } from './types';
+import type { SenderSignInput, SenderSignature, SenderSigner } from './types';
 
 /**
  * Private-key sender signer. A thin wrapper over the shared SDK's
@@ -25,7 +24,7 @@ export class RawSenderSigner implements SenderSigner {
     this.inner = localKeySigner(network, adapter.formatPrivateKey(privateKey));
   }
 
-  sign(signedMessage: SignedMessage): Promise<SenderSignature> {
+  sign(signedMessage: SenderSignInput): Promise<SenderSignature> {
     return this.inner.sign(signedMessage);
   }
 }

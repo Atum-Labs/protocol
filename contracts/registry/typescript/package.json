@@ -5,6 +5,24 @@
   "description": "TypeScript reader for the contract version registry (contracts/registry/chains)",
   "main": "dist/typescript/src/index.js",
   "types": "dist/typescript/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/typescript/src/index.d.ts",
+      "default": "./dist/typescript/src/index.js"
+    },
+    "./overlay": {
+      "types": "./dist/typescript/src/overlay.d.ts",
+      "default": "./dist/typescript/src/overlay.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "overlay": [
+        "dist/typescript/src/overlay.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",

@@ -28,10 +28,16 @@ import {
 
 import { evmChainId, namespaceOf, tronNumericChainId } from './chain-id.js';
 import bs58 from 'bs58';
-import { computeReserveHashV3, Pubkey, type EscrowDomain } from '@atum-labs/solana-escrow-encoding';
+import {
+  computeReserveHashV3,
+  matchEscrowWitness,
+  Pubkey,
+  WitnessKind,
+  type EscrowDomain,
+} from '@atum-labs/solana-escrow-encoding';
 import { isJsonBlank } from './commitment-rules.js';
 import { recordSpelledTwice } from './commitment-permit.js';
-import { solanaEscrowDomain, verifyEd25519Strict } from './commitment-solana.js';
+import { solanaEscrowDomain } from './commitment-solana.js';
 import { TronChainIdError } from './errors.js';
 import {
   isObject,
@@ -100,6 +106,12 @@ export interface ReserveAuthExpectations {
    */
   svmSignatureClusterId?: string;
   svmSignatureDomainVersion?: number;
+  /**
+   * The Solana escrow's svm message scheme, from the registry's `svmMessage` for the escrow: `''` or
+   * absent (the default) accepts a reserve signed over the raw hash only, and `'escrow-text-v1'` the
+   * escrow text (bare, v1 or v0) only.
+   */
+  svmMessageScheme?: string;
 }
 
 /**
@@ -638,7 +650,15 @@ function verifySolanaReserveAuth(
       'the signature is not a 64-byte hex ed25519 signature',
     );
   }
-  if (!verifyEd25519Strict(reserver.toBytes(), digest, hexBytes(auth.signature))) {
+  if (
+    matchEscrowWitness(
+      expected.svmMessageScheme ?? '',
+      WitnessKind.Reserve,
+      digest,
+      reserver.toBytes(),
+      hexBytes(auth.signature),
+    ) === undefined
+  ) {
     return verdict(
       'eoa',
       'signer_mismatch',
@@ -685,6 +705,7 @@ export function readSolanaExpectations(
     escrowProgramId: expected.escrowContract,
     clusterId: expected.svmSignatureClusterId ?? '',
     domainVersion: expected.svmSignatureDomainVersion,
+    messageScheme: expected.svmMessageScheme,
   });
   if (typeof domain === 'string') return misconfigured(domain);
   if (domain.signatureDomainVersion < SVM_RESERVE_SOURCE_AMOUNT_VERSION) {

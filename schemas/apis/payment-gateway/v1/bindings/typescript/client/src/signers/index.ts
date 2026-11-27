@@ -5,7 +5,13 @@ import { RawSenderSigner } from './raw';
 import { TurnkeySenderSigner } from './turnkey';
 import type { SenderSigner, SenderSignerOptions, TurnkeyConfig } from './types';
 
-export type { SenderSigner, SenderSignature, SenderSignerOptions, TurnkeyConfig } from './types';
+export type {
+  SenderSignInput,
+  SenderSigner,
+  SenderSignature,
+  SenderSignerOptions,
+  TurnkeyConfig,
+} from './types';
 export { RawSenderSigner } from './raw';
 export { TurnkeySenderSigner } from './turnkey';
 

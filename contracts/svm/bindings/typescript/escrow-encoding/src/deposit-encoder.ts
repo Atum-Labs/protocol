@@ -107,6 +107,20 @@ export function computeDestinationHash(destination: string): Uint8Array {
 }
 
 /**
+ * Enforces the destination rules (non-empty, at most {@link MAX_DESTINATION_LEN} UTF-8 bytes) and
+ * returns its hash, the `destination_hash` argument of the escrow-text-v1 deposit instruction.
+ * {@link computeDepositHashV2} keeps the v4 checks unchanged.
+ */
+export function validateAndHashDestination(destination: string): Uint8Array {
+  if (destination.length === 0) throw new EmptyDestinationError();
+  // Byte length, not UTF-16 code units: the limit bounds the UTF-8 encoding, matching EVM and TVM.
+  if (stringToBytes(destination).length > MAX_DESTINATION_LEN) {
+    throw new DestinationTooLongError();
+  }
+  return computeDestinationHash(destination);
+}
+
+/**
  * Computes the signature_domain_version 4 deposit_hash: {@link computeDepositHash}'s preimage with
  * keccak256(destination) inserted directly after deposit_request_hash.
  *

@@ -14,6 +14,7 @@
 KEYPAIR_DIR="/contracts/svm/accounts"
 
 ESCROW_KEYPAIR="${KEYPAIR_DIR}/escrow.json"
+ESCROW_V5_KEYPAIR="${KEYPAIR_DIR}/escrow_v5.json"
 FULFILLMENT_PROXY_KEYPAIR="${KEYPAIR_DIR}/fulfillment_proxy.json"
 MOCK_TRANSFER_HOOK_KEYPAIR="${KEYPAIR_DIR}/mock_transfer_hook.json"
 PAYER_KEYPAIR="${KEYPAIR_DIR}/payer.json"
@@ -28,6 +29,9 @@ USDT_MINT_KEYPAIR="${KEYPAIR_DIR}/usdt-mint.json"
 # --- Program IDs (local declare_id!s; set by `anchor keys sync` to match the
 #     keypairs above) ---
 LOCAL_ESCROW_PROGRAM_ID="CFKUVjrHDt1cXXzHMTCbHj5NxFZjtCqxxTc2k61gry7R"
+# v5 escrow (signs readable text) beside v4, built from the current source and
+# sharing the v4 fulfillment proxy.
+LOCAL_ESCROW_V5_PROGRAM_ID="AtBJCoGvJynVf4pk3XtAnn1WbyhiW7eZCtA24FCzrUqF"
 LOCAL_FULFILLMENT_PROXY_PROGRAM_ID="FLNuCtE9w1qsyr2wjDSf1BCy7KCR6pvnVYht2KaY2dAn"
 LOCAL_MOCK_TRANSFER_HOOK_PROGRAM_ID="FHUH8QAmdnMTnggSeuXc1T1tAh8CSsxS31WvKb77h4jE"
 

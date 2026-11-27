@@ -69,6 +69,15 @@ layout, asserted by more than one implementation.
 | Release, Refund | `deposit_hash` and `quote_hash` | one literal per leg at domain versions 3 and 5, shared by Rust `tests/encoder_anchors.rs`, Go `v2_quotehash_test.go` and TS `v4-destination.test.ts` |
 | Reserve signature verification | the reserve anchor above, signed with ed25519 | sender-auth Go `reserve_auth_test.go` and TS `reserve-auth.test.ts`, reading `schemas/declarations/PaymentRequest/v1/conformance/reserve-auth-vectors.json` |
 
+v5 escrows sign readable text, v4 escrows sign the raw hash, chosen per escrow. A v5 signer signs
+the escrow text `<label> <base64url-nopad(hash)>`, bare or in a `v1`/`v0` off-chain message
+envelope (layouts in `svm/source/docs/programs/escrow.md`, "Signed text").
+
+| Signed bytes | Pinned by |
+|---|---|
+| Text and the three forms for each label | `svm/conformance/signed-text.json`, written by Go `signed_text_test.go` (`REGEN_SIGNED_TEXT=1`), read by Go and TS `signed-text.test.ts`; the same hex is pinned in Rust `signed_text_tests` |
+| Signatures from a fixed seed, and a non-canonical-S signature strict verifiers reject | same file |
+
 Further shared checks:
 
 - `svm/conformance/guard-vectors.json`: rejection cases asserted by Go `guard_parity_test.go`
@@ -147,7 +156,7 @@ a new contract id (no `upgrade` entrypoint), so the vectors are re-derived, not 
 ```sh
 for m in evm tvm svm stellar; do (cd contracts/$m/bindings/go/escrow-encoding && go test ./...); done
 for m in evm tvm svm stellar; do (cd contracts/$m/bindings/typescript/escrow-encoding && pnpm test); done
-(cd contracts/svm/source && cargo test -p escrow hash_anchor_tests)
+(cd contracts/svm/source && cargo test -p escrow -- hash_anchor_tests signed_text_tests)
 (cd contracts/stellar/source && cargo test --workspace)   # also the stellar-contracts CI lane
 python3 contracts/stellar/conformance/regenerate_vectors.py --check   # also the stellar-contracts CI lane
 node schemas/apis/payment-gateway/v1/bindings/go/client/scripts/flatten.mjs --check

@@ -50,6 +50,11 @@
 #                           config's default keypair otherwise, which is some unrelated local
 #                           key, and fails with "insufficient funds" naming an account nobody
 #                           recognises while the funded authority sits unused.
+#   DEPLOYMENTS             deployments file listing the programs, default ../deployments-v4.json
+#                           (../deployments-v5.json for the v5 escrow)
+#   ALLOW_V4_UPGRADE=1      required to --apply to the v4 programs. v4 is frozen by convention: v5
+#                           ships as a new program, so an in place v4 upgrade is a deliberate,
+#                           reviewed exception (an audit fix), never a routine rebuild
 #   REPO_URL                default https://github.com/Atum-Labs/protocol
 #   VERIFY_REF_DEVNET / VERIFY_REF_MAINNET   override a cluster's verification ref
 #
@@ -57,7 +62,8 @@ set -uo pipefail
 
 SELF="${BASH_SOURCE[0]}"
 HERE="$(cd -P "$(dirname "$SELF")" && pwd)"
-DEPLOYMENTS="$HERE/../deployments-v4.json"
+V4_DEPLOYMENTS="$HERE/../deployments-v4.json"
+DEPLOYMENTS="${DEPLOYMENTS:-$V4_DEPLOYMENTS}"
 
 RED=$'\033[31m'; GRN=$'\033[32m'; YEL=$'\033[33m'; BLD=$'\033[1m'; OFF=$'\033[0m'
 FAIL=0
@@ -72,7 +78,7 @@ while [ $# -gt 0 ]; do
     --apply)   MODE=apply ;;
     --cluster) ONLY_CLUSTER="${2:-}"; shift ;;
     --program) ONLY_PROGRAM="${2:-}"; shift ;;
-    -h|--help) sed -n '2,55p' "$SELF"; exit 0 ;;
+    -h|--help) sed -n '2,59p' "$SELF"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -121,6 +127,17 @@ if [ "$MODE" = apply ]; then
     && ok "authority keypair present" \
     || bad "SVM_AUTHORITY_KEYPAIR is unset or missing -- required for --apply (it signs AND pays)"
 fi
+[ -f "$DEPLOYMENTS" ] && ok "deployments: $DEPLOYMENTS" || bad "DEPLOYMENTS=$DEPLOYMENTS does not exist"
+# Every program id deployments-v4.json lists, whatever file DEPLOYMENTS names: a v5 file reuses the
+# v4 proxy, so the gate is on the id, not the file.
+V4_IDS="$(python3 - "$V4_DEPLOYMENTS" <<'PY'
+import json,io,sys
+for v in json.load(io.open(sys.argv[1],encoding='utf-8')).values():
+    if isinstance(v,dict):
+        print(*((v.get('contracts') or {}).values()), sep='\n')
+PY
+)"
+is_v4_id() { printf '%s\n' "$V4_IDS" | grep -qxF "$1"; }
 [ "$FAIL" -gt 0 ] && { printf '\n%s%d preflight failure(s); refusing to continue.%s\n' "$RED" "$FAIL" "$OFF"; exit 1; }
 
 # Arrays, so --cluster / --program values reach the loops as one word each: an unknown value is
@@ -145,8 +162,18 @@ for cluster in "${CLUSTERS[@]}"; do
   for prog in "${PROGRAMS[@]}"; do
     PID="$(json_get "$CKEY" "contracts.$(lib_of "$prog")")"
     hdr "$cluster / $prog"
-    [ -z "$PID" ] && { bad "no program id in deployments-v4.json"; continue; }
+    [ -z "$PID" ] && { bad "no program id in $(basename "$DEPLOYMENTS")"; continue; }
     echo "  program id : $PID"
+    if is_v4_id "$PID"; then
+      if [ "${ALLOW_V4_UPGRADE:-}" = 1 ]; then
+        warn "$PID is a v4 program -- ALLOW_V4_UPGRADE=1, upgrading it in place"
+      elif [ "$MODE" = apply ]; then
+        bad "$PID is a v4 program: --apply needs ALLOW_V4_UPGRADE=1, since v4 is frozen and a new version ships as a new program"
+        continue
+      else
+        warn "$PID is a v4 program: --apply would need ALLOW_V4_UPGRADE=1"
+      fi
+    fi
 
     # The ref must declare the id being deployed to. declare_id! compiles into the binary, so a
     # ref carrying the wrong one produces bytes that can never match -- and that only surfaces at

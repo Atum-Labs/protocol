@@ -271,6 +271,65 @@ describe('atumGatewayTrust — vouched tokens', () => {
   });
 });
 
+describe('atumGatewayTrust — the escrow message scheme', () => {
+  const SOLANA = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp';
+  const ESCROW = baseDefaults.escrow_contract;
+  const on = (network: string, entries: unknown) => ({
+    ...baseDefaults,
+    chain_id: network,
+    escrows: entries,
+  });
+  const answer = (body: unknown) =>
+    fakeFetch((gateway) => (gateway === MAINNET_GW ? json(body) : notFound())).fetch;
+  const resolve = (network: string, body: unknown) =>
+    atumGatewayTrust({ fetch: answer(body), now: fixedNow })(network);
+
+  it('carries the svm_message of the escrows entry for the trusted escrow on Solana', async () => {
+    const body = on(SOLANA, [
+      { escrow_contract: 'OtherEscrow', svm_message: '' },
+      { escrow_contract: ESCROW, svm_message: 'escrow-text-v1' },
+    ]);
+    await expect(resolve(SOLANA, body)).resolves.toEqual({
+      ...baseRoles,
+      svmMessageScheme: 'escrow-text-v1',
+    });
+  });
+
+  it('carries no scheme when escrows is absent, names another escrow, or omits svm_message', async () => {
+    const withoutEscrows: Record<string, unknown> = { ...baseDefaults, chain_id: SOLANA };
+    for (const body of [
+      withoutEscrows,
+      on(SOLANA, [{ escrow_contract: 'OtherEscrow', svm_message: 'escrow-text-v1' }]),
+      on(SOLANA, [{ escrow_contract: ESCROW }]),
+    ]) {
+      await expect(resolve(SOLANA, body)).resolves.toEqual(baseRoles);
+    }
+  });
+
+  for (const [label, entries] of [
+    ['escrows is an object', { a: 1 }],
+    ['an entry is null', [null]],
+    ['svm_message is a number', [{ escrow_contract: ESCROW, svm_message: 5 }]],
+    ['escrow_contract is missing', [{ svm_message: '' }]],
+    [
+      'a malformed entry follows the match',
+      [{ escrow_contract: ESCROW, svm_message: '' }, { escrow_contract: 7 }],
+    ],
+  ] as Array<[string, unknown]>) {
+    it(`rejects TRUST_SOURCE_UNAVAILABLE on Solana when ${label}`, async () => {
+      const err = await trustFailure(resolve(SOLANA, on(SOLANA, entries)));
+      expect(err.code).toBe('TRUST_SOURCE_UNAVAILABLE');
+    });
+  }
+
+  it('ignores escrows on a non Solana network, malformed or not', async () => {
+    await expect(resolve(BASE, on(BASE, [null]))).resolves.toEqual(baseRoles);
+    await expect(
+      resolve(BASE, on(BASE, [{ escrow_contract: ESCROW, svm_message: 'escrow-text-v1' }])),
+    ).resolves.toEqual(baseRoles);
+  });
+});
+
 describe('atumGatewayTrust — an authoritative refusal', () => {
   it('rejects CHAIN_NOT_TRUSTED when every gateway answers 404', async () => {
     const { fetch } = fakeFetch(() => notFound());

@@ -1,5 +1,7 @@
 package svm_escrow_encoding
 
+import "unicode/utf8"
+
 // EscrowDepositParams contains the parameters needed to compute a deposit message hash.
 type EscrowDepositParams struct {
 	// DepositRequestHash is the depositor-signed commitment to the offchain deposit request.
@@ -128,6 +130,22 @@ const MaxDestinationLen = 256
 // accident. TestRawDestinationFeedIsRejected pins the distinction.
 func ComputeDestinationHash(destination string) [32]byte {
 	return Keccak256([]byte(destination))
+}
+
+// ValidateAndHashDestination enforces the destination rules (non-empty, valid UTF-8, at most
+// MaxDestinationLen bytes) and returns its hash, the destination_hash argument of the
+// escrow-text-v1 deposit instruction. ComputeDepositHashV2 keeps the v4 checks unchanged.
+func ValidateAndHashDestination(destination string) ([32]byte, error) {
+	if destination == "" {
+		return [32]byte{}, ErrEmptyDestination
+	}
+	if !utf8.ValidString(destination) {
+		return [32]byte{}, ErrDestinationNotUTF8
+	}
+	if len(destination) > MaxDestinationLen {
+		return [32]byte{}, ErrDestinationTooLong
+	}
+	return ComputeDestinationHash(destination), nil
 }
 
 // ComputeDepositHashV2 is the signature_domain_version 4 deposit witness: ComputeDepositHash's preimage

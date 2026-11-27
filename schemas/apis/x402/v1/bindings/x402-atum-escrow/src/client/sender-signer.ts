@@ -33,7 +33,9 @@ export function toSenderSigner(network: string, signer: AuthSigner): SenderSigne
   // disclose the signer's public key as `delegateSigner` — the facilitator verifies against it
   // and pins it to source.account (it cannot recover the key from the signature the way EVM/Tron
   // do). The key is disclosed in the source account's own form (base58 on Solana, a `G…` strkey
-  // on Stellar).
+  // on Stellar). Solana signs the raw 32 byte digest. The client refuses an escrow-text-v1 (v5)
+  // escrow before it gets here (UNSUPPORTED_ESCROW_SCHEME) only when the trust source names that
+  // scheme in svmMessageScheme, as atumGatewayTrust does from the gateway's escrows.
   if (namespace === 'solana' || namespace === 'stellar') {
     if (!('publicKey' in signer)) {
       const [chain, typeName] =

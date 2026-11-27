@@ -50,6 +50,10 @@ type SignedMessageInput struct {
 	Signature      string                 `json:"signature"`
 	MessagePrehash *string                `json:"message_prehash,omitempty"`
 	Payload        map[string]interface{} `json:"payload,omitempty"`
+	// SvmMessageScheme is SDK-local and never on the wire: the Solana escrow's svm message scheme,
+	// set only by a caller that knows it. "" (the default) signs the raw 32 byte hash;
+	// "escrow-text-v1" signs the escrow text. Other chains ignore it.
+	SvmMessageScheme string `json:"-"`
 }
 
 // Reused Solana deposit prehash from the svm escrow-encoding lib (snake_case wire
@@ -108,6 +112,9 @@ type Expectations struct {
 	// fields; required on Solana, absent for EVM/Tron.
 	SvmSignatureClusterID     string `json:"svmSignatureClusterId,omitempty"`
 	SvmSignatureDomainVersion *int   `json:"svmSignatureDomainVersion,omitempty"`
+	// SvmMessageScheme is the Solana escrow's svm message scheme, from the registry's svmMessage
+	// for the escrow. "" (the default) is the raw hash; see SolanaDomain.MessageScheme.
+	SvmMessageScheme string `json:"svmMessageScheme,omitempty"`
 	// NowSec, when non-nil, pins the verify-time clock the EVM/Tron freshness check compares
 	// against (unix seconds). Production verifiers leave it nil (real clock).
 	NowSec *int `json:"nowSec,omitempty"`

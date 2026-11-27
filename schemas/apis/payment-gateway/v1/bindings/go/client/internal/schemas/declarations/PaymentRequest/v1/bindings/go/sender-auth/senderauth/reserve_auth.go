@@ -74,6 +74,10 @@ type ReserveAuthExpectations struct {
 	// required on Solana. The reserve hash binds the source amount from domain version 5.
 	SvmSignatureClusterID     string `json:"svmSignatureClusterId,omitempty"`
 	SvmSignatureDomainVersion *int   `json:"svmSignatureDomainVersion,omitempty"`
+	// SvmMessageScheme is the Solana escrow's svm message scheme, from the registry's svmMessage for
+	// the escrow: "" (the default) accepts a reserve signed over the raw hash only, and
+	// "escrow-text-v1" the escrow text (bare, v1 or v0) only.
+	SvmMessageScheme string `json:"svmMessageScheme,omitempty"`
 }
 
 // ReserveAuthReason is why a reserve_auth was, or was not, found valid. Only

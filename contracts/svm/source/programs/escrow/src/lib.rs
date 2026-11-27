@@ -45,7 +45,7 @@ pub mod escrow {
     pub fn deposit<'a>(
         ctx: Context<'_, '_, 'a, 'a, Deposit<'a>>,
         deposit_request_hash: [u8; 32],
-        destination: String,
+        destination_hash: [u8; 32],
         amount: u64,
         reserver: Pubkey,
         releaser: Pubkey,
@@ -57,7 +57,7 @@ pub mod escrow {
         instructions::escrow::deposit(
             ctx,
             deposit_request_hash,
-            destination,
+            destination_hash,
             amount,
             reserver,
             releaser,

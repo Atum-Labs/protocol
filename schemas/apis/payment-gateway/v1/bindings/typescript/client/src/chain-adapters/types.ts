@@ -40,6 +40,25 @@ export interface ChainDefaults {
    * signatures.
    */
   directDepositRequestHashVersion?: number;
+  /**
+   * Every escrow the gateway accepts a payment into on this chain, the default `escrowContract`
+   * first, with how each one's signers sign. Absent from a gateway that predates it. Read with
+   * {@link escrowSigningOf}.
+   */
+  escrows?: ChainEscrow[];
+}
+
+/** One escrow of {@link ChainDefaults.escrows}. */
+export interface ChainEscrow {
+  /** The escrow's address, or on Solana its program id. */
+  escrowContract: string;
+  /** Solana only: this escrow's signature domain version. */
+  svmSignatureDomainVersion?: number;
+  /**
+   * Solana only: what a signer signs over this escrow's hashes. Absent or `''`: the 32-byte hash
+   * itself. `'escrow-text-v1'`: the escrow text.
+   */
+  svmMessage?: string;
 }
 
 /**

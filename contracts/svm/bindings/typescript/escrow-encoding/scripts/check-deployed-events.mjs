@@ -50,7 +50,12 @@ const DEFAULT_RPC = {
   mainnet: 'https://api.mainnet-beta.solana.com',
   devnet: 'https://api.devnet.solana.com',
 };
-const IDL_BY_CONTRACT = { Escrow: 'escrow.json', FulfillmentProxy: 'fulfillment_proxy.json' };
+// The served v4 escrow's deposit takes the destination string, which src/generated no longer does,
+// so the escrow decodes with the idl-history/v4 snapshot of that program.
+const IDL_BY_CONTRACT = {
+  Escrow: join(here, '..', 'idl-history', 'v4', 'escrow.json'),
+  FulfillmentProxy: join(idlDir, 'fulfillment_proxy.json'),
+};
 // The accounting events v4 mainnet has actually emitted. Refunded and Fulfilled never have, so
 // requiring them would fail every mainnet run; they are reported, and --signature can cover them.
 const DEFAULT_REQUIRED = {
@@ -142,10 +147,10 @@ function targets() {
   const entry = Object.values(JSON.parse(readFileSync(deployments, 'utf8'))).find(
     (e) => e.mainnet === (args.cluster === 'mainnet'),
   );
-  return Object.entries(IDL_BY_CONTRACT).map(([contract, file]) => ({
+  return Object.entries(IDL_BY_CONTRACT).map(([contract, idlPath]) => ({
     label: `${entry.name} ${contract}`,
     program: entry.contracts[contract],
-    idlPath: join(idlDir, file),
+    idlPath,
     defaults: DEFAULT_REQUIRED[contract],
   }));
 }

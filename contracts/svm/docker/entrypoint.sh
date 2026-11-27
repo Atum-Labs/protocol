@@ -4,11 +4,12 @@
 #
 # Every container start boots a fresh solana-test-validator, then runs the
 # escrow's deploy-local.ts (deploy programs + init protocol + create mints +
-# allowlist) and funds the test accounts, so the chain comes up ready for tests.
+# allowlist), deploys the v5 escrow beside v4, and funds the test accounts, so the chain comes up ready for tests.
 
 set -euo pipefail
 
 ESCROW_DIR="/contracts/svm/source"
+ESCROW_V5_DIR="/contracts/svm/escrow-v5"
 DOCKER_DIR="/contracts/svm/docker"
 RPC_PORT="${RPC_PORT:-8899}"
 RPC_URL="http://127.0.0.1:${RPC_PORT}"
@@ -79,6 +80,18 @@ echo "[entrypoint] Running deploy-local.ts (deploy + init + mints + allowlist) .
   LOCAL_USDC_MINT_KEYPAIR="${USDC_MINT_KEYPAIR}" \
   LOCAL_USDT_MINT_KEYPAIR="${USDT_MINT_KEYPAIR}" \
   tsx scripts/deploy-local.ts
+)
+
+# --- Deploy the v5 escrow beside v4 (same proxy and mints, its own program id) ---
+echo "[entrypoint] Deploying escrow v5 at ${LOCAL_ESCROW_V5_PROGRAM_ID} ..."
+(
+  cd "${ESCROW_DIR}"
+  ANCHOR_WALLET="${PAYER_KEYPAIR}" \
+  SOLANA_RPC_URL="${RPC_URL}" \
+  ESCROW_V5_KEYPAIR="${ESCROW_V5_KEYPAIR}" \
+  ESCROW_V5_SO="${ESCROW_V5_DIR}/escrow.so" \
+  ESCROW_V5_IDL="${ESCROW_V5_DIR}/escrow.json" \
+  tsx scripts/deploy-escrow-v5.ts
 )
 
 # --- Fund the test accounts: SOL airdrop + USDC/USDT ATAs + mintTo ---

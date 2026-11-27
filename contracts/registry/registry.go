@@ -21,12 +21,17 @@ import (
 //go:embed chains/*.json
 var chainFiles embed.FS
 
+// svmMessageSchemes are the Solana message schemes the svm escrow encoding knows (its
+// MessageSchemes): "" signs the raw 32 byte hash, "escrow-text-v1" the escrow text.
+var svmMessageSchemes = map[string]bool{"": true, "escrow-text-v1": true}
+
 // Signature names the signing domain a version verifies.
 type Signature struct {
 	EIP712Name       string `json:"eip712Name,omitempty"`
 	EIP712Version    string `json:"eip712Version,omitempty"`
 	SVMDomainVersion int    `json:"svmDomainVersion,omitempty"`
-	// SVMMessage is the form a Solana signer signs for this version; "" is the raw 32 byte hash.
+	// SVMMessage is the form a Solana signer signs for this version: "" is the raw 32 byte hash,
+	// "escrow-text-v1" the escrow text.
 	SVMMessage string `json:"svmMessage,omitempty"`
 	// StellarDomainVersion is the version byte every Stellar escrow digest commits to.
 	StellarDomainVersion int `json:"stellarDomainVersion,omitempty"`
@@ -163,8 +168,7 @@ func (s Signature) validate(caip2 string) error {
 		if s.SVMDomainVersion > 255 {
 			return fmt.Errorf("svmDomainVersion %d does not fit in one byte", s.SVMDomainVersion)
 		}
-		// Only the raw hash scheme exists today.
-		if s.SVMMessage != "" {
+		if !svmMessageSchemes[s.SVMMessage] {
 			return fmt.Errorf("svmMessage %q is not a known message scheme", s.SVMMessage)
 		}
 		return nil

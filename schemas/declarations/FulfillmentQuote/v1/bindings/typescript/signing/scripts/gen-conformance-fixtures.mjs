@@ -5,10 +5,12 @@
 //   FQ side:
 //     - secp256k1-ts-signed.json
 //     - ed25519-ts-signed.json
+//     - ed25519-ts-signed-text.json (textProof)
 //
 //   VP side:
 //     - secp256k1-ts-vp.json
 //     - ed25519-ts-vp.json
+//     - ed25519-ts-vp-text.json, ed25519-ts-pre-vp-text.json (textProof)
 //     - secp256k1-ts-vp-null-issuance-date.json  (negative: verifyVP must refuse)
 //     - ed25519-ts-vp-null-issuance-date.json    (negative: verifyVP must refuse)
 //
@@ -112,16 +114,18 @@ const PRE_CONTEXT = JSON.parse(
 async function main() {
   mkdirSync(fixturesDir, { recursive: true });
   await genSecp256k1();
-  await genEd25519();
   await genSecp256k1VP("secp256k1-ts-vp.json", PINNED_VC_ISSUANCE_DATE);
-  await genEd25519VP("ed25519-ts-vp.json", PINNED_VC_ISSUANCE_DATE);
+  await genSecp256k1PREVP();
+  for (const text of [false, true]) {
+    await genEd25519(text);
+    await genEd25519VP(`ed25519-ts-vp${textSuffix(text)}.json`, PINNED_VC_ISSUANCE_DATE, text);
+    await genEd25519PREVP(text);
+  }
   // Negative fixtures: the same envelopes with the credential's
   // issuanceDate set to JSON null. The holder signature verifies; the
   // verifiers on both sides must refuse the credential.
   await genSecp256k1VP("secp256k1-ts-vp-null-issuance-date.json", null);
-  await genEd25519VP("ed25519-ts-vp-null-issuance-date.json", null);
-  await genSecp256k1PREVP();
-  await genEd25519PREVP();
+  await genEd25519VP("ed25519-ts-vp-null-issuance-date.json", null, false);
   await genSecp256k1TypedPREVP();
   await genVCProofSecp256k1(buildPinnedVCBody(), "secp256k1-ts-vc-proof.json");
   await genVCProofEd25519(buildPinnedVCBody(), "ed25519-ts-vc-proof.json");
@@ -154,7 +158,13 @@ async function genSecp256k1() {
   writeFileSync(resolve(fixturesDir, "secp256k1-ts-signed.json"), out);
 }
 
-async function genEd25519() {
+// textSuffix names the textProof variant of an ed25519 fixture.
+function textSuffix(text) {
+  return text ? "-text" : "";
+}
+
+// genEd25519 signs the raw signingInput, or its text form when text is set.
+async function genEd25519(text) {
   // 32 zero bytes as the seed → deterministic keypair. Matches the Go
   // generator's `var seed [32]byte`.
   const seed = new Uint8Array(32);
@@ -179,11 +189,12 @@ async function genEd25519() {
   const signed = await signQuoteEd25519(doc, priv, {
     verificationMethod: `did:pkh:solana:devnet:${pubBase58}#blockchainAccountId`,
     created: PINNED_CREATED,
+    textProof: text,
   });
 
   const sortedSigned = sortKeysRecursively(signed);
   const out = JSON.stringify(sortedSigned) + "\n";
-  writeFileSync(resolve(fixturesDir, "ed25519-ts-signed.json"), out);
+  writeFileSync(resolve(fixturesDir, `ed25519-ts-signed${textSuffix(text)}.json`), out);
 }
 
 // issuanceDate is the embedded credential's issuanceDate (null writes JSON
@@ -206,7 +217,7 @@ async function genSecp256k1VP(fileName, issuanceDate) {
 
 // issuanceDate is the embedded credential's issuanceDate (null writes JSON
 // null).
-async function genEd25519VP(fileName, issuanceDate) {
+async function genEd25519VP(fileName, issuanceDate, text) {
   const seed = new Uint8Array(32);
   const keyPair = nacl.sign.keyPair.fromSeed(seed);
   const pub = keyPair.publicKey;
@@ -220,6 +231,7 @@ async function genEd25519VP(fileName, issuanceDate) {
     challenge: PINNED_VP_CHALLENGE,
     domain: PINNED_VP_DOMAIN,
     created: PINNED_CREATED,
+    textProof: text,
   });
   const sortedSigned = sortKeysRecursively(signed);
   const out = JSON.stringify(sortedSigned) + "\n";
@@ -279,7 +291,7 @@ async function genSecp256k1TypedPREVP() {
 // (pinned by TestConformance_Ed25519PREVPFixturesAreByteIdentical on both
 // sides), which is the strongest proof the declarationType-set canonical
 // form agrees across languages.
-async function genEd25519PREVP() {
+async function genEd25519PREVP(text) {
   const seed = new Uint8Array(32);
   const keyPair = nacl.sign.keyPair.fromSeed(seed);
   const pub = keyPair.publicKey;
@@ -296,10 +308,11 @@ async function genEd25519PREVP() {
     declarationType: PRE_ENVELOPE_TYPE,
     envelopeContextUrl: PRE_CONTEXT_URL,
     extraEnvelopeContexts: { [PRE_CONTEXT_URL]: PRE_CONTEXT },
+    textProof: text,
   });
   const sortedSigned = sortKeysRecursively(signed);
   const out = JSON.stringify(sortedSigned) + "\n";
-  writeFileSync(resolve(fixturesDir, "ed25519-ts-pre-vp.json"), out);
+  writeFileSync(resolve(fixturesDir, `ed25519-ts-pre-vp${textSuffix(text)}.json`), out);
 }
 
 // genVCProofSecp256k1 signs vcBody under

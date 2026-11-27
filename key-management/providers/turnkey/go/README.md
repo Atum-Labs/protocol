@@ -21,7 +21,9 @@ the `SigningKeyBackend` and `TypedDataSigner` interfaces:
   `PAYLOAD_ENCODING_EIP712` activity so the sub-org policy can bind the
   witness type, the escrow domain and the releaser. `Sign` refuses them with
   `ErrDigestSigningRefused`.
-- `solana:*` keys sign a 32-byte digest as a raw ed25519 payload.
+- `solana:*` keys sign a 32-byte digest (v4 escrows) or a Solana escrow text
+  (`atum <deposit|reserve|release|refund> v1 <b64url hash>`, v5 escrows) as a
+  HEXADECIMAL raw ed25519 payload; ed25519 signs the same bytes either way.
 - Every signature is checked against the configured public key before it is
   returned, and secp256k1 signatures come back low-s with v in {27, 28}.
 - `ResolveWallet` checks the credential and that it is not a root user, then

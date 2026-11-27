@@ -196,6 +196,43 @@ func TestComputeDepositHashV2_DestinationBounds(t *testing.T) {
 	}
 }
 
+// TestComputeDepositHashV2_KeepsV4DestinationRules pins the v4 witness: invalid UTF-8 is hashed as
+// is, as before escrow-text-v1. Only ValidateAndHashDestination, the v5 argument, refuses it.
+func TestComputeDepositHashV2_KeepsV4DestinationRules(t *testing.T) {
+	const notUTF8 = "eip155:1/erc20:0x01@\xff"
+	got, err := ComputeDepositHashV2(v4DepositParams(t), notUTF8, v4DevnetDomain(t))
+	if err != nil {
+		t.Fatalf("v4 deposit hash refused an invalid UTF-8 destination: %v", err)
+	}
+	if got == ([32]byte{}) {
+		t.Fatal("v4 deposit hash is zero")
+	}
+}
+
+// TestValidateAndHashDestination covers the deposit instruction's destination_hash argument.
+func TestValidateAndHashDestination(t *testing.T) {
+	got, err := ValidateAndHashDestination(testDestination)
+	if err != nil {
+		t.Fatalf("ValidateAndHashDestination: %v", err)
+	}
+	if got != ComputeDestinationHash(testDestination) {
+		t.Fatal("ValidateAndHashDestination diverged from ComputeDestinationHash")
+	}
+
+	if _, err := ValidateAndHashDestination(""); !errors.Is(err, ErrEmptyDestination) {
+		t.Fatalf("empty destination: got %v, want ErrEmptyDestination", err)
+	}
+	if _, err := ValidateAndHashDestination("eip155:1/erc20:0x01@\xff"); !errors.Is(err, ErrDestinationNotUTF8) {
+		t.Fatalf("invalid UTF-8 destination: got %v, want ErrDestinationNotUTF8", err)
+	}
+	if _, err := ValidateAndHashDestination(strings.Repeat("a", MaxDestinationLen)); err != nil {
+		t.Fatalf("destination at exactly MaxDestinationLen must be accepted: %v", err)
+	}
+	if _, err := ValidateAndHashDestination(strings.Repeat("a", MaxDestinationLen+1)); !errors.Is(err, ErrDestinationTooLong) {
+		t.Fatalf("destination at MaxDestinationLen+1: got %v, want ErrDestinationTooLong", err)
+	}
+}
+
 // TestComputeDepositHash_V1LayoutStaysFrozen asserts the legacy deposit witness cannot produce the v4
 // value, and vice versa.
 //

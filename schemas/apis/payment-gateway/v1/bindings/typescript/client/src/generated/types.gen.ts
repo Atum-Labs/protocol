@@ -2001,6 +2001,28 @@ export type ChainDefaults = {
      * The depositRequestHash version this gateway derives an originator-executed (direct) deposit's id at, and so the version that deposit's witness must commit: 1 is keccak256 of the request_id, 2 is the hash of the payment terms. Present on the chains a direct deposit can be made from (EVM). A deposit whose witness commits another version is still accepted by the escrow, under an id that names no payment, and comes back only through `refundUnreserved`. Absent from a gateway that predates this member: obtain the version from the gateway operator. Version 1 is deprecated for direct deposits. The gateway can change the version it derives at, so read this member for each direct deposit: a deposit funded at the old version and submitted after the change names no payment. A client that does not know the version must not make a direct deposit, since its deposit would name no payment: it upgrades instead. Unrelated to `deposit_request_hash_version` and `deposit_request_hash_versions`, which describe Permit2 signatures.
      */
     direct_deposit_request_hash_version?: number;
+    /**
+     * Every escrow the gateway accepts a payment into on this chain, the default `escrow_contract` first. Absent from a gateway that predates this member, which accepts only `escrow_contract`. A request that names another listed escrow is signed with that escrow's own fields here: on Solana its `svm_signature_domain_version` and `svm_message`.
+     */
+    escrows?: Array<ChainEscrow>;
+};
+
+/**
+ * One escrow the gateway accepts a payment into, with how its signers sign.
+ */
+export type ChainEscrow = {
+    /**
+     * The escrow's address, or on Solana its program id.
+     */
+    escrow_contract: string;
+    /**
+     * Solana only. This escrow's signature domain version, which its deposit and reserve hashes commit to. Absent for EVM and Tron.
+     */
+    svm_signature_domain_version?: number;
+    /**
+     * Solana only. What a signer signs over this escrow's deposit or reserve hash. Absent or empty: the 32-byte hash itself. `escrow-text-v1`: the text `atum deposit v1 <base64url hash>` (or `atum reserve v1` for a reserve), bare or inside a single-signer Solana off-chain message; the hash itself is refused. A client that does not know the value must not sign for this escrow.
+     */
+    svm_message?: string;
 };
 
 /**

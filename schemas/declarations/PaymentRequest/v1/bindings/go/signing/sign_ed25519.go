@@ -18,6 +18,10 @@ type SignEd25519Options struct {
 	VerificationMethod string
 	ProofPurpose       string
 	Created            time.Time
+
+	// TextProof signs lddataintegrity.Ed25519ProofMessage(SigningInput)
+	// instead of the raw SigningInput. VerifyPaymentRequest accepts both.
+	TextProof bool
 }
 
 // SignPaymentRequestEd25519 produces a W3C Data Integrity-signed
@@ -37,6 +41,7 @@ func SignPaymentRequestEd25519(doc map[string]any, priv ed25519.PrivateKey, opts
 	return SignPaymentRequestEd25519WithCreatedString(doc, priv, SignEd25519Options{
 		VerificationMethod: opts.VerificationMethod,
 		ProofPurpose:       opts.ProofPurpose,
+		TextProof:          opts.TextProof,
 	}, createdStr)
 }
 
@@ -68,7 +73,13 @@ func SignPaymentRequestEd25519WithCreatedString(doc map[string]any, priv ed25519
 		return nil, fmt.Errorf("sign_ed25519: hash: %w", err)
 	}
 
-	sig := ed25519.Sign(priv, hash.SigningInput)
+	msg := hash.SigningInput
+	if opts.TextProof {
+		if msg, err = lddataintegrity.Ed25519ProofMessage(hash.SigningInput); err != nil {
+			return nil, fmt.Errorf("sign_ed25519: proof message: %w", err)
+		}
+	}
+	sig := ed25519.Sign(priv, msg)
 	proofValue, err := lddataintegrity.EncodeEd25519ProofValue(sig)
 	if err != nil {
 		return nil, fmt.Errorf("sign_ed25519: encode proofValue: %w", err)

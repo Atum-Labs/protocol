@@ -84,6 +84,10 @@ type SolanaDomain struct {
 	EscrowProgramID string `json:"escrowProgramId"`
 	ClusterID       string `json:"clusterId"`
 	DomainVersion   int    `json:"domainVersion"`
+	// MessageScheme is the escrow's svm message scheme, from the registry's svmMessage for the
+	// escrow: "" (the default) accepts a deposit signed over the raw hash only, as v4 does, and
+	// "escrow-text-v1" accepts the escrow text (bare, v1 or v0) only.
+	MessageScheme string `json:"messageScheme,omitempty"`
 }
 
 // CommitmentOption is verifier configuration for a commitment check beyond the Solana domain.

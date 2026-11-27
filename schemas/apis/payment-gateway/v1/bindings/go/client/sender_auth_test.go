@@ -1,6 +1,8 @@
 package pgclient
 
 import (
+	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -259,7 +261,7 @@ func TestSignSenderAuth_ProducesASignatureTheAdapterVerifies(t *testing.T) {
 // If this fails: a field was added to SignedMessageInput. Map it in sender_auth.go, then update
 // the count here.
 func TestSignedMessageInputFieldCount(t *testing.T) {
-	const mapped = 4 // Message, Signature, MessagePrehash, Payload
+	const mapped = 5 // Message, Signature, MessagePrehash, Payload, SvmMessageScheme
 
 	got := reflect.TypeOf(senderauth.SignedMessageInput{}).NumField()
 	if got != mapped {
@@ -267,4 +269,44 @@ func TestSignedMessageInputFieldCount(t *testing.T) {
 			"an unmapped field is signed as its zero value, so the wallet signs something the "+
 			"request does not say", got, mapped)
 	}
+}
+
+// A Solana key signs the raw hash by default, and the escrow text only when the escrow's scheme
+// says so. The scheme never reaches the request.
+func TestSignSenderAuthWithScheme_Solana(t *testing.T) {
+	seed := make([]byte, ed25519.SeedSize)
+	for i := range seed {
+		seed[i] = 7
+	}
+	pub := ed25519.NewKeyFromSeed(seed).Public().(ed25519.PublicKey)
+	signer, err := senderauth.LocalKeySigner("solana:mainnet", hex.EncodeToString(seed))
+	require.NoError(t, err)
+	var hash [32]byte
+	for i := range hash {
+		hash[i] = 0xab
+	}
+	text := []byte("atum deposit v1 q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s")
+	for _, tc := range []struct {
+		name   string
+		sign   func(*PaymentRequest) error
+		signed []byte
+	}{
+		{"default", func(r *PaymentRequest) error { return SignSenderAuth(r, signer) }, hash[:]},
+		{"raw scheme", func(r *PaymentRequest) error { return SignSenderAuthWithScheme(r, signer, "") }, hash[:]},
+		{"text scheme", func(r *PaymentRequest) error { return SignSenderAuthWithScheme(r, signer, "escrow-text-v1") }, text},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := requestWith(SignedMessage{Message: "0x" + hex.EncodeToString(hash[:])})
+			require.NoError(t, tc.sign(req))
+			sig, err := hex.DecodeString(req.SenderAuth.SignedMessages[0].Signature[2:])
+			require.NoError(t, err)
+			require.True(t, ed25519.Verify(pub, tc.signed, sig))
+			body, err := json.Marshal(req)
+			require.NoError(t, err)
+			require.NotContains(t, string(body), "escrow-text-v1")
+		})
+	}
+	req := requestWith(SignedMessage{Message: "0x" + hex.EncodeToString(hash[:])})
+	require.ErrorContains(t, SignSenderAuthWithScheme(req, signer, "text"), "unknown message scheme")
+	require.Empty(t, req.SenderAuth.SignedMessages[0].Signature)
 }

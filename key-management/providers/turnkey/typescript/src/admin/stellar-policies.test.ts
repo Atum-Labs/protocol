@@ -177,3 +177,74 @@ describe('verifier policy set with a Stellar chain', () => {
     expect(out.map((x) => x.policyName)).not.toContain(ALLOW);
   });
 });
+
+// Evaluates a policy condition of `field == 'v'` / `field in ['a', ...]` clauses joined by `&&`
+// against one activity. A clause it cannot read counts as `unknown` (true for a deny, false for an
+// allow), so the check below can only err toward failing.
+function matches(condition: string, activity: Record<string, string>, unknown: boolean): boolean {
+  return condition.split(' && ').every((clause) => {
+    const eq = /^([\w.]+) == '([^']*)'$/.exec(clause.trim());
+    if (eq && eq[1]! in activity) return activity[eq[1]!] === eq[2];
+    const inList = /^([\w.]+) in \[(.*)\]$/.exec(clause.trim());
+    if (inList && inList[1]! in activity) {
+      return inList[2]!
+        .split(',')
+        .map((s) => s.trim().replace(/^'|'$/g, ''))
+        .includes(activity[inList[1]!]!);
+    }
+    return unknown;
+  });
+}
+
+describe('Stellar hex signing with a Solana chain in the same set', () => {
+  const hexSign = {
+    'activity.type': 'ACTIVITY_TYPE_SIGN_RAW_PAYLOAD_V2',
+    'activity.resource': 'WALLET',
+    'activity.params.encoding': 'PAYLOAD_ENCODING_HEXADECIMAL',
+    'activity.params.hash_function': 'HASH_FUNCTION_NOT_APPLICABLE',
+    'wallet_account.address': G1,
+  };
+  const sets = {
+    settler: () =>
+      buildSettlerRawPayloadPolicies({
+        chains: [STELLAR, SOLANA],
+        transferWithAuthorizationTokens: {},
+        evmAddress: '0x551DfeD720649704E79f4aa6ee6a227ce0139796',
+        stellarSigners: { Stellar: [G1] },
+      }),
+    sender: () =>
+      buildSenderPolicies(
+        {
+          network: 'testnet',
+          allowedTokens: {},
+          escrows: {},
+          allowedDestinations: {},
+          solanaEscrowProgramId: 'X',
+          stellarSigners: { Stellar: [G1] },
+        } as never,
+        [STELLAR, SOLANA],
+      ),
+    verifier: () =>
+      buildVerifierPolicies(
+        {
+          escrows: {},
+          releasers: {},
+          stellarSigners: { Stellar: [G1] },
+          solanaSigners: { Solana: ['4zvwRjXUKGfvwnParsHAS3HuSVzV5cA4McphgmoCtajS'] },
+        } as never,
+        [STELLAR, SOLANA],
+      ),
+  };
+
+  for (const [role, build] of Object.entries(sets)) {
+    it(`${role}: the Stellar allow admits HEXADECIMAL + NOT_APPLICABLE and no deny overrides it`, () => {
+      const out = build();
+      const allow = out.find((p) => p.policyName === ALLOW)!;
+      expect(matches(allow.condition, hexSign, false)).toBe(true);
+      const overriding = out.filter(
+        (p) => p.effect === 'EFFECT_DENY' && matches(p.condition, hexSign, true),
+      );
+      expect(overriding.map((p) => p.policyName)).toEqual([]);
+    });
+  }
+});

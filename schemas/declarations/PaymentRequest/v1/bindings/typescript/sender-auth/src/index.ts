@@ -74,6 +74,7 @@ export type {
   SolanaDomain,
 } from './commitment.js';
 export { localKeySigner } from './signer.js';
+export { solanaWitnessKind } from './solana-witness.js';
 export type { SenderSigner, SenderSignature } from './signer.js';
 export { recoverPermit2EOA, verifyDepositorSignature } from './depositor-signature.js';
 export { verifyReserveAuth } from './reserve-auth.js';

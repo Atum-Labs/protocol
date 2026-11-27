@@ -794,8 +794,13 @@ export type Escrow = {
           }
         },
         {
-          "name": "destination",
-          "type": "string"
+          "name": "destinationHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         },
         {
           "name": "amount",
@@ -2728,12 +2733,12 @@ export type Escrow = {
     {
       "code": 6035,
       "name": "destinationEmpty",
-      "msg": "The committed destination cannot be empty"
+      "msg": "The committed destination hash cannot be zero"
     },
     {
       "code": 6036,
       "name": "destinationTooLong",
-      "msg": "The committed destination exceeds 256 bytes"
+      "msg": "Not raised by this program: the 256-byte destination limit is enforced off chain"
     },
     {
       "code": 6037,
@@ -2804,6 +2809,16 @@ export type Escrow = {
       "code": 6050,
       "name": "permanentDelegateMintNotAllowed",
       "msg": "Mints with a permanent delegate are not allowed"
+    },
+    {
+      "code": 6051,
+      "name": "mintExtensionNotAllowed",
+      "msg": "The mint carries a Token-2022 extension the escrow does not accept"
+    },
+    {
+      "code": 6052,
+      "name": "hookAccountSignerNotAllowed",
+      "msg": "A transfer hook account other than the transfer authority is a signer"
     }
   ],
   "types": [

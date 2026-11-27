@@ -22,7 +22,12 @@ The recovered address (used in `verificationMethod` DID) is
 ### `signQuoteEd25519(quote, secretKey, opts)` — Solana / Ed25519
 
 64-byte ed25519 secret key (the Solana `Keypair.secretKey` shape) +
-caller-supplied `verificationMethod`.
+caller-supplied `verificationMethod`. Quote and VP (`signVPEd25519`) proofs
+sign the raw signingInput, or `ed25519ProofMessage(signingInput)` from
+`@atum-labs/ld-data-integrity` (`"atum ld-proof v1 "` + base64url of the
+64-byte signingInput) with `textProof: true` (off by default);
+`verifyQuote` / `verifyVP` accept both. VC proofs sign the raw signingInput. `computeQuoteHash` stays
+`keccak256(signingInput)`.
 
 ### `hashQuote(quote, opts)` — shared signing-input construction
 
