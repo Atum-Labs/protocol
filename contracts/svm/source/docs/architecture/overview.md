@@ -40,7 +40,7 @@ to the treasury when the depositor's token account cannot take a plain credit.
 | Delegate    | `create_delegate`, `revoke_delegate`, `renounce_delegate`                     |
 | Escrow      | `deposit`, `reserve`, `release`, `refund`                                     |
 | Protocol    | `initialize_protocol`, `pause`, `unpause`, role setters (`set_*`)             |
-| Mint Config | `allow_mint`, `disallow_mint`, `set_mint_fee_config`, `clear_mint_fee_config` |
+| Mint Config | `allow_mint`, `disallow_mint`, `set_mint_fee_config`, `clear_mint_fee_config`, `pin_mint_permanent_delegate` |
 
 ## State Transitions
 
@@ -113,6 +113,7 @@ Per-mint fee configuration and allowlist entry. Existence = mint is allowlisted.
 | fee_percentage_6 | u64    | Fee % × 1e6 (1_000_000 = 1%) |
 | min_fee_6        | u64    | Min fee × 1e6                |
 | max_fee_6        | u64    | Max fee × 1e6                |
+| permanent_delegate | Pubkey | Pinned permanent delegate, default when none |
 
 ### DepositInfo
 

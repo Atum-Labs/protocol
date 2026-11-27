@@ -111,6 +111,10 @@ pub struct MintFeeConfig {
     pub min_fee_6: u64,
     /// Maximum fee in 6-decimal normalized units (0 = disabled)
     pub max_fee_6: u64,
+    /// The mint's permanent delegate reviewed at `allow_mint` or `pin_mint_permanent_delegate`, or
+    /// `Pubkey::default()` when it had none. A deposit is refused while the live delegate is another
+    /// key. A live delegate is never the default key, so default means none or cleared.
+    pub permanent_delegate: Pubkey,
 }
 
 impl MintFeeConfig {
@@ -122,8 +126,10 @@ impl MintFeeConfig {
     // fee_percentage_6: 8
     // min_fee_6: 8
     // max_fee_6: 8
-    // Total: 8 + 32 + 8 + 8 + 8 = 64
-    pub const SIZE: usize = 8 + 32 + 8 + 8 + 8;
+    // permanent_delegate: 32
+    // Total: 8 + 32 + 8 + 8 + 8 + 32 = 96
+    // Deployed only at a fresh program id, see the v5 checklist in contracts/svm/deploy/README.md.
+    pub const SIZE: usize = 8 + 32 + 8 + 8 + 8 + 32;
 }
 
 /// Global protocol configuration PDA

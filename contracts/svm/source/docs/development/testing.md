@@ -23,9 +23,9 @@
 | `09_pda_interactions.ts`           | PDA account interactions           | 9     |
 | `10_protocol_fees.ts`              | Fee calculation + settlement       | 14    |
 | `11_protocol_pause_rbac.ts`        | Pause + RBAC flows                 | 15    |
-| `12_token2022_integration.ts`      | Token-2022 support                 | 6     |
+| `12_token2022_integration.ts`      | Token-2022 support                 | 15    |
 | `13_signature_domain.ts`           | Signature-domain hardening         | 7     |
-| `15_real_token_compat.ts`          | Real mainnet/devnet mints          | 23    |
+| `15_real_token_compat.ts`          | Real mainnet/devnet mints          | 35    |
 | `16_signed_text_forms.ts`          | Signed text: bare, v1, v0 forms    | 11    |
 
 ## Running Tests
@@ -279,7 +279,7 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | 11.13b | Reject premature admin transfer (delay > 0) |
 | 11.14  | Unauthorized role/config changes rejected   |
 
-### 12. Token-2022 Integration (14 tests)
+### 12. Token-2022 Integration (15 tests)
 
 | Test  | Description                                                  |
 | ----- | ------------------------------------------------------------ |
@@ -293,10 +293,11 @@ npx ts-mocha -p tsconfig.json -t 1000000 tests/08_replay_protection.ts
 | 12.8  | Depositor ATA requiring memos gets the surplus and refund    |
 | 12.9  | Frozen depositor ATA: payout lands, surplus to the treasury  |
 | 12.10 | Reassigned classic depositor ATA does not block settlement   |
-| 12.11 | Hooked mint releases and refunds with the hook accounts      |
-| 12.12 | PermanentDelegate mint rejected on allowMint                 |
+| 12.11 | Hooked mint with a permanent delegate releases and refunds   |
+| 12.12 | Permanent delegate pinned, rotation stops deposits, re-pin   |
 | 12.13 | NonTransferable mint rejected on allowMint                   |
 | 12.14 | Hooked deposit refused when the hook names a signer          |
+| 12.15 | Re-allow pins the new delegate, cleared delegate allowed     |
 
 ### 13. Signature Domain (7 tests)
 
@@ -324,16 +325,16 @@ Instruction data is built with the shared `escrow-encoding` TypeScript builder.
 | 16.6 | Reject an envelope that names another signer                                    |
 | 16.7 | Report the deposit transaction size for each form                               |
 
-### 15. Real Token Compatibility (23 tests)
+### 15. Real Token Compatibility (35 tests)
 
 Runs the escrow and fulfillment proxy against the real mint accounts Atum supports, one `describe`
 per row of `tests/fixtures/real-mints/manifest.json`: mainnet USDC and USDT, devnet USDC, and
-mainnet PYUSD and USDG (Token-2022).
+mainnet PYUSD, USDG, GBPA and OUSD (Token-2022, each with a permanent delegate).
 
 | Test | Description                                                                                                                           |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 15.a | Loaded mint matches the manifest: owner, decimals, exact extension set, no transfer hook, zero fees                                   |
-| 15.b | `allowMint` succeeds, or fails with the manifest's `expectAllowMint` error                                                            |
+| 15.a | Loaded mint matches the manifest: owner, decimals, exact extension set, permanent delegate, no transfer hook, zero fees               |
+| 15.b | `allowMint` with the manifest's delegate succeeds and pins it, or fails with the manifest's `expectAllowMint` error                    |
 | 15.c | Allowed: nonzero fee + partial reserve + release (net, fee and surplus paths). Rejected: `createDelegate` fails with `MintNotAllowed` |
 | 15.d | Allowed only: deposit → refund                                                                                                        |
 | 15.e | Fulfillment proxy `fulfill` + `strictFulfill` (no escrow allowlist, so every row runs)                                                |
@@ -349,17 +350,18 @@ The local validator runs its bundled Token-2022 program (v7.0.0 in Solana 2.3.0)
 deployment (v11.0.0). The suite proves the program works with the real mint state, not against the
 mainnet Token-2022 binary.
 
-**Refreshing.** `pnpm fixtures:real-mints [--mainnet-rpc <url>] [--devnet-rpc <url>]` rewrites every
-fixture. It fails, writing nothing for that row, when a mint is missing or no longer matches its
-manifest row: owner, decimals, extension set, a transfer hook program being set, or a nonzero older or
-newer transfer fee. A failure means the issuer changed the mint, so review that change before
+**Refreshing.** `pnpm fixtures:real-mints [--mainnet-rpc <url>] [--devnet-rpc <url>] [--only <name,...>]`
+rewrites every fixture, or only the named rows. It fails, writing nothing for that row, when a mint is
+missing or no longer matches its manifest row: owner, decimals, extension set, permanent delegate, a
+transfer hook program being set, or a nonzero older or newer transfer fee. A failure means the issuer changed the mint, so review that change before
 updating the manifest.
 
-**Adding a token.** Add a manifest row, run the refresh, add the `[[test.validator.account]]` block to
-`Anchor.toml`, and allowlist the mint in `.gitleaks.toml` (with its row in the pre-publication audit).
+**Adding a token.** Add a manifest row with its `permanentDelegate` (null for none), run the refresh,
+add the `[[test.validator.account]]` block to `Anchor.toml`, and allowlist the mint and its delegate in
+`.gitleaks.toml` (with its row in the pre-publication audit). A row with a delegate also checks that
+`allowMint` refuses it when the wrong key is expected.
 
-**Expecting a rejection.** A row whose `expectAllowMint` names an error code (PYUSD and USDG expect
-`PermanentDelegateMintNotAllowed`) asserts that `allowMint` fails with it and that `createDelegate` then
+**Expecting a rejection.** No current row expects one. A row whose `expectAllowMint` names an error code asserts that `allowMint` fails with it and that `createDelegate` then
 fails with `MintNotAllowed`, and skips the release and refund flows.
 
 Keep only JSON under `tests/fixtures/`: the unquoted `tests/**/*.ts` glob in `Anchor.toml` is

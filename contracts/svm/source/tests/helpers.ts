@@ -767,7 +767,7 @@ export async function setupMintAndFund(
 
     // Allowlist the mint with zero fees
     await escrowProgram.methods
-      .allowMint()
+      .allowMint(PublicKey.default)
       .accountsPartial({
         tokenConfigAuthority: provider.wallet.publicKey,
         protocolConfig,
@@ -1238,7 +1238,7 @@ export async function setupToken2022MintAndFund(
     );
 
     await program.methods
-      .allowMint()
+      .allowMint(options.permanentDelegate ?? PublicKey.default)
       .accountsPartial({
         tokenConfigAuthority: anchorProvider.wallet.publicKey,
         protocolConfig,
@@ -1279,6 +1279,8 @@ export async function setupTransferHookMint(
     initialMintAmount?: bigint;
     /** Names this key in the hook's extra-account list as a signing, writable account. */
     hookSigner?: PublicKey;
+    /** Adds a PermanentDelegate extension naming this key, pinned when the mint is allowlisted. */
+    permanentDelegate?: PublicKey;
   } = {}
 ): Promise<{
   mint: PublicKey;
@@ -1292,6 +1294,9 @@ export async function setupTransferHookMint(
 
   // Calculate space needed for TransferHook extension
   const extensions: ExtensionType[] = [ExtensionType.TransferHook];
+  if (options.permanentDelegate) {
+    extensions.push(ExtensionType.PermanentDelegate);
+  }
   const mintLen = getMintLen(extensions);
   const lamports =
     await anchorProvider.connection.getMinimumBalanceForRentExemption(mintLen);
@@ -1319,6 +1324,15 @@ export async function setupTransferHookMint(
       TOKEN_2022_PROGRAM_ID
     )
   );
+  if (options.permanentDelegate) {
+    tx.add(
+      createInitializePermanentDelegateInstruction(
+        mintKeypair.publicKey,
+        options.permanentDelegate,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+  }
 
   // 3. Initialize mint
   tx.add(
@@ -1398,7 +1412,7 @@ export async function setupTransferHookMint(
     );
 
     await program.methods
-      .allowMint()
+      .allowMint(options.permanentDelegate ?? PublicKey.default)
       .accountsPartial({
         tokenConfigAuthority: anchorProvider.wallet.publicKey,
         protocolConfig,

@@ -1387,7 +1387,7 @@ describe("11 Pause + RBAC", () => {
 
     try {
       await program.methods
-        .allowMint()
+        .allowMint(PublicKey.default)
         .accountsPartial({
           tokenConfigAuthority: randomSigner.publicKey,
           protocolConfig,

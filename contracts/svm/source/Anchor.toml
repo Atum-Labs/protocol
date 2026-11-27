@@ -61,6 +61,14 @@ filename = "tests/fixtures/real-mints/mainnet_pyusd.json"
 address = "2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH"
 filename = "tests/fixtures/real-mints/mainnet_usdg.json"
 
+[[test.validator.account]]
+address = "DYoCmA91VE8REbWNw3kM736PN7vv97qc2jr5wmUbuNtZ"
+filename = "tests/fixtures/real-mints/mainnet_gbpa.json"
+
+[[test.validator.account]]
+address = "ousd2mJsPEckLHcSCDxyKD7NDGARZcfLbDZkKiatYHB"
+filename = "tests/fixtures/real-mints/mainnet_ousd.json"
+
 # A strict-fulfillment marker as the previous build left it, at [strict_fulfilled, quote_hash] for the
 # quote hash 0xab x 32. The new build must refuse that quote (tests/06_fulfillment_proxy.ts, 6.5.14).
 [[test.validator.account]]

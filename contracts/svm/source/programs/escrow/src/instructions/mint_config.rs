@@ -2,10 +2,12 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenInterface};
 
 use crate::errors::ErrorCode;
-use crate::events::{MintAllowed, MintDisallowed, MintFeesCleared, MintFeesUpdated};
+use crate::events::{
+    MintAllowed, MintDisallowed, MintFeesCleared, MintFeesUpdated, MintPermanentDelegatePinned,
+};
 use crate::state::{MintFeeConfig, ProtocolConfig};
 use crate::utils::fees::validate_mint_fee_config;
-use crate::utils::mint::check_escrowable_mint;
+use crate::utils::mint::{check_escrowable_mint, check_expected_delegate};
 
 #[derive(Accounts)]
 pub struct AllowMint<'info> {
@@ -36,16 +38,45 @@ pub struct AllowMint<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn allow_mint(ctx: Context<AllowMint>) -> Result<()> {
-    check_escrowable_mint(&ctx.accounts.mint_account.to_account_info())?;
+/// Pins `expected_permanent_delegate`, `Pubkey::default()` for a mint with no delegate, so the
+/// key pinned is the one the caller reviewed even if the issuer rotates before this lands.
+pub fn allow_mint(ctx: Context<AllowMint>, expected_permanent_delegate: Pubkey) -> Result<()> {
+    let live = check_escrowable_mint(&ctx.accounts.mint_account.to_account_info())?;
+    let delegate = check_expected_delegate(live, expected_permanent_delegate)?;
 
     let config = &mut ctx.accounts.mint_fee_config;
     config.mint = ctx.accounts.mint_account.key();
     config.fee_percentage_6 = 0;
     config.min_fee_6 = 0;
     config.max_fee_6 = 0;
+    config.permanent_delegate = delegate;
 
-    emit!(MintAllowed { mint: config.mint });
+    emit!(MintAllowed {
+        mint: config.mint,
+        permanent_delegate: delegate,
+    });
+
+    Ok(())
+}
+
+/// Re-pins an allowlisted mint's permanent delegate after its issuer changed it, once the new key is
+/// reviewed. Fees are kept. Shares `SetMintFeeConfig`'s accounts: the same role and mint binding.
+pub fn pin_mint_permanent_delegate(
+    ctx: Context<SetMintFeeConfig>,
+    expected_permanent_delegate: Pubkey,
+) -> Result<()> {
+    let live = check_escrowable_mint(&ctx.accounts.mint_account.to_account_info())?;
+    let delegate = check_expected_delegate(live, expected_permanent_delegate)?;
+
+    let config = &mut ctx.accounts.mint_fee_config;
+    let previous = config.permanent_delegate;
+    config.permanent_delegate = delegate;
+
+    emit!(MintPermanentDelegatePinned {
+        mint: config.mint,
+        previous,
+        delegate,
+    });
 
     Ok(())
 }
@@ -111,7 +142,8 @@ pub fn set_mint_fee_config(
     min_fee_6: u64,
     max_fee_6: u64,
 ) -> Result<()> {
-    // Defense in depth: the mint's transfer fee may have changed since allow_mint
+    // Defense in depth: the mint's transfer fee may have changed since allow_mint. The delegate is
+    // deliberately neither compared nor re-pinned: a fee change moves no funds and never pins a key.
     check_escrowable_mint(&ctx.accounts.mint_account.to_account_info())?;
 
     // Validate fee config using utility

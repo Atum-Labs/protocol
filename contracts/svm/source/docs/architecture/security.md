@@ -23,7 +23,7 @@ Role keys stored in each program's `ProtocolConfig` PDA. Equality checks for O(1
 ### Escrow — Allowed While Paused
 
 - initialize_protocol
-- allow_mint, disallow_mint, set_mint_fee_config, clear_mint_fee_config
+- allow_mint, disallow_mint, set_mint_fee_config, clear_mint_fee_config, pin_mint_permanent_delegate
 - set_token_config_authority, set_treasurer, set_pauser
 - begin/accept_default_admin_transfer, set_default_admin_delay_seconds
 
@@ -50,8 +50,9 @@ Two-step process with configurable delay:
 | Check                      | Description                                                                                                                                        |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mint allowlist             | Only mints with `MintFeeConfig` PDA can be delegated to and deposited                                                                              |
-| Nonzero transfer fee check | Token-2022 mints with a transfer fee slot that can charge, in force or scheduled, are rejected on allow, fee config update and deposit             |
-| Mint extension check       | Token-2022 mints are accepted only when every extension is in the accepted set (see "Issuer authorities"), on allow, fee config update and deposit |
+| Nonzero transfer fee check | Token-2022 mints with a transfer fee slot that can charge, in force or scheduled, are rejected on allow, fee config update, delegate pin and deposit |
+| Mint extension check       | Token-2022 mints are accepted only when every extension is in the accepted set (see "Issuer authorities"), on allow, fee config update, delegate pin and deposit |
+| Pinned delegate check      | A deposit is refused while the mint's live permanent delegate is a key other than the pinned one (see "Permanent delegate mints") |
 | Exact transfer enforcement | Deposited amount must match specified amount exactly                                                                                               |
 
 ### Transfer fee mints
@@ -85,7 +86,7 @@ An extension list the program cannot read counts as refusing plain credits, so a
 
 ### Issuer authorities
 
-`allow_mint`, `set_mint_fee_config` and `deposit` accept a Token-2022 mint only when every extension on it is in the table below. Any other extension is refused with `MintExtensionNotAllowed`, and an unknown extension type or an extension list the program cannot read fails closed. `release` and `refund` do not run the check, so an issuer change never locks an open deposit through it. Allowlisting a mint accepts these issuer powers:
+`allow_mint`, `set_mint_fee_config`, `pin_mint_permanent_delegate` and `deposit` accept a Token-2022 mint only when every extension on it is in the table below. Any other extension is refused with `MintExtensionNotAllowed`, and an unknown extension type or an extension list the program cannot read fails closed. `release` and `refund` do not run the check, so an issuer change never locks an open deposit through it. Allowlisting a mint accepts these issuer powers:
 
 | Extension                                                   | Accepted risk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,17 +96,29 @@ An extension list the program cannot read counts as refusing plain credits, so a
 | `MintCloseAuthority`                                        | Closing needs zero supply, so the mint cannot be closed while the escrow holds any of it                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `DefaultAccountState`                                       | New token accounts can start frozen. While the default is Frozen every deposit reverts, since each one opens a new escrow account, and a release reverts when it credits a new frozen recipient or treasury account. A new frozen depositor account sends the release surplus to the treasury but makes refund revert until the depositor account exists and is thawed, or the default is no longer Frozen. While the default is Frozen, a fulfill to a recipient with no token account reverts |
 | `ConfidentialTransferMint`, `ConfidentialTransferFeeConfig` | Opt in per token account. The escrow never configures its accounts for it, and depositor accounts are covered above. A recipient whose existing account refuses non-confidential credits makes the release to it revert                                                                                                                                                                                                                                                                         |
+| `PermanentDelegate`                                         | Accepted with its key pinned, see "Permanent delegate mints" |
 | `MetadataPointer`, `TokenMetadata`                          | Descriptive data, no power over balances                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 The base mint freeze authority is not an extension and every mint can carry it, USDC included. It can freeze the escrow's token account and stop `release` and `refund` for that deposit.
 
-The programs do not watch the extension powers above. A Token-2022 mint must not be allowlisted until a monitor watches its transfer fee config, hook program id, pause state and default account state, and alerts on any change the table above lists as a risk. On mainnet that monitor is Atum's Token-2022 watch. It reads the escrow's Token-2022 mints and open deposits, and alerts on a fee slot that can charge, a hook program other than the one pinned for the mint, a paused mint and a Frozen default account state, among others. It also alerts when an open deposit's escrow token account holds less than its amount or is frozen, which covers the freeze authority above.
+The programs do not watch the extension powers above. A Token-2022 mint must not be allowlisted until a monitor watches its transfer fee config, hook program id, pause state, default account state and permanent delegate, and alerts on any change the table above lists as a risk. On mainnet that monitor is Atum's Token-2022 watch. It reads the escrow's Token-2022 mints and open deposits, and alerts on a fee slot that can charge, a hook program other than the one pinned for the mint, a paused mint and a Frozen default account state, among others. It also alerts when an open deposit's escrow token account holds less than its amount or is frozen, which covers the freeze authority above.
 
-Refused: `PermanentDelegate` (below) and every other extension, for example `NonTransferable`, `InterestBearingConfig`, `ScaledUiAmount`, `ConfidentialMintBurn` and the token group extensions.
+Refused: every other extension, for example `NonTransferable`, `InterestBearingConfig`, `ScaledUiAmount`, `ConfidentialMintBurn` and the token group extensions.
 
 ### Permanent delegate mints
 
-A mint with the `PermanentDelegate` extension is refused with `PermanentDelegateMintNotAllowed`, or with `MintExtensionNotAllowed` when it also carries another refused extension. Its delegate can transfer or burn from any token account of the mint, the escrow's included, without the escrow's say-so, and `DepositInfo.amount` does not move with it: `release` then fails on an underfunded account and `refund` pays back only what is left. The check looks for the extension, not for who the delegate is. The AUSD, GBPA, OUSD, PYUSD and USDG mainnet mints in `programs/escrow/src/utils/fixtures/` all carry the extension, and every other extension on them is accepted, so the permanent delegate is the only reason they are refused.
+A permanent delegate can transfer or burn from any token account of the mint, the escrow's included, without the escrow's say-so, and `DepositInfo.amount` does not move with it: `release` then fails on an underfunded account and `refund` pays back only what is left. Allowlisting such a mint accepts that power for the key reviewed at allowlist time. The AUSD, GBPA, OUSD, PYUSD and USDG mainnet mints in `programs/escrow/src/utils/fixtures/` all carry the extension.
+
+The program pins the key:
+
+1. `allow_mint` takes the reviewed key as `expected_permanent_delegate` and refuses the mint unless it is the live delegate. It stores the key in `MintFeeConfig.permanent_delegate`, `Pubkey::default()` for a mint with none.
+2. `deposit` refuses a mint whose live delegate is another key with `PermanentDelegateChanged`. A cleared delegate passes: Token-2022 cannot set one again, so no key holds the power.
+3. `release`, `refund` and `reserve` do not check the pin, so deposits already open still settle after a rotation. `set_mint_fee_config` neither checks nor re-pins it.
+4. To accept a rotation, review the new key, then run `pin_mint_permanent_delegate` with it as `expected_permanent_delegate`. Deposits resume and fees are kept. It refuses any key other than the live one, so a second rotation during the review is not pinned.
+
+The pin covers only new deposits. Funds already in escrow stay exposed to whichever key holds the delegate, including a key rotated in but not yet reviewed, and a rotation and a seizure can share a transaction. `reserve` keeps working on open deposits after a rotation, so a settler that pays out before such a seizure loses the whole payout: `release` reverts and `refund` returns the remainder to the payer. A rotation shows up as deposits failing with `PermanentDelegateChanged` until it is re-pinned, so the mint monitor must alert on the delegate too, and a settler should stop reserving a mint whose deposits fail with it.
+
+A cleared delegate cannot be set again on the same mint, but every mint in scope also carries `MintCloseAuthority`. An issuer that burns every balance with the delegate can close the mint at zero supply and re-create it at the same address. A re-created mint with a new delegate is refused by the pin. One with no delegate passes, and `MintFeeConfig` does not record decimals, so the monitor must alert on the mint account being closed or re-created.
 
 ## Ed25519 Authorization
 

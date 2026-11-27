@@ -146,7 +146,12 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "expected_permanent_delegate",
+          "type": "pubkey"
+        }
+      ]
     },
     {
       "name": "begin_default_admin_transfer",
@@ -1056,6 +1061,100 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "pin_mint_permanent_delegate",
+      "discriminator": [
+        176,
+        167,
+        38,
+        30,
+        184,
+        17,
+        189,
+        54
+      ],
+      "accounts": [
+        {
+          "name": "token_config_authority",
+          "signer": true
+        },
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint_account",
+          "docs": [
+            "The mint (for Token-2022 validation)"
+          ]
+        },
+        {
+          "name": "mint_fee_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  102,
+                  101,
+                  101,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint_fee_config.mint",
+                "account": "MintFeeConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "expected_permanent_delegate",
+          "type": "pubkey"
+        }
+      ]
     },
     {
       "name": "refund",
@@ -2431,6 +2530,19 @@
       ]
     },
     {
+      "name": "MintPermanentDelegatePinned",
+      "discriminator": [
+        171,
+        170,
+        3,
+        191,
+        158,
+        252,
+        5,
+        232
+      ]
+    },
+    {
       "name": "Paused",
       "discriminator": [
         172,
@@ -2813,6 +2925,11 @@
       "code": 6052,
       "name": "HookAccountSignerNotAllowed",
       "msg": "A transfer hook account other than the transfer authority is a signer"
+    },
+    {
+      "code": 6053,
+      "name": "PermanentDelegateChanged",
+      "msg": "The mint's permanent delegate is not the pinned key"
     }
   ],
   "types": [
@@ -3081,6 +3198,13 @@
           {
             "name": "mint",
             "type": "pubkey"
+          },
+          {
+            "name": "permanent_delegate",
+            "docs": [
+              "The pinned permanent delegate, `Pubkey::default()` when the mint has none."
+            ],
+            "type": "pubkey"
           }
         ]
       }
@@ -3134,6 +3258,15 @@
               "Maximum fee in 6-decimal normalized units (0 = disabled)"
             ],
             "type": "u64"
+          },
+          {
+            "name": "permanent_delegate",
+            "docs": [
+              "The mint's permanent delegate reviewed at `allow_mint` or `pin_mint_permanent_delegate`, or",
+              "`Pubkey::default()` when it had none. A deposit is refused while the live delegate is another",
+              "key. A live delegate is never the default key, so default means none or cleared."
+            ],
+            "type": "pubkey"
           }
         ]
       }
@@ -3170,6 +3303,29 @@
           {
             "name": "max_fee_6",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MintPermanentDelegatePinned",
+      "docs": [
+        "`pin_mint_permanent_delegate` replaced the stored permanent delegate."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "previous",
+            "type": "pubkey"
+          },
+          {
+            "name": "delegate",
+            "type": "pubkey"
           }
         ]
       }

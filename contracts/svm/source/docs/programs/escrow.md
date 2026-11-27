@@ -92,7 +92,11 @@ Updates the delay for admin transfers. Only callable by default_admin.
 
 ### allow_mint
 
-Adds a mint to the allowlist with zero fees. Rejects Token-2022 mints whose TransferFeeConfig can charge a fee (nonzero basis points and nonzero maximum fee) in `newer_transfer_fee`, or in `older_transfer_fee` while it is still in force (the current epoch is before `newer_transfer_fee.epoch`), mints that carry the `PermanentDelegate` extension (`PermanentDelegateMintNotAllowed`), mints that carry any extension outside the accepted set in `architecture/security.md` (`MintExtensionNotAllowed`), and mints whose extension list the program cannot read. `set_mint_fee_config` and `deposit` run the same checks.
+Adds a mint to the allowlist with zero fees and pins its permanent delegate. Rejects Token-2022 mints whose TransferFeeConfig can charge a fee (nonzero basis points and nonzero maximum fee) in `newer_transfer_fee`, or in `older_transfer_fee` while it is still in force (the current epoch is before `newer_transfer_fee.epoch`), mints that carry any extension outside the accepted set in `architecture/security.md` (`MintExtensionNotAllowed`), and mints whose extension list the program cannot read. `set_mint_fee_config` and `deposit` run the same checks. Also rejects a mint whose live permanent delegate is not `expected_permanent_delegate` (`PermanentDelegateChanged`), so the key pinned is the one reviewed even if the issuer rotates before the transaction lands.
+
+| Parameter                     | Type     | Description                                                                                  |
+| ----------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `expected_permanent_delegate` | `Pubkey` | The reviewed permanent delegate, `Pubkey::default()` for a mint with none or a cleared one |
 
 | Account                  | Type    | Mut | Description                                                 |
 | ------------------------ | ------- | --- | ----------------------------------------------------------- |
@@ -130,6 +134,14 @@ Configures fee parameters for an allowlisted mint.
 | `mint_account`           | Mint    |     | Token mint (for Token-2022 validation)              |
 | `token_config_authority` | Signer  |     | Must match `protocol_config.token_config_authority` |
 | `token_program`          | Program |     | SPL Token program                                   |
+
+### pin_mint_permanent_delegate
+
+Replaces an allowlisted mint's pinned permanent delegate after its issuer changed it, once the new key is reviewed. Rejects the call unless the live delegate is `expected_permanent_delegate` (`PermanentDelegateChanged`), and runs the same mint checks as `allow_mint`. Fees are kept. Same accounts as `set_mint_fee_config`.
+
+| Parameter                     | Type     | Description                                                                         |
+| ----------------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `expected_permanent_delegate` | `Pubkey` | The reviewed live delegate, `Pubkey::default()` when the issuer cleared it |
 
 ### clear_mint_fee_config
 
@@ -268,7 +280,8 @@ is **absent** from the deposit preimage. The preimage lengths are pinned by
 
 Creates a new escrow deposit, authorized by the delegate signer via Ed25519 signature. Requires
 `protocol_config` (blocked when paused) and `mint_fee_config`. Stores computed `fee_amount` in the
-deposit.
+deposit. Refused with `PermanentDelegateChanged` while the mint's live permanent delegate is a key
+other than `MintFeeConfig.permanent_delegate`. A cleared delegate passes.
 
 | Parameter              | Type       | Description                                                 |
 | ---------------------- | ---------- | ----------------------------------------------------------- |
@@ -429,8 +442,9 @@ Fee configuration for an allowlisted mint.
 | `fee_percentage_6` | `u64`    | Fee % × 1e6 (max 100_000_000) |
 | `min_fee_6`        | `u64`    | Min fee in 6-decimal units    |
 | `max_fee_6`        | `u64`    | Max fee in 6-decimal units    |
+| `permanent_delegate` | `Pubkey` | Key pinned by `allow_mint` or `pin_mint_permanent_delegate`, `Pubkey::default()` when pinned with none. Not updated when the issuer clears the delegate |
 
-**PDA Seeds:** `[b"mint_fee_config", mint]`
+96 bytes. **PDA Seeds:** `[b"mint_fee_config", mint]`
 
 ### EscrowDelegate
 
@@ -536,6 +550,7 @@ declared.
 | `6050` | `PermanentDelegateMintNotAllowed` | Mints with a permanent delegate are not allowed |
 | `6051` | `MintExtensionNotAllowed` | The mint carries a Token-2022 extension the escrow does not accept |
 | `6052` | `HookAccountSignerNotAllowed` | A transfer hook account other than the transfer authority is a signer |
+| `6053` | `PermanentDelegateChanged` | The mint's permanent delegate is not the pinned key |
 
 <!-- END GENERATED ERROR TABLE -->
 
@@ -548,8 +563,9 @@ declared.
 `CapacityExceeded` used to carry the fee and timestamp arithmetic too. Those moved to
 `FeeArithmeticFailed` and `TimestampOverflow`, so it now means only what its message says.
 
-Five codes are reserved and raised by nothing: `InvalidData`, `InvalidAuthority`, `InvalidCaller`,
-`InvalidRevoker` and `SignatureMessageSizeInvalid`. `Unauthorized` covers the three authority conditions,
+Six codes are reserved and raised by nothing: `InvalidData`, `InvalidAuthority`, `InvalidCaller`,
+`InvalidRevoker`, `SignatureMessageSizeInvalid` and `PermanentDelegateMintNotAllowed` (a permanent
+delegate is pinned instead, see `PermanentDelegateChanged`). `Unauthorized` covers the three authority conditions,
 and `InvalidMessage` covers every signed message that is not the expected escrow text. They stay declared so the
 codes after them do not move, and so a client decoding an older transaction still resolves the name.
 
@@ -573,7 +589,8 @@ codes after them do not move, and so a client decoding an older transaction stil
 
 | Event             | Fields                                               |
 | ----------------- | ---------------------------------------------------- |
-| `MintAllowed`     | `mint`                                               |
+| `MintAllowed`     | `mint`, `permanent_delegate`                         |
+| `MintPermanentDelegatePinned` | `mint`, `previous`, `delegate`           |
 | `MintDisallowed`  | `mint`                                               |
 | `MintFeesUpdated` | `mint`, `fee_percentage_6`, `min_fee_6`, `max_fee_6` |
 | `MintFeesCleared` | `mint`                                               |

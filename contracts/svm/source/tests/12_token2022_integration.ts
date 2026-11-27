@@ -37,6 +37,7 @@ import {
   depositComputeBudgetIx,
   MINT_DECIMALS,
   sendV0WithLookupTable,
+  findProgramEvent,
 } from "./helpers";
 import {
   AuthorityType,
@@ -713,9 +714,9 @@ describe("12 Token-2022 Integration", () => {
     );
   });
 
-  function allowMint(mint: PublicKey) {
+  function allowMint(mint: PublicKey, permanentDelegate = PublicKey.default) {
     return escrowProgram.methods
-      .allowMint()
+      .allowMint(permanentDelegate)
       .accountsPartial({
         tokenConfigAuthority: provider.wallet.publicKey,
         protocolConfig,
@@ -1056,6 +1057,7 @@ describe("12 Token-2022 Integration", () => {
   // still settles. The strict mock hook fails when its validation PDA is not forwarded.
   it("12.11 hooked mint releases with surplus and refunds when the hook accounts are passed", async () => {
     const authority = provider.wallet.payer as Keypair;
+    // A permanent delegate too, so the pinned-delegate check also runs on a hooked deposit.
     const {
       mint,
       mintFeeConfig,
@@ -1065,7 +1067,8 @@ describe("12 Token-2022 Integration", () => {
       escrowProgram,
       provider,
       authority,
-      authority
+      authority,
+      { permanentDelegate: Keypair.generate().publicKey }
     );
     const hookAccounts =
       buildTransferHookRemainingAccounts(extraAccountMetaList);
@@ -1141,44 +1144,219 @@ describe("12 Token-2022 Integration", () => {
     );
   });
 
-  // 12.12 A mint with a permanent delegate is rejected on allowMint, whatever else it carries
-  it("12.12 PermanentDelegate mint rejected on allowMint", async () => {
-    const delegate = Keypair.generate().publicKey;
+  // The anchor error code a failed call carries, for exact matching.
+  async function expectCode(action: () => Promise<unknown>, code: string) {
+    let err: any;
+    try {
+      await action();
+    } catch (e) {
+      err = e;
+    }
+    expect(err, `expected ${code}`).to.exist;
+    expect(err.error?.errorCode?.code, String(err)).to.equal(code);
+  }
 
-    const plain = await setupToken2022MintAndFund(
-      escrowProgram,
-      provider,
+  // Moves (or, with null, clears) the mint's permanent delegate. Signed by the current delegate.
+  async function setPermanentDelegate(
+    mint: PublicKey,
+    current: Keypair,
+    next: PublicKey | null
+  ) {
+    await setAuthority(
+      provider.connection,
       provider.wallet.payer as Keypair,
-      { skipAllowlist: true, permanentDelegate: delegate }
+      mint,
+      current,
+      AuthorityType.PermanentDelegate,
+      next,
+      [],
+      undefined,
+      TOKEN_2022_PROGRAM_ID
     );
-    await expectRejected(
-      () => allowMint(plain.mint),
-      /PermanentDelegateMintNotAllowed/
-    );
+  }
 
+  function pinPermanentDelegate(
+    mint: PublicKey,
+    expected: PublicKey,
+    signer?: Keypair
+  ) {
+    const builder = escrowProgram.methods
+      .pinMintPermanentDelegate(expected)
+      .accountsPartial({
+        tokenConfigAuthority: signer?.publicKey ?? provider.wallet.publicKey,
+        protocolConfig,
+        mintAccount: mint,
+        mintFeeConfig: getMintFeeConfigAddress(mint, escrowProgram.programId),
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      });
+    return signer ? builder.signers([signer]).rpc() : builder.rpc();
+  }
+
+  function setFees(mint: PublicKey, pct: number, min: number, max: number) {
+    return escrowProgram.methods
+      .setMintFeeConfig(
+        new anchor.BN(pct),
+        new anchor.BN(min),
+        new anchor.BN(max)
+      )
+      .accountsPartial({
+        tokenConfigAuthority: provider.wallet.publicKey,
+        protocolConfig,
+        mintAccount: mint,
+        mintFeeConfig: getMintFeeConfigAddress(mint, escrowProgram.programId),
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
+  }
+
+  function fetchMintFeeConfig(mint: PublicKey) {
+    return escrowProgram.account.mintFeeConfig.fetch(
+      getMintFeeConfigAddress(mint, escrowProgram.programId)
+    );
+  }
+
+  // 12.12 A permanent delegate is pinned at allowMint. A rotation to another key stops new deposits
+  // until the new key is pinned, while deposits already open still settle.
+  it("12.12 PermanentDelegate pinned at allowMint, rotation stops deposits until re-pinned", async () => {
+    const delegate = Keypair.generate();
+    const rotated = Keypair.generate();
     // The PYUSD / USDG shape: a zero-fee TransferFeeConfig next to a PermanentDelegate
-    const withZeroFee = await setupToken2022MintAndFund(
+    const { mint, authorityAta } = await setupToken2022MintAndFund(
       escrowProgram,
       provider,
       provider.wallet.payer as Keypair,
       {
         skipAllowlist: true,
         transferFee: { feeBasisPoints: 0, maxFee: 0n },
-        permanentDelegate: delegate,
+        permanentDelegate: delegate.publicKey,
       }
     );
-    await expectRejected(
-      () => allowMint(withZeroFee.mint),
-      /PermanentDelegateMintNotAllowed/
+    const mintFeeConfig = getMintFeeConfigAddress(
+      mint,
+      escrowProgram.programId
     );
 
-    // Nothing was allowlisted by either attempt
-    for (const { mint } of [plain, withZeroFee]) {
-      const info = await provider.connection.getAccountInfo(
-        getMintFeeConfigAddress(mint, escrowProgram.programId)
-      );
-      expect(info).to.equal(null);
-    }
+    // allowMint pins only the key the caller reviewed.
+    await expectCode(() => allowMint(mint), "PermanentDelegateChanged");
+    await expectCode(
+      () => allowMint(mint, rotated.publicKey),
+      "PermanentDelegateChanged"
+    );
+    expect(await provider.connection.getAccountInfo(mintFeeConfig)).to.equal(
+      null
+    );
+    const allowSig = await allowMint(mint, delegate.publicKey);
+    const allowed = await findProgramEvent(
+      escrowProgram,
+      allowSig,
+      "MintAllowed"
+    );
+    expect(allowed.permanentDelegate.toBase58()).to.equal(
+      delegate.publicKey.toBase58()
+    );
+    expect(
+      (await fetchMintFeeConfig(mint)).permanentDelegate.toBase58()
+    ).to.equal(delegate.publicKey.toBase58());
+    expect(
+      (await provider.connection.getAccountInfo(mintFeeConfig))!.data.length
+    ).to.equal(96);
+
+    const toRelease = await openDeposit(mint, mintFeeConfig, authorityAta);
+    const toRefund = await openDeposit(mint, mintFeeConfig, authorityAta);
+
+    await setPermanentDelegate(mint, delegate, rotated.publicKey);
+    await expectCode(
+      () => openDeposit(mint, mintFeeConfig, authorityAta),
+      "PermanentDelegateChanged"
+    );
+
+    // A fee change neither checks nor re-pins the delegate.
+    await setFees(mint, 10_000, 1, 1_000_000_000);
+    let config = await fetchMintFeeConfig(mint);
+    expect(config.permanentDelegate.toBase58()).to.equal(
+      delegate.publicKey.toBase58()
+    );
+    expect(config.feePercentage6.toNumber()).to.equal(10_000);
+
+    // Deposits opened before the rotation still settle exactly.
+    await reserveDeposit(toRelease);
+    await releaseDeposit(toRelease);
+    expect(
+      (await balance(await ata(mint, toRelease.recipient.publicKey))).toString()
+    ).to.equal(DEPOSIT_AMOUNT.toString());
+    const refundBefore = await balance(toRefund.depositorAta);
+    await refundDeposit(toRefund);
+    expect((await balance(toRefund.depositorAta)) - refundBefore).to.equal(
+      BigInt(DEPOSIT_AMOUNT.toString())
+    );
+
+    // Re-pin: only token_config_authority, and only the live key.
+    const stranger = await generateFundedKeypair();
+    await expectCode(
+      () => pinPermanentDelegate(mint, rotated.publicKey, stranger),
+      "Unauthorized"
+    );
+    // Another mint's live delegate can never be pinned on this mint's config.
+    const other = Keypair.generate();
+    const otherMint = await setupToken2022MintAndFund(
+      escrowProgram,
+      provider,
+      provider.wallet.payer as Keypair,
+      { permanentDelegate: other.publicKey }
+    );
+    await expectCode(
+      () =>
+        escrowProgram.methods
+          .pinMintPermanentDelegate(other.publicKey)
+          .accountsPartial({
+            tokenConfigAuthority: provider.wallet.publicKey,
+            protocolConfig,
+            mintAccount: otherMint.mint,
+            mintFeeConfig,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+          })
+          .rpc(),
+      "InvalidMint"
+    );
+    await expectCode(
+      () => pinPermanentDelegate(mint, delegate.publicKey),
+      "PermanentDelegateChanged"
+    );
+    const pinSig = await pinPermanentDelegate(mint, rotated.publicKey);
+    const pinned = await findProgramEvent(
+      escrowProgram,
+      pinSig,
+      "MintPermanentDelegatePinned"
+    );
+    expect(pinned.previous.toBase58()).to.equal(delegate.publicKey.toBase58());
+    expect(pinned.delegate.toBase58()).to.equal(rotated.publicKey.toBase58());
+    config = await fetchMintFeeConfig(mint);
+    expect(config.permanentDelegate.toBase58()).to.equal(
+      rotated.publicKey.toBase58()
+    );
+    expect(config.feePercentage6.toNumber()).to.equal(10_000);
+    expect(config.minFee6.toNumber()).to.equal(1);
+    expect(config.maxFee6.toNumber()).to.equal(1_000_000_000);
+    await openDeposit(mint, mintFeeConfig, authorityAta);
+
+    // A cleared delegate holds no power, so deposits keep working without a re-pin.
+    await setPermanentDelegate(mint, rotated, null);
+    await openDeposit(mint, mintFeeConfig, authorityAta);
+    await escrowProgram.methods
+      .clearMintFeeConfig()
+      .accountsPartial({
+        tokenConfigAuthority: provider.wallet.publicKey,
+        protocolConfig,
+        mintFeeConfig,
+      })
+      .rpc();
+    expect(
+      (await fetchMintFeeConfig(mint)).permanentDelegate.toBase58()
+    ).to.equal(rotated.publicKey.toBase58());
+    await pinPermanentDelegate(mint, PublicKey.default);
+    expect(
+      (await fetchMintFeeConfig(mint)).permanentDelegate.toBase58()
+    ).to.equal(PublicKey.default.toBase58());
   });
 
   // 12.13 A mint extension outside the accepted set is rejected on allowMint
@@ -1223,6 +1401,69 @@ describe("12 Token-2022 Integration", () => {
           ])
         ),
       /HookAccountSignerNotAllowed/
+    );
+  });
+  // 12.15 Disallow and allow again pins the new key, and a mint whose delegate was cleared is
+  // allowed with no delegate.
+  it("12.15 PermanentDelegate re-allowed with the new key, cleared delegate allowed", async () => {
+    const delegate = Keypair.generate();
+    const rotated = Keypair.generate();
+    const { mint, authorityAta } = await setupToken2022MintAndFund(
+      escrowProgram,
+      provider,
+      provider.wallet.payer as Keypair,
+      { skipAllowlist: true, permanentDelegate: delegate.publicKey }
+    );
+    const mintFeeConfig = getMintFeeConfigAddress(
+      mint,
+      escrowProgram.programId
+    );
+    await allowMint(mint, delegate.publicKey);
+    await setPermanentDelegate(mint, delegate, rotated.publicKey);
+    await escrowProgram.methods
+      .disallowMint()
+      .accountsPartial({
+        tokenConfigAuthority: provider.wallet.publicKey,
+        protocolConfig,
+        mintFeeConfig,
+      })
+      .rpc();
+    await expectCode(
+      () => pinPermanentDelegate(mint, rotated.publicKey),
+      "AccountNotInitialized"
+    );
+    await expectCode(
+      () => allowMint(mint, delegate.publicKey),
+      "PermanentDelegateChanged"
+    );
+    await allowMint(mint, rotated.publicKey);
+    await openDeposit(mint, mintFeeConfig, authorityAta);
+
+    const cleared = Keypair.generate();
+    const clearedMint = await setupToken2022MintAndFund(
+      escrowProgram,
+      provider,
+      provider.wallet.payer as Keypair,
+      { skipAllowlist: true, permanentDelegate: cleared.publicKey }
+    );
+    await setPermanentDelegate(clearedMint.mint, cleared, null);
+    await expectCode(
+      () => allowMint(clearedMint.mint, cleared.publicKey),
+      "PermanentDelegateChanged"
+    );
+    const allowSig = await allowMint(clearedMint.mint);
+    const allowed = await findProgramEvent(
+      escrowProgram,
+      allowSig,
+      "MintAllowed"
+    );
+    expect(allowed.permanentDelegate.toBase58()).to.equal(
+      PublicKey.default.toBase58()
+    );
+    await openDeposit(
+      clearedMint.mint,
+      getMintFeeConfigAddress(clearedMint.mint, escrowProgram.programId),
+      clearedMint.authorityAta
     );
   });
 });
