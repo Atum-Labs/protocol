@@ -748,7 +748,9 @@ about it.
   \`refunded\` once the refund lands, or \`completed\` if the settler delivers late and is
   paid first. Do not pay again while it is \`refund_available\`.
 - \`refunded\`: your funds were returned from the source escrow. \`transactions.refund\` is
-  the refund transaction, when it is known.
+  the refund transaction, when it is known. On Solana, GET /v1/payments/{paymentId}/status
+  may also return \`refunded_amount\`, how much came back, and \`refund_partial\`, whether
+  that was less than the deposit. The other responses report this status without them.
 
 \`completed\`, \`failed\` and \`refunded\` are final and will not change afterwards.
 \`pending\`, \`finalizing\`, \`refunding\` and \`refund_available\` will.
@@ -1148,6 +1150,25 @@ this payment, and never mean paying again while it is \`refunding\` or \`refund_
                 }
             ],
             description: 'Present only when `status` is `refund_available`.'
+        },
+        refunded_amount: {
+            type: 'string',
+            description: `What the escrow paid out in the refund, in the source token's base units. Present
+only when \`status\` is \`refunded\` and the source chain is Solana, where the escrow
+refunds whatever the deposit account holds: less than the deposit when the token's
+issuer took from it, more when tokens were sent to the account on top. A transfer
+fee the token charges on the refund is not deducted. Absent means unknown, not zero.
+Unsigned: read the refund transaction in \`transactions.refund\` on chain for proof.
+`,
+            pattern: '^[0-9]+$',
+            example: '1000000'
+        },
+        refund_partial: {
+            type: 'boolean',
+            description: `\`true\` when \`refunded_amount\` is less than what was deposited, \`false\` when it is
+not. Absent when the deposited amount is unknown, so absent never means full.
+Present only with \`refunded_amount\`.
+`
         },
         requested_count: {
             type: 'integer',

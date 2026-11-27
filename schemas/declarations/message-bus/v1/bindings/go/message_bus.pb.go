@@ -783,7 +783,13 @@ type Refunded struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Absent when veri-fill observed no refund transaction (it learned of the refund from a
 	// destination scan).
-	Refund        *SettlementTransaction `protobuf:"bytes,1,opt,name=refund,proto3" json:"refund,omitempty"`
+	Refund *SettlementTransaction `protobuf:"bytes,1,opt,name=refund,proto3" json:"refund,omitempty"`
+	// What the escrow paid out in the refund, in the token's base units, as a decimal string. Set only
+	// on a solana source, where the escrow refunds the deposit account's whole balance, and only
+	// with refund. Absent means unknown, never zero.
+	Amount *string `protobuf:"bytes,2,opt,name=amount,proto3,oneof" json:"amount,omitempty"`
+	// Whether amount is less than the deposit. Absent when the deposit amount could not be read.
+	Partial       *bool `protobuf:"varint,3,opt,name=partial,proto3,oneof" json:"partial,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -823,6 +829,20 @@ func (x *Refunded) GetRefund() *SettlementTransaction {
 		return x.Refund
 	}
 	return nil
+}
+
+func (x *Refunded) GetAmount() string {
+	if x != nil && x.Amount != nil {
+		return *x.Amount
+	}
+	return ""
+}
+
+func (x *Refunded) GetPartial() bool {
+	if x != nil && x.Partial != nil {
+		return *x.Partial
+	}
+	return false
 }
 
 // Whether the Settler Gateway recorded the payment's award, so the Payment Gateway can decide a
@@ -1563,9 +1583,14 @@ const file_message_bus_proto_rawDesc = "" +
 	"\x0fRefundSignature\x12\x1c\n" +
 	"\tsignature\x18\x01 \x01(\tR\tsignature\x12!\n" +
 	"\fmessage_hash\x18\x02 \x01(\tR\vmessageHash\x12'\n" +
-	"\x0fmessage_prehash\x18\x03 \x01(\tR\x0emessagePrehash\"I\n" +
+	"\x0fmessage_prehash\x18\x03 \x01(\tR\x0emessagePrehash\"\x9c\x01\n" +
 	"\bRefunded\x12=\n" +
-	"\x06refund\x18\x01 \x01(\v2%.atum.pubsub.v1.SettlementTransactionR\x06refund\"\x99\x01\n" +
+	"\x06refund\x18\x01 \x01(\v2%.atum.pubsub.v1.SettlementTransactionR\x06refund\x12\x1b\n" +
+	"\x06amount\x18\x02 \x01(\tH\x00R\x06amount\x88\x01\x01\x12\x1d\n" +
+	"\apartial\x18\x03 \x01(\bH\x01R\apartial\x88\x01\x01B\t\n" +
+	"\a_amountB\n" +
+	"\n" +
+	"\b_partial\"\x99\x01\n" +
 	"\fAwardOutcome\x12;\n" +
 	"\brecorded\x18\x01 \x01(\v2\x1d.atum.pubsub.v1.AwardRecordedH\x00R\brecorded\x12C\n" +
 	"\vnot_awarded\x18\x02 \x01(\v2 .atum.pubsub.v1.AwardNotRecordedH\x00R\n" +
@@ -1693,6 +1718,7 @@ func file_message_bus_proto_init() {
 		(*RefundOutcome_RefundAvailable)(nil),
 		(*RefundOutcome_Refunded)(nil),
 	}
+	file_message_bus_proto_msgTypes[8].OneofWrappers = []any{}
 	file_message_bus_proto_msgTypes[9].OneofWrappers = []any{
 		(*AwardOutcome_Recorded)(nil),
 		(*AwardOutcome_NotAwarded)(nil),

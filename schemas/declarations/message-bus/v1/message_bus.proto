@@ -168,6 +168,12 @@ message Refunded {
   // Absent when veri-fill observed no refund transaction (it learned of the refund from a
   // destination scan).
   SettlementTransaction refund = 1;
+  // What the escrow paid out in the refund, in the token's base units, as a decimal string. Set only
+  // on a solana source, where the escrow refunds the deposit account's whole balance, and only
+  // with refund. Absent means unknown, never zero.
+  optional string amount = 2;
+  // Whether amount is less than the deposit. Absent when the deposit amount could not be read.
+  optional bool partial = 3;
 }
 
 // Whether the Settler Gateway recorded the payment's award, so the Payment Gateway can decide a
