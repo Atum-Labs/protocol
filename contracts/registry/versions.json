@@ -1,0 +1,60 @@
+{
+  "$comment": "Hand edited. Each entry makes every chain in its deployments file a registry version, addresses taken from that file. chains/*.json is generated from this file and the deployments files: run `go run ./cmd/gen-chains` here after editing either.",
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/evm/deployments-v4.json",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    },
+    {
+      "id": "v5",
+      "source": "contracts/evm/deployments-v5.json",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    },
+    {
+      "id": "v4",
+      "source": "contracts/svm/deployments-v4.json",
+      "signature": {
+        "svmDomainVersion": 5
+      }
+    },
+    {
+      "id": "v4",
+      "source": "contracts/tvm/deployments-v4.json",
+      "signature": {
+        "eip712Name": "Escrow",
+        "eip712Version": "3"
+      }
+    },
+    {
+      "id": "v4",
+      "source": "contracts/stellar/deploy/deployments-testnet.json",
+      "signature": {
+        "stellarDomainVersion": 2
+      }
+    }
+  ],
+  "unrecordedFulfillmentProxies": [
+    {
+      "address": "0x3f2F4Fa9EA195028f534851ddFd26994e4e3700c",
+      "version": "v4",
+      "chains": [
+        "eip155:421614",
+        "eip155:11142220",
+        "eip155:84532",
+        "eip155:11155111",
+        "eip155:80002",
+        "eip155:11155420",
+        "eip155:43113",
+        "eip155:42431"
+      ],
+      "reason": "testnet proxy deployed before #217, replaced by the preview proxy 0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144; trusted until the last payment created on it finishes (contracts/README.md)"
+    }
+  ]
+}

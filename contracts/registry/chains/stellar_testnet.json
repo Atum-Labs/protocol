@@ -1,0 +1,18 @@
+{
+  "chain": "stellar:testnet",
+  "name": "Stellar Testnet",
+  "mainnet": false,
+  "versions": [
+    {
+      "id": "v4",
+      "source": "contracts/stellar/deploy/deployments-testnet.json",
+      "escrow": "CBF3JFX2BZREI5T53SSLEV3LHU2Y5YQKLX64CGSEIIXNZTJE3VCV622U",
+      "fulfillmentProxies": [
+        "CC6IPIDCVQIK7NUVAOJLLQWFYLAWWNMEAURJGC46TZ3TPTHTTGIMTJV4"
+      ],
+      "signature": {
+        "stellarDomainVersion": 2
+      }
+    }
+  ]
+}

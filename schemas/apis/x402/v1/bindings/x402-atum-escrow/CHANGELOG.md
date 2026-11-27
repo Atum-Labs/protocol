@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   admits.
 
 ### Changed
+- The bundled Solana escrow encoding keeps a frozen copy of the v4 escrow IDL and names the raw 32 byte hash signing scheme its v4 deposits use. What is signed and sent is unchanged.
 - The bundled signing libraries can verify a payer's wallet-signed (EIP-712) payment request and payment request envelope where the verifier asks, and no longer accept the settler identity typed form on a payment request envelope. The facilitator verifies neither, so payments behave as before.
 - The bundled PaymentRequest schema describes `quote_selector` as the account that picks the settler and signs the reserve. Only the description changed: payments are validated as before.
 - The facilitator verifies a Solana deposit signature the way the Solana ed25519 program does, so a
