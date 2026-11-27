@@ -12,6 +12,8 @@
 //     - secp256k1-ts-vp-null-issuance-date.json  (negative: verifyVP must refuse)
 //     - ed25519-ts-vp-null-issuance-date.json    (negative: verifyVP must refuse)
 //     - {secp256k1,ed25519}-ts-vp-pass-through.json (a third-party VC a reserved set passes through)
+//     - secp256k1-ts-vp-reserved-{iri,compact,compact-no-context,undefined}.json
+//       (a reserved type in another spelling, or a type nothing defines: checked)
 //
 //   VC-proof side:
 //     - secp256k1-ts-vc-proof.json
@@ -126,6 +128,9 @@ async function main() {
   // reserved set must pass through unchecked.
   await genSecp256k1VP("secp256k1-ts-vp-pass-through.json", PINNED_VC_ISSUANCE_DATE, true);
   await genEd25519VP("ed25519-ts-vp-pass-through.json", PINNED_VC_ISSUANCE_DATE, true);
+  for (const sp of RESERVED_SPELLINGS) {
+    await genReservedSpellingVP(`secp256k1-ts-vp-reserved-${sp.name}.json`, sp.context, sp.types);
+  }
   await genSecp256k1PREVP();
   await genEd25519PREVP();
   await genSecp256k1TypedPREVP();
@@ -134,7 +139,9 @@ async function main() {
   for (const f of KNOWN_TO_ATUM_V2_FIXTURES) {
     await genKnownToAtumV2VCProofs(f);
   }
-  console.log(`wrote ${13 + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`);
+  console.log(
+    `wrote ${13 + RESERVED_SPELLINGS.length + 2 * KNOWN_TO_ATUM_V2_FIXTURES.length} fixtures to ${fixturesDir}`
+  );
 }
 
 async function genSecp256k1() {
@@ -470,6 +477,68 @@ function pinnedThirdPartyVC(cryptosuite) {
       proofPurpose: "assertionMethod",
     },
   };
+}
+
+// RESERVED_SPELLINGS are the reserved-type spelling fixtures: the pinned
+// Known-to-Atum credential followed by a credential from an issuer on no
+// trust list whose type is the reserved type in another JSON-LD spelling, or
+// a short name no context defines. Its subject is the holder and its dates
+// are valid, so only the issuer check can refuse it, and it must be checked
+// rather than passed through. MUST exactly mirror the Go generator's
+// reservedSpellings.
+const RESERVED_SPELLINGS = [
+  {
+    name: "iri",
+    context: [W3C_VC_V1_CONTEXT, KNOWN_TO_ATUM_V1_CONTEXT],
+    types: ["VerifiableCredential", "https://schemas.atum.xyz/credentials/known-to-atum/v1#KnownToAtumVerifiableCredential"],
+  },
+  {
+    name: "compact",
+    context: [W3C_VC_V1_CONTEXT, KNOWN_TO_ATUM_V1_CONTEXT],
+    types: ["VerifiableCredential", "kta:KnownToAtumVerifiableCredential"],
+  },
+  {
+    name: "compact-no-context",
+    context: [W3C_VC_V1_CONTEXT],
+    types: ["VerifiableCredential", "kta:KnownToAtumVerifiableCredential"],
+  },
+  {
+    name: "undefined",
+    context: [W3C_VC_V1_CONTEXT, KNOWN_TO_ATUM_V1_CONTEXT],
+    types: ["VerifiableCredential", "PartnerAttestationCredential"],
+  },
+];
+const PINNED_SPELLED_VC_ID = "urn:uuid:3c6b9e1a-7d2f-4b8e-9a1c-2e4f6a8b0c1d";
+const PINNED_SPELLED_VC_ISSUER = "did:web:impersonator.example";
+
+// genReservedSpellingVP signs a secp256k1 envelope carrying the pinned
+// Known-to-Atum credential followed by the spelled credential.
+async function genReservedSpellingVP(fileName, context, types) {
+  const wallet = new Wallet(HARDHAT_PRIVKEY);
+  const holder = `did:pkh:eip155:1:${wallet.address.toLowerCase()}`;
+  const vcs = pinnedVCsFor(holder, "EcdsaSecp256k1RecoverySignature2020", PINNED_VC_ISSUANCE_DATE);
+  vcs.push({
+    "@context": context,
+    id: PINNED_SPELLED_VC_ID,
+    type: types,
+    issuer: PINNED_SPELLED_VC_ISSUER,
+    issuanceDate: PINNED_VC_ISSUANCE_DATE,
+    credentialSubject: { id: holder, role: "settler" },
+    proof: {
+      type: "EcdsaSecp256k1RecoverySignature2020",
+      created: PINNED_VC_ISSUANCE_DATE,
+      verificationMethod: `${PINNED_SPELLED_VC_ISSUER}#key-1`,
+      proofPurpose: "assertionMethod",
+    },
+  });
+  const signed = await signVP(vcs, HARDHAT_PRIVKEY, {
+    holder,
+    verificationMethod: `${holder}#blockchainAccountId`,
+    challenge: PINNED_VP_CHALLENGE,
+    domain: PINNED_VP_DOMAIN,
+    created: PINNED_CREATED,
+  });
+  writeFileSync(resolve(fixturesDir, fileName), JSON.stringify(sortKeysRecursively(signed)) + "\n");
 }
 
 // sortKeysRecursively normalizes the JSON object so the on-disk output

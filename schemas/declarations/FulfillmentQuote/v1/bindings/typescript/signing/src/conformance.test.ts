@@ -282,6 +282,50 @@ describe("conformance: an unreserved third-party credential is passed through", 
   });
 });
 
+// Mirror of the Go canonical's TestConformance_VPReservedTypeSpellingsAreChecked.
+// Each fixture carries the pinned Known-to-Atum credential followed by a
+// credential from an issuer on no trust list whose type is the reserved type
+// in another JSON-LD spelling, or a short name no context defines. With
+// Known-to-Atum required and issuer trust strict on the pinned issuer it is
+// refused on that credential's issuer; trusting that issuer too makes it
+// verify with both credentials checked, so it was checked, not passed
+// through. A short name no context defines canonicalizes differently in
+// jsonld.js and json-gold, so the Go-signed "undefined" fixture never
+// verifies here: its holder signature fails. It is refused either way.
+describe("conformance: a reserved type in another spelling is checked", () => {
+  const holder = `did:pkh:eip155:1:${HARDHAT_ACCOUNT_0}`;
+  for (const spelling of ["iri", "compact", "compact-no-context", "undefined"]) {
+    for (const signer of ["go", "ts"]) {
+      const file = `secp256k1-${signer}-vp-reserved-${spelling}.json`;
+      it(`${file}: checked, never passed through`, async () => {
+        const text = readFixture(file).toString("utf-8");
+        const base: VerifyVPOptions = {
+          ...vpHappyOpts(holder),
+          requiredVCTypes: ["KnownToAtumVerifiableCredential"],
+        };
+        if (spelling === "undefined" && signer === "go") {
+          await expect(
+            verifyVP(text, { ...base, isIssuerTrusted: () => ({ allowed: true, enforced: true }) })
+          ).rejects.toThrow(/signer|holder|signature/i);
+          return;
+        }
+        await expect(
+          verifyVP(text, { ...base, isIssuerTrusted: (d: string) => ({ allowed: d === "did:web:atumlabs.xyz", enforced: true }) })
+        ).rejects.toThrow(/verifiableCredential\[1\] issuer .* not in trust anchors/);
+        const res = await verifyVP(text, {
+          ...base,
+          isIssuerTrusted: (d: string) => ({
+            allowed: d === "did:web:atumlabs.xyz" || d === "did:web:impersonator.example",
+            enforced: true,
+          }),
+        });
+        expect(res.attestedClaims).toHaveLength(2);
+        expect(res.passThroughClaims).toHaveLength(0);
+      });
+    }
+  }
+});
+
 // PRE-side conformance — the declarationType-set path. The
 // fixtures are PaymentRequestEnvelopes (type
 // ["VerifiablePresentation","PaymentRequestEnvelope"], signed under the PRE

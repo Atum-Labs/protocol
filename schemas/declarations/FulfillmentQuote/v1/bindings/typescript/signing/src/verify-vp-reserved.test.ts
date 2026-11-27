@@ -25,7 +25,12 @@ const FIXTURE_DOMAIN = "did:web:settler.atum.network";
 
 const TRUSTED_ISSUER = "did:web:atumlabs.test";
 const THIRD_PARTY_ISSUER = "did:web:unlisted-issuer.example";
-const THIRD_PARTY_TYPE = "PartnerAttestationCredential";
+// An absolute IRI, so the type resolves under any context. A short name no
+// loaded context defines can't be resolved and is checked, not passed
+// through (see the spelling cases below).
+const THIRD_PARTY_TYPE = "https://example.org/credentials#PartnerAttestationCredential";
+const KTA_TYPE_IRI = "https://schemas.atum.xyz/credentials/known-to-atum/v1#KnownToAtumVerifiableCredential";
+const IMPOSTOR = "did:web:impersonator.example";
 const KTA = "KnownToAtumVerifiableCredential";
 
 function credentialId(seed: string): string {
@@ -90,6 +95,28 @@ function thirdPartyVC(types: string[]): Record<string, unknown> {
       type: "EcdsaSecp256k1RecoverySignature2020",
       created: "2026-01-01T00:00:00Z",
       verificationMethod: `${THIRD_PARTY_ISSUER}#key-1`,
+      proofPurpose: "assertionMethod",
+      jws: `stub-signature-of:${id}`,
+    },
+  };
+}
+
+// A credential from `issuer` about `subject`, valid by date, with the given
+// @context and types. Its proof is a stub: the spelling cases don't supply
+// verifyVCProofs, so only the policy checks decide.
+function spelledVC(issuer: string, subject: string, context: unknown[], types: string[]): Record<string, unknown> {
+  const id = credentialId(`spelled:${issuer}:${JSON.stringify(context)}:${types.join(",")}`);
+  return {
+    "@context": context,
+    id,
+    type: types,
+    issuer,
+    issuanceDate: "2026-01-01T00:00:00Z",
+    credentialSubject: { id: subject, role: "settler" },
+    proof: {
+      type: "EcdsaSecp256k1RecoverySignature2020",
+      created: "2026-01-01T00:00:00Z",
+      verificationMethod: `${issuer}#key-1`,
       proofPurpose: "assertionMethod",
       jws: `stub-signature-of:${id}`,
     },
@@ -195,6 +222,48 @@ describe("verifyVP: reserved and pass-through credentials", () => {
     const signed = await signPresentation(wallet, holder, [kta, smuggled]);
     await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(/verifiableCredential\[1\]/);
   });
+
+  // Every JSON-LD spelling of the reserved type, and a type nothing defines,
+  // is checked: from an issuer outside the trust list it refuses the
+  // presentation under strict trust. Trusting that issuer as well makes the
+  // same presentation verify with the credential in attestedClaims, so the
+  // refusal came from the issuer check on a checked credential. Mirror of Go
+  // TestVerifyVP_ReservedTypeSpellings_AreChecked.
+  const spellings: [string, unknown[], string[]][] = [
+    ["the full IRI", [W3C_VC_V1_CONTEXT_URL, KNOWN_TO_ATUM_V1_CONTEXT_URL], ["VerifiableCredential", KTA_TYPE_IRI]],
+    [
+      "the kta: compact form",
+      [W3C_VC_V1_CONTEXT_URL, KNOWN_TO_ATUM_V1_CONTEXT_URL],
+      ["VerifiableCredential", "kta:KnownToAtumVerifiableCredential"],
+    ],
+    [
+      "the kta: form without the known-to-atum context",
+      [W3C_VC_V1_CONTEXT_URL],
+      ["VerifiableCredential", "kta:KnownToAtumVerifiableCredential"],
+    ],
+    [
+      "a short name no context defines",
+      [W3C_VC_V1_CONTEXT_URL, KNOWN_TO_ATUM_V1_CONTEXT_URL],
+      ["VerifiableCredential", "PartnerAttestationCredential"],
+    ],
+  ];
+  for (const [name, context, types] of spellings) {
+    it(`checks a reserved type spelled as ${name}`, async () => {
+      const { wallet, holder } = newHolder();
+      const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+      const spelled = spelledVC(IMPOSTOR, holder, context, types);
+      const signed = await signPresentation(wallet, holder, [kta, spelled]);
+      await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(
+        /verifiableCredential\[1\] issuer .* not in trust anchors/
+      );
+      const res = await verifyVP(
+        signed,
+        strictOpts(holder, { isIssuerTrusted: (d: string) => ({ allowed: d === TRUSTED_ISSUER || d === IMPOSTOR, enforced: true }) })
+      );
+      expect(res.attestedClaims).toHaveLength(2);
+      expect(res.passThroughClaims).toHaveLength(0);
+    });
+  }
 });
 
 // For the explicitly reserved case the third-party credential is checked,

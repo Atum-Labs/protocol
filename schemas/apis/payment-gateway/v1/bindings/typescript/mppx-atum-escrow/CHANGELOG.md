@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The bundled payment gateway client's `verifyVP` passes a credential of an unreserved type through untouched, in the new `passThroughClaims`, instead of checking it against the verifier's trusted issuers; a credential of a reserved type (`reservedVCTypes` together with `requiredVCTypes`) is checked as before. This package does not verify presentations, so its payments behave as before.
+- The bundled payment gateway client's `verifyVP` passes a credential of an unreserved type through untouched, in the new `passThroughClaims`, instead of checking it against the verifier's trusted issuers; a credential of a reserved type (`reservedVCTypes` together with `requiredVCTypes`) is checked as before, in any JSON-LD spelling of that type. This package does not verify presentations, so its payments behave as before.
 - The bundled payment-gateway client's quote-request response types gain an optional `error`. Payments made through this package never create a quote request, so they behave as before.
 - The package moved within the protocol repository, from `schemas/apis/payment-gateway/v1/bindings/mppx-atum-escrow/` to `schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow/`, beside the other payment-gateway bindings split by language. Only the manifest `homepage` and `repository.directory` change; the published name, entry points and behavior do not.
 - The bundled payment-gateway client knows the `MISSING_QUOTE_SELECTOR` code, and the `QUOTE_SELECTOR_NOT_ALLOWED` and `RESERVER_MISMATCH` messages no longer describe leaving `quote_selector` out. Payments made through this package never create a quote request, so they behave as before.

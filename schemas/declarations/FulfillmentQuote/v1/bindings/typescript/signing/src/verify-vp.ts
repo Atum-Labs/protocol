@@ -58,8 +58,10 @@ import { hashQuote, type Cryptosuite } from "./hash.js";
 import { parseDetachedJws } from "./jws.js";
 import { decodeStellarAccount, encodeStellarAccount } from "./strkey.js";
 import { verifyVCProof, type IssuerKeyResolver } from "./verify-vc.js";
+import { newReservedTypeMatcher } from "./reserved-types.js";
 import {
   assertDeclarationContextSupplied,
+  fqLoader,
   FULFILLMENT_QUOTE_ENVELOPE_CONTEXT_URL,
   SECP256K1_RECOVERY_CONTEXT_URL,
   ED25519_2020_CONTEXT_URL,
@@ -132,6 +134,12 @@ export interface VerifyVPOptions {
   // Undefined or empty, it is requiredVCTypes alone; when both are empty
   // every VC walks every check, as before. Mirror of Go
   // VerifyVPOptions.ReservedVCTypes.
+  //
+  // Types are matched on what they mean, not on how they are spelled: a VC
+  // whose type is a reserved name, a JSON-LD spelling of the IRI a reserved
+  // name stands for (the full IRI, a compact `prefix:` form, a context term
+  // aliasing it), or a type that can't be resolved to an absolute IRI at
+  // all, is reserved and checked. See reserved-types.ts.
   reservedVCTypes?: string[];
   // Cap on envelope.verifiableCredential length. Schema enforces
   // minItems: 1 but no maxItems; an attacker submitting a 10k-VC bid
@@ -589,7 +597,11 @@ async function applyVCPolicies(
     throw new Error("verifyVP: envelope.verifiableCredential is missing or empty");
   }
 
-  const reserved = reservedVCTypes(options);
+  const matcher = await newReservedTypeMatcher(
+    reservedVCTypes(options),
+    "@context" in doc ? doc["@context"] : undefined,
+    verifyLoader(options).toJsonldLoader()
+  );
   let matchedRequired = !options.requiredVCTypes || options.requiredVCTypes.length === 0;
   const accepted: unknown[] = [];
   const passThrough: unknown[] = [];
@@ -599,11 +611,14 @@ async function applyVCPolicies(
     // Pass-through. A VC that declares no reserved type is for the
     // counterparties to judge: no check here, and it never reaches
     // attestedClaims or the coverage gate. A VC declaring any reserved
-    // type is checked, so one claiming a reserved type from an untrusted
-    // issuer is still refused. Its issuer is never resolved: resolving an
-    // arbitrary issuer's DID would let any presenter make the verifier
-    // fetch a host of its choosing. Mirror of the Go canonical.
-    if (reserved.length > 0 && !vcTypeIntersects(vc, reserved)) {
+    // type, in any spelling, or a type that can't be resolved, is checked
+    // (see reserved-types.ts), so one claiming a reserved type from an
+    // untrusted issuer is still refused. A pass-through VC's issuer is
+    // never resolved: resolving an arbitrary issuer's DID would let any
+    // presenter make the verifier fetch a host of its choosing. A null
+    // matcher means no reserved set: every VC is checked. Mirror of the Go
+    // canonical.
+    if (matcher && !(await matcher.reserved(vcs[i]))) {
       passThrough.push(vc);
       continue;
     }
@@ -653,12 +668,14 @@ function reservedVCTypes(options: VerifyVPOptions): string[] {
   return reserved;
 }
 
-// vcTypeIntersects reports whether the VC's `type` array declares any of
-// `types`. Mirror of the Go canonical's vcTypeIntersects.
-function vcTypeIntersects(vc: Record<string, unknown>, types: string[]): boolean {
-  const have = vc.type;
-  if (!Array.isArray(have)) return false;
-  return have.some((t) => typeof t === "string" && types.includes(t));
+// verifyLoader is the per-call document loader for verification: the shared
+// loader overlaid with the caller's extraEnvelopeContexts. The reserved-type
+// matcher expands credential types with the same loader the holder signature
+// is canonicalized with. Mirror of the Go canonical's verifyLoader.
+function verifyLoader(options: VerifyVPOptions): typeof fqLoader {
+  const extra = options.extraEnvelopeContexts;
+  if (!extra || Object.keys(extra).length === 0) return fqLoader;
+  return fqLoader.withExtraContexts(extra as Parameters<typeof fqLoader.withExtraContexts>[0]);
 }
 
 // ZERO_INSTANT_MS is 0001-01-01T00:00:00Z, the instant Go's zero time.Time

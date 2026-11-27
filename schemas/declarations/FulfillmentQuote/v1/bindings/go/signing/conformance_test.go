@@ -1009,3 +1009,57 @@ func TestConformance_Ed25519PassThroughVPFixturesAreByteIdentical(t *testing.T) 
 		t.Fatalf("ed25519 pass-through VP fixtures differ between Go and TS signers")
 	}
 }
+
+// reservedSpellingVPFixtures carry the pinned Known-to-Atum credential
+// followed by a credential from an issuer on no trust list whose type is the
+// reserved type in another JSON-LD spelling, or a short name no context
+// defines. Its subject is the holder and its dates are valid.
+var reservedSpellingVPFixtures = []string{"iri", "compact", "compact-no-context", "undefined"}
+
+// TestConformance_VPReservedTypeSpellingsAreChecked: with Known-to-Atum
+// required and issuer trust strict on the pinned issuer, every
+// reserved-spelling fixture, Go-signed and TS-signed, is refused on the
+// spelled credential's issuer; trusting that issuer too makes it verify
+// with both credentials checked. So the spelled credential was checked, not
+// passed through. The TS conformance suite asserts the same verdicts.
+//
+// A short name no context defines canonicalizes differently in json-gold
+// and jsonld.js, so the other language's "undefined" fixture never verifies
+// here: its holder signature fails. It is refused either way and never
+// passed through, which is what this asserts for that one.
+func TestConformance_VPReservedTypeSpellingsAreChecked(t *testing.T) {
+	const holder = "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+	for _, spelling := range reservedSpellingVPFixtures {
+		for _, signer := range []string{"go", "ts"} {
+			file := "secp256k1-" + signer + "-vp-reserved-" + spelling + ".json"
+			t.Run(file, func(t *testing.T) {
+				signed := readFixture(t, file)
+				opts := vpHappyOpts(t, holder)
+				opts.RequiredVCTypes = []string{"KnownToAtumVerifiableCredential"}
+				if spelling == "undefined" && signer == "ts" {
+					opts.IsIssuerTrusted = func(string) (bool, bool) { return true, true }
+					if _, err := VerifyVP(signed, opts); !errors.Is(err, ErrVPSignerHolderMismatch) {
+						t.Fatalf("VerifyVP(%s): want the cross-language holder-signature refusal, got %v", file, err)
+					}
+					return
+				}
+				opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == "did:web:atumlabs.xyz", true }
+				_, err := VerifyVP(signed, opts)
+				if !errors.Is(err, ErrVPIssuerNotTrusted) || !strings.Contains(err.Error(), "verifiableCredential[1]") {
+					t.Fatalf("VerifyVP(%s): want ErrVPIssuerNotTrusted on verifiableCredential[1], got %v", file, err)
+				}
+
+				opts.IsIssuerTrusted = func(d string) (bool, bool) {
+					return d == "did:web:atumlabs.xyz" || d == "did:web:impersonator.example", true
+				}
+				res, err := VerifyVP(signed, opts)
+				if err != nil {
+					t.Fatalf("VerifyVP(%s) with both issuers trusted: %v", file, err)
+				}
+				if len(res.AttestedClaims) != 2 || len(res.PassThroughClaims) != 0 {
+					t.Fatalf("%s: %d attested and %d passed through, want both checked", file, len(res.AttestedClaims), len(res.PassThroughClaims))
+				}
+			})
+		}
+	}
+}

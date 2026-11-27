@@ -20,7 +20,10 @@ import (
 const (
 	reservedTrustedIssuer = "did:web:atumlabs.test"
 	thirdPartyIssuer      = "did:web:unlisted-issuer.example"
-	thirdPartyType        = "PartnerAttestationCredential"
+	// An absolute IRI, so the type resolves under any context. A short
+	// name no loaded context defines can't be resolved and is checked,
+	// not passed through (see TestVerifyVP_ReservedTypeSpellings_AreChecked).
+	thirdPartyType = "https://example.org/credentials#PartnerAttestationCredential"
 )
 
 // guardResolver resolves only the trusted issuer and fails the test the
@@ -229,5 +232,79 @@ func TestVerifyVP_VCDeclaringReservedTypeAmongOthers_IsChecked(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "verifiableCredential[1]") {
 		t.Fatalf("want the error to name verifiableCredential[1], got %v", err)
+	}
+}
+
+// knownToAtumTypeIRI is the IRI the known-to-atum context maps
+// KnownToAtumVerifiableCredential to.
+const knownToAtumTypeIRI = "https://schemas.atum.xyz/credentials/known-to-atum/v1#KnownToAtumVerifiableCredential"
+
+// spelledVCForTest is a credential from issuer about subject, valid by date,
+// with the given @context and types. Its proof is a stub: these tests don't
+// wire VC-proof verification, so only the policy checks decide.
+func spelledVCForTest(t *testing.T, issuer, subject string, ctx []any, types []string) json.RawMessage {
+	t.Helper()
+	vc := buildFixtureVC(issuer, mustTimeNoT("2026-01-01T00:00:00Z"), nil, types, subject, ProofTypeSecp256k1Recovery2020)
+	vc["@context"] = ctx
+	raw, err := json.Marshal(vc)
+	if err != nil {
+		t.Fatalf("marshal VC: %v", err)
+	}
+	return raw
+}
+
+// Every JSON-LD spelling of the reserved type, and a type nothing defines,
+// is checked: from an issuer outside the trust list it refuses the
+// presentation under strict trust. Trusting that issuer as well makes the
+// same presentation verify with the credential in AttestedClaims, so the
+// refusal came from the issuer check on a checked credential, not from
+// anything else.
+//
+// An inline context object can't alias the IRI: canonicalization admits
+// only context URLs and refuses the whole presentation first. A context
+// that aliases it can only be one the caller supplies, covered by
+// TestVerifyVP_SuppliedContextAliasingReservedType_IsChecked.
+func TestVerifyVP_ReservedTypeSpellings_AreChecked(t *testing.T) {
+	const (
+		w3c      = "https://www.w3.org/2018/credentials/v1"
+		ktaCtx   = "https://schemas.atum.xyz/credentials/known-to-atum/v1"
+		impostor = "did:web:impersonator.example"
+	)
+	cases := []struct {
+		name  string
+		ctx   []any
+		types []string
+	}{
+		{"the full IRI", []any{w3c, ktaCtx}, []string{"VerifiableCredential", knownToAtumTypeIRI}},
+		{"the kta: compact form", []any{w3c, ktaCtx}, []string{"VerifiableCredential", "kta:KnownToAtumVerifiableCredential"}},
+		{"the kta: form without the known-to-atum context", []any{w3c}, []string{"VerifiableCredential", "kta:KnownToAtumVerifiableCredential"}},
+		{"a short name no context defines", []any{w3c, ktaCtx}, []string{"VerifiableCredential", "PartnerAttestationCredential"}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			holderPriv := newSecpKey(t)
+			holderDID := holderDIDForKey(holderPriv)
+			issuerPriv := newSecpKey(t)
+
+			trusted := mintTrustedVCForSubject(t, issuerPriv, reservedTrustedIssuer, holderDID)
+			spelled := spelledVCForTest(t, impostor, holderDID, c.ctx, c.types)
+			envelope := signSenderVPForTest(t, holderPriv, holderDID, []json.RawMessage{trusted, spelled})
+
+			opts := happyOpts(holderDID)
+			opts.IsIssuerTrusted = strictTrust(reservedTrustedIssuer)
+			_, err := VerifyVP(envelope, opts)
+			if !errors.Is(err, ErrVPIssuerNotTrusted) || !strings.Contains(err.Error(), "verifiableCredential[1]") {
+				t.Fatalf("VerifyVP: want ErrVPIssuerNotTrusted on verifiableCredential[1], got %v", err)
+			}
+
+			opts.IsIssuerTrusted = func(d string) (bool, bool) { return d == reservedTrustedIssuer || d == impostor, true }
+			res, err := VerifyVP(envelope, opts)
+			if err != nil {
+				t.Fatalf("VerifyVP with both issuers trusted: %v", err)
+			}
+			if len(res.AttestedClaims) != 2 || len(res.PassThroughClaims) != 0 {
+				t.Fatalf("got %d attested and %d passed through, want both credentials checked", len(res.AttestedClaims), len(res.PassThroughClaims))
+			}
+		})
 	}
 }

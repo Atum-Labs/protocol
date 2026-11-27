@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   admits.
 
 ### Changed
-- The bundled signing libraries' `verifyVP` passes a credential of an unreserved type through untouched, in the new `passThroughClaims`, instead of checking it against the verifier's trusted issuers; a credential of a reserved type (`reservedVCTypes` together with `requiredVCTypes`) is checked as before. This package does not verify presentations, so its behavior is unchanged.
+- The bundled signing libraries' `verifyVP` passes a credential of an unreserved type through untouched, in the new `passThroughClaims`, instead of checking it against the verifier's trusted issuers; a credential of a reserved type (`reservedVCTypes` together with `requiredVCTypes`) is checked as before, in any JSON-LD spelling of that type. This package does not verify presentations, so its behavior is unchanged.
 - The bundled signing libraries can verify a payer's wallet-signed (EIP-712) payment request and payment request envelope where the verifier asks, and no longer accept the settler identity typed form on a payment request envelope. The facilitator verifies neither, so payments behave as before.
 - The bundled PaymentRequest schema describes `quote_selector` as the account that picks the settler and signs the reserve. Only the description changed: payments are validated as before.
 - The facilitator verifies a Solana deposit signature the way the Solana ed25519 program does, so a

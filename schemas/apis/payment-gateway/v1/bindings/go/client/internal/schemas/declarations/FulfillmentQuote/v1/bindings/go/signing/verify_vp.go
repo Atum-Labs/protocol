@@ -177,6 +177,12 @@ type VerifyVPOptions struct {
 	// RequiredVCTypes alone. When both are empty there is no reserved set
 	// and every VC walks every check, as before this field existed.
 	// HolderIssuedVCTypes keeps its own carve-out either way.
+	//
+	// Types are matched on what they mean, not on how they are spelled: a
+	// VC whose type is a reserved name, a JSON-LD spelling of the IRI a
+	// reserved name stands for (the full IRI, a compact `prefix:` form, a
+	// context term aliasing it), or a type that can't be resolved to an
+	// absolute IRI at all, is reserved and checked. See reservedTypeMatcher.
 	ReservedVCTypes []string
 
 	// HolderIssuedVCTypes lists VC types the verifier accepts as
@@ -549,6 +555,7 @@ func verifyVPSecp256k1(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []j
 	if err != nil {
 		return VPResult{}, err
 	}
+	loader := verifyLoader(opts)
 
 	// VP-mode requires (a) keeping the verifiableCredential
 	// array in the canonical doc (it IS the signed payload), and (b)
@@ -570,7 +577,7 @@ func verifyVPSecp256k1(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []j
 		// Overlay any caller-supplied envelope context (PRE)
 		// onto fqLoader for this canonicalization only — see
 		// VerifyVPOptions.ExtraEnvelopeContexts.
-		Loader: loaderWithExtraEnvelopeContexts(opts.ExtraEnvelopeContexts),
+		Loader: loader,
 	})
 	if err != nil {
 		return VPResult{}, err
@@ -613,7 +620,8 @@ func verifyVPSecp256k1(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []j
 	}
 
 	var issuerTrustObservations []IssuerTrustObservation
-	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
+	matcher := newReservedTypeMatcher(reservedVCTypes(opts), envelopeJSON, loader)
+	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, matcher, &issuerTrustObservations)
 	if err != nil {
 		return VPResult{}, err
 	}
@@ -664,6 +672,7 @@ func verifyVPEd25519(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []jso
 	if err != nil {
 		return VPResult{}, err
 	}
+	loader := verifyLoader(opts)
 
 	hash, err := HashQuote(doc, HashQuoteOptions{
 		Cryptosuite: ProofTypeEd25519Signature2020,
@@ -680,7 +689,7 @@ func verifyVPEd25519(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []jso
 		// Overlay any caller-supplied envelope context (PRE)
 		// onto fqLoader for this canonicalization only — see
 		// VerifyVPOptions.ExtraEnvelopeContexts.
-		Loader: loaderWithExtraEnvelopeContexts(opts.ExtraEnvelopeContexts),
+		Loader: loader,
 	})
 	if err != nil {
 		return VPResult{}, err
@@ -699,7 +708,8 @@ func verifyVPEd25519(envelopeJSON []byte, envelope *fqe.SchemaJson, rawVCs []jso
 	}
 
 	var issuerTrustObservations []IssuerTrustObservation
-	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, &issuerTrustObservations)
+	matcher := newReservedTypeMatcher(reservedVCTypes(opts), envelopeJSON, loader)
+	attested, passThrough, err := verifyVCPolicies(envelope.VerifiableCredential, rawVCs, opts, matcher, &issuerTrustObservations)
 	if err != nil {
 		return VPResult{}, err
 	}
@@ -790,7 +800,7 @@ func vpProofContext(rawProof map[string]any, suiteCtxURL string) any {
 // caller). The accumulator is populated even when verifyVCPolicies
 // succeeds, so VerifyVP can surface the signal via
 // VPResult.IssuerTrustObservations on a passing envelope.
-func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, opts VerifyVPOptions, observations *[]IssuerTrustObservation) ([]json.RawMessage, []json.RawMessage, error) {
+func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, opts VerifyVPOptions, matcher *reservedTypeMatcher, observations *[]IssuerTrustObservation) ([]json.RawMessage, []json.RawMessage, error) {
 	if len(vcs) == 0 {
 		// envelope schema enforces minItems: 1, so this is defense in
 		// depth — keeps the rejection path local rather than relying on
@@ -803,7 +813,6 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 		return nil, nil, fmt.Errorf("internal: rawVCs len %d does not match typed VCs len %d", len(rawVCs), len(vcs))
 	}
 
-	reserved := reservedVCTypes(opts)
 	attested := make([]json.RawMessage, 0, len(vcs))
 	var passThrough []json.RawMessage
 	// checked[i] reports whether vcs[i] walked the policy checks; the
@@ -839,9 +848,11 @@ func verifyVCPolicies(vcs []fqe.VerifiableCredential, rawVCs []json.RawMessage, 
 		// Pass-through. A VC that declares no reserved type, and isn't
 		// holder-issued, is for the counterparties to judge: no check
 		// here, and it never reaches AttestedClaims or the coverage gate.
-		// A VC declaring any reserved type is checked, so one claiming a
-		// reserved type from an untrusted issuer is still refused.
-		if !holderIssued && len(reserved) > 0 && !vcTypeIntersects(vc, reserved) {
+		// A VC declaring any reserved type, in any spelling, or a type that
+		// can't be resolved, is checked (see reservedTypeMatcher), so one
+		// claiming a reserved type from an untrusted issuer is still
+		// refused. A nil matcher means no reserved set: every VC is checked.
+		if !holderIssued && matcher != nil && !matcher.reserved(vc.Type, rawVCs[i]) {
 			// Preserve verbatim wire bytes — see the rawVCs param doc.
 			passThrough = append(passThrough, rawVCs[i])
 			continue
@@ -951,6 +962,15 @@ func reservedVCTypes(opts VerifyVPOptions) []string {
 		}
 	}
 	return reserved
+}
+
+// verifyLoader is the per-call document loader for verification: fqLoader
+// overlaid with the caller's ExtraEnvelopeContexts. The reserved-type
+// matcher expands credential types with the same loader the holder
+// signature is canonicalized with, so both read a credential's terms the
+// same way.
+func verifyLoader(opts VerifyVPOptions) *lddataintegrity.DocumentLoader {
+	return loaderWithExtraEnvelopeContexts(opts.ExtraEnvelopeContexts)
 }
 
 func checkVCDateWindow(vc fqe.VerifiableCredential, now time.Time) error {
