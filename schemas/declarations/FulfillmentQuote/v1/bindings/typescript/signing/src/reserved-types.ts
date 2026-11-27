@@ -159,10 +159,13 @@ export async function newReservedTypeMatcher(
 
   return {
     async reserved(vc: unknown): Promise<boolean> {
-      if (!isPlainObject(vc)) return false;
+      // Only a plain object whose `type` is an array of strings can pass
+      // through. Go refuses any other shape while decoding the envelope, so
+      // anything else walks every check here and is refused there.
+      if (!isPlainObject(vc)) return true;
       const types = vc.type;
-      if (!Array.isArray(types)) return false;
-      const declared = types.filter((t): t is string => typeof t === "string");
+      if (!Array.isArray(types) || !types.every((t) => typeof t === "string")) return true;
+      const declared = types as string[];
       if (declared.some(lexical)) return true;
 
       const probe: Record<string, unknown> = { type: declared };

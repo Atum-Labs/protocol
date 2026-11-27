@@ -223,6 +223,27 @@ describe("verifyVP: reserved and pass-through credentials", () => {
     await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(/verifiableCredential\[1\]/);
   });
 
+  // Only a plain object whose `type` is an array of strings can pass through.
+  // Go refuses any other shape while decoding the envelope; here it walks
+  // every check, so a bare-string reserved type from an untrusted issuer is
+  // refused on its issuer, and a non-object entry on its missing subject.
+  it("checks a credential whose type is a bare string, as Go refuses it", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const bare = { ...spelledVC(IMPOSTOR, holder, [W3C_VC_V1_CONTEXT_URL, KNOWN_TO_ATUM_V1_CONTEXT_URL], []), type: KTA };
+    const signed = await signPresentation(wallet, holder, [kta, bare]);
+    await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(
+      /verifiableCredential\[1\] issuer .* not in trust anchors/
+    );
+  });
+
+  it("checks an entry that isn't a credential object", async () => {
+    const { wallet, holder } = newHolder();
+    const { vc: kta } = await signedKnownToAtumVC(ISSUER_KEY, TRUSTED_ISSUER, holder);
+    const signed = await signPresentation(wallet, holder, [kta, "urn:example:junk" as unknown as Record<string, unknown>]);
+    await expect(verifyVP(signed, strictOpts(holder))).rejects.toThrow(/verifiableCredential\[1\]/);
+  });
+
   // Every JSON-LD spelling of the reserved type, and a type nothing defines,
   // is checked: from an issuer outside the trust list it refuses the
   // presentation under strict trust. Trusting that issuer as well makes the
