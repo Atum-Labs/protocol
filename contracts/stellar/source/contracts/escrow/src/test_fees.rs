@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Fee parity with the EVM `determineFee`.
 //!
 //! The cases are the ones `contracts/svm/source/programs/escrow/src/utils/fees.rs`

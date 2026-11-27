@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Replays `contracts/stellar/conformance/vectors.json` through the contract's own digest functions.
 //!
 //! The same file is asserted by the Go encoder (`encoding/conformance_test.go`) and the TypeScript

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::{contracttype, Address, BytesN, String};
 
 /// Operational roles. The default admin is deliberately not a member: it has its own delayed

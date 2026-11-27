@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pub const MINT_FEE_CONFIG_SEED: &[u8] = b"mint_fee_config";
 pub const PROTOCOL_CONFIG_SEED: &[u8] = b"protocol_config";
 

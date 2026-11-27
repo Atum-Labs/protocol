@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #![no_std]
 
 //! Fulfillment proxy: the destination-chain half of an Atum payment. A settler pays the recipient

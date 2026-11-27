@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::{contractevent, Address, BytesN};
 
 /// `quote_hash` is the first topic after the name because it is the correlation key the off-chain settler

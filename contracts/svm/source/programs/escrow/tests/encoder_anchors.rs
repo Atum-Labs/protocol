@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //! Release and refund anchors shared with the Go and TypeScript encoders.
 //!
 //! The Go `TestSolanaV2QuoteHashLayout` and the TypeScript `v4-destination.test.ts` assert these

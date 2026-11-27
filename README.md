@@ -107,6 +107,11 @@ go doc -http .    # the whole module, rendered in a browser
 - **Definitions are versioned.** Messages and APIs carry an explicit version (`v1`, …), and each
   version constant is checked against its schema in CI.
 
+## Contributing
+
+Outside contributions need a signed Contributor License Agreement. See
+[CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## License
 
 This repository is licensed under the [Apache License, Version 2.0](./LICENSE).

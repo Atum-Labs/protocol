@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use soroban_sdk::contracterror;
 
 /// Codes are append-only: offchain matchers key on the number, so a variant is never inserted or

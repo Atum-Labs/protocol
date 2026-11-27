@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use anchor_lang::prelude::*;
 
 /// transfer_checked through Token-2022's hook aware helper. It resolves a transfer hook's extra

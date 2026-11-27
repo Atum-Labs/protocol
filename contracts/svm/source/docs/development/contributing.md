@@ -1,5 +1,8 @@
 # Contributing Guidelines
 
+The CLA and licensing rules for the whole repository are in the root
+[CONTRIBUTING.md](../../../../../CONTRIBUTING.md).
+
 ## Code Style
 
 | Language   | Convention                                                                    |

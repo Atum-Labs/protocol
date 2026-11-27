@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 use anchor_lang::prelude::*;
 use spl_token_2022::extension::confidential_transfer::ConfidentialTransferAccount;
 use spl_token_2022::extension::transfer_fee::{TransferFee, TransferFeeConfig};

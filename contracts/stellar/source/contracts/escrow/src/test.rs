@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 //! Lifecycle and policy tests against the compiled contract in the host-native test environment.
 
 use std::boxed::Box;
