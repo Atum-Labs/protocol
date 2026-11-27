@@ -1,0 +1,15 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "sc": "https://schemas.atum.xyz/credentials/sender-compliance/v1#",
+    "SenderComplianceCredential": "sc:SenderComplianceCredential",
+    "complianceStatus": {
+      "@id": "sc:complianceStatus",
+      "@type": "@vocab"
+    },
+    "approved": "sc:approved",
+    "rejected": "sc:rejected",
+    "pending": "sc:pending"
+  }
+}

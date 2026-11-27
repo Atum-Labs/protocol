@@ -1,0 +1,21 @@
+version: v2
+plugins:
+  # Go message + gRPC service bindings for the atum-core consumers, emitted into
+  # the bindings/go module (see bindings/go/go.mod).
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: bindings/go
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go:v1.5.1
+    out: bindings/go
+    opt: paths=source_relative
+  # TypeScript bindings for the settler-agent consumer. Options match the settler
+  # repo's existing ts-proto config so its consuming code does not change.
+  - remote: buf.build/community/stephenh-ts-proto:v2.11.8
+    out: bindings/typescript/src
+    opt:
+      - env=node
+      - outputServices=grpc-js
+      - esModuleInterop=true
+      - useDate=true
+      - forceLong=string
+      - importSuffix=.js

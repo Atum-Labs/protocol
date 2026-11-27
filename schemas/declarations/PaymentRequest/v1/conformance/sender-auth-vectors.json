@@ -1,0 +1,2577 @@
+{
+  "_comment": "Frozen sender_auth conformance vectors. Verified by TS (bindings/typescript/sender-auth/src/conformance.test.ts) and Go (bindings/go/sender-auth/senderauth/conformance_test.go). Regenerate: REGEN_VECTORS=1 pnpm --filter @atum-labs/payment-request-sender-auth exec vitest run src/conformance.test.ts",
+  "cases": [
+    {
+      "name": "evm-permit2",
+      "network": "eip155:1",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x5c26fa64699c5e84fce85cd8f03cea858969926c80089007e1a0b9907a3e4e16",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0x60de71363c848906b78d0d456fcd99ec8f9dca977e785bd19de12fd5261f8536\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x2aa5220e8eac9d4eb8c123bcc7fde74fa2f4d24a8b3eda677e848ee88715d9c906ab776af679b1c3ee93d26156450388c7eb055e9aca650ae4a5d2d262594ffe1b"
+      },
+      "expectedTerms": {
+        "amount": "1000000",
+        "deadlineSec": 1924991999
+      }
+    },
+    {
+      "name": "tron-tip712",
+      "network": "tron:mainnet",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xfd6b0e5185e34359c45f1c2cdeb7faa5c52157602942b808dc3b3e6d1edf1d53",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xb9fd0ed8da7adeebee2f17d9fcb8fed6008027470c201c06b16eea18cb95126e\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0xacb81236b8f135324da647f21eb8ae858ec537240360169f48aa92f981ecae4f7fcd5cace5fb765eb8bd2679d62107f0f443fa8c1e2f891371f21ff4a785fad91c"
+      },
+      "expectedTerms": {
+        "amount": "10000000",
+        "deadlineSec": 1924991999
+      }
+    },
+    {
+      "name": "solana-ed25519",
+      "network": "solana:mainnet",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x55c11aa746607e1c703b56df9f644d87d4b6009f73fb8b443e59e8cd58571e99",
+        "message_prehash": "{\"deposit_request_hash\":\"0x7ae71cfbd1c0aa3a7162884f0e92f148e6275e47782fe33b954b44d6de2ab242\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"876173328419\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0x1819167c0c38d0a8b45cc6eb5f04affde4fce474253d12d3c5d54572697d55c58eb4a0f3aacc11011b4c2ff2666251dcd00e68bee6d155365e5884fc474bee01",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expectedTerms": {
+        "amount": "1000000",
+        "deadlineSec": 1700000120
+      }
+    },
+    {
+      "name": "solana-ed25519-v2-destination",
+      "network": "solana:mainnet",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "EdmxWPmx2WH6WgFfTdu9xfkYf3k1g5wD1zccTVySEEh1"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_v2"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 4,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x5962d45cfcfa4cb0a52546e46befe4593f4bdbfacde93bfca0e937ce76801485",
+        "message_prehash": "{\"deposit_request_hash\":\"0x14d7b324950ac6e0487d70024ee8f7080c767a67d284186593af2ee5cfa6958b\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"EdmxWPmx2WH6WgFfTdu9xfkYf3k1g5wD1zccTVySEEh1\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"223338299611\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0x114cc7594ccd4756406c26192e714322b5ffad7c82a9dc074052f20b96789eefdac75dd0a895cceecc3abd129cdae465f4a248c3a8e8877d2ddb5b3b3aa7ca0a",
+        "payload": {
+          "delegate_signer": "EdmxWPmx2WH6WgFfTdu9xfkYf3k1g5wD1zccTVySEEh1"
+        }
+      },
+      "expectedTerms": {
+        "amount": "1000000",
+        "deadlineSec": 1700000120
+      }
+    },
+    {
+      "name": "solana-ed25519-v2-without-delegate-signer",
+      "network": "solana:mainnet",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "EdmxWPmx2WH6WgFfTdu9xfkYf3k1g5wD1zccTVySEEh1"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_v2"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 4,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x5962d45cfcfa4cb0a52546e46befe4593f4bdbfacde93bfca0e937ce76801485",
+        "message_prehash": "{\"deposit_request_hash\":\"0x14d7b324950ac6e0487d70024ee8f7080c767a67d284186593af2ee5cfa6958b\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"EdmxWPmx2WH6WgFfTdu9xfkYf3k1g5wD1zccTVySEEh1\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"223338299611\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0x114cc7594ccd4756406c26192e714322b5ffad7c82a9dc074052f20b96789eefdac75dd0a895cceecc3abd129cdae465f4a248c3a8e8877d2ddb5b3b3aa7ca0a"
+      },
+      "expectedTerms": {
+        "amount": "1000000",
+        "deadlineSec": 1700000120
+      }
+    }
+  ],
+  "negativeCases": [
+    {
+      "name": "evm-wrong-signer",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x9999999999999999999999999999999999999999"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "evm-high-s-malleability",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188fcfa84313611e94ee467f38750da42b10f7507cdf8182ccedd81e9ab44c9d5d421c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-recover-signer-signature-without-prefix",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-signature-without-prefix",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "evm-recover-signer-signature-upper-case-prefix",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0X129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-signature-upper-case-prefix",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0X129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "evm-recover-signer-signature-compact",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188fb057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-signature-compact",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188fb057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "evm-recover-signer-signature-eip155-recovery-id",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff25"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-signature-eip155-recovery-id",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff25"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "evm-contract-account-payer",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x5afe5afe5afe5afe5afe5afe5afe5afe5afe5afe"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "evm-recover-signer-message-without-prefix",
+      "network": "eip155:1",
+      "call": "recoverSigner",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "signed": {
+        "message": "edbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "evm-malformed-prehash",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "not json",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash is not a single valid JSON document"
+    },
+    {
+      "name": "evm-tampered-amount",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "999",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Rejected",
+      "expectMessageContains": "permit amount does not match max_source_amount"
+    },
+    {
+      "name": "evm-quote-amount-above-permit",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "1000001"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "evm-quote-amount-below-permit",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "999999"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "evm-quote-amount-with-max-source-amount",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "1000000"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "a quote source amount and a max source amount were both supplied"
+    },
+    {
+      "name": "evm-quote-amount-zero",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "0"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the quote source amount is not a positive decimal integer string"
+    },
+    {
+      "name": "evm-quote-amount-leading-zero",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "01000000"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the quote source amount is not a positive decimal integer string"
+    },
+    {
+      "name": "evm-quote-amount-exponent",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "1e6"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the quote source amount is not a positive decimal integer string"
+    },
+    {
+      "name": "evm-quote-amount-plus-sign",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "+1000000"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the quote source amount is not a positive decimal integer string"
+    },
+    {
+      "name": "evm-quote-amount-padded",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": " 1000000"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the quote source amount is not a positive decimal integer string"
+    },
+    {
+      "name": "evm-stale-deadline",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 4000000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Rejected",
+      "expectMessageContains": "permit deadline is not in the future"
+    },
+    {
+      "name": "evm-chain-id-above-max",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:9007199254740993",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash commits a destination but is not decodable typed data: sender_auth: eip155 chain id 9007199254740993 exceeds the EIP-2294 maximum (9007199254740991)"
+    },
+    {
+      "name": "evm-commitment-destination-mismatch",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x1111111111111111111111111111111111111111"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "destination_mismatch",
+      "expectDetail": "the payer signed a deposit payable to \"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\", but this payment pays \"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111\""
+    },
+    {
+      "name": "evm-commitment-request-hash-mismatch",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_other"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "request_hash_mismatch",
+      "expectDetail": "the payer signed a deposit for another request: depositRequestHash 0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554 is not keccak256 of request_id \"req_other\""
+    },
+    {
+      "name": "evm-message-not-the-permit-digest",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xabababababababababababababababababababababababababababababababab",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed digest is not the EIP-712 hash of message_prehash"
+    },
+    {
+      "name": "evm-signed-destination-oversized",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "destination_mismatch",
+      "expectDetail": "the payer signed a deposit payable to \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", but this payment pays \"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\""
+    },
+    {
+      "name": "evm-signed-destination-lone-high-surrogate",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"\\ud800eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed destination is not well-formed text"
+    },
+    {
+      "name": "evm-signed-destination-lone-low-surrogate",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"\\udc00eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed destination is not well-formed text"
+    },
+    {
+      "name": "evm-signed-destination-not-string",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":1,\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash is not readable: message.witness.destination is not a string"
+    },
+    {
+      "name": "evm-request-hash-absent",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "commitment_absent",
+      "expectDetail": "the deposit witness commits no depositRequestHash, and every deployed escrow requires one"
+    },
+    {
+      "name": "evm-request-hash-malformed",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0x12\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed depositRequestHash is not a 32-byte hex value"
+    },
+    {
+      "name": "evm-permit2-override-not-an-address",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000,
+        "permit2Contract": "0x12"
+      },
+      "signed": {
+        "message": "0xedbb2ee563ff0281da0f88315a88f4a1bc116fb8a05eae319745a4661ced7e91",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x129d377f1b37664ff7294e7f599efae71f91dcb18bdfa639799c115550a4188f3057bcec9ee16b11b980c78af25bd4edc35e60072dc5d34de7b3c3d88398e3ff1c"
+      },
+      "expect": "Rejected",
+      "expectMessageContains": "is not an address"
+    },
+    {
+      "name": "evm-deadline-beyond-safe-integer",
+      "network": "eip155:1",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "eip155:1",
+        "asset": "0x5555555555555555555555555555555555555555",
+        "account": "0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979"
+          }
+        ],
+        "requestId": "req_evm_neg"
+      },
+      "expected": {
+        "escrowContract": "0x1111111111111111111111111111111111111111",
+        "quoteSelector": "0x2222222222222222222222222222222222222222",
+        "fulfillmentVerifierAccount": "0x3333333333333333333333333333333333333333",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "0x4444444444444444444444444444444444444444",
+        "maxSourceAmount": "1000000",
+        "reserver": "0x2222222222222222222222222222222222222222",
+        "releaser": "0x3333333333333333333333333333333333333333",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xfddcb1357f0c91e24206ea4a3fdf2382e03f2aa75b10b0f1ba81cd79dc947168",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0x5555555555555555555555555555555555555555\",\"amount\":\"1000000\"},\"spender\":\"0x1111111111111111111111111111111111111111\",\"nonce\":\"123\",\"deadline\":\"9007199254740992\",\"witness\":{\"depositRequestHash\":\"0xbb57890d656ccf1dfbf9d2550394ad868ed77588fdc0ba89fc643a4b2aa72554\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0xde60ce3326b224ea8d12b160f500aca987e05561dcbf3d8ca75a3c1ce4e21d34010b4925d162990a98b85e023bd9ad1eafe7c67f315a2a57b6944eae2a5568cd1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed deadline is beyond the largest supported value"
+    },
+    {
+      "name": "tron-commitment-destination-mismatch",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "destination_mismatch",
+      "expectDetail": "the payer signed a deposit payable to \"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\", but this payment pays \"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m\""
+    },
+    {
+      "name": "tron-recover-signer-signature-without-prefix",
+      "network": "tron:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "tron-recover-signer-signature-upper-case-prefix",
+      "network": "tron:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0X4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "tron-recover-signer-signature-compact",
+      "network": "tron:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2309a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "tron-recover-signer-signature-eip155-recovery-id",
+      "network": "tron:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a25"
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "tron-quote-amount-above-permit",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "10000001"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "tron-quote-amount-below-permit",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000,
+        "quoteSourceAmount": "9999999"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "tron-contract-account-payer",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the deposit signature does not recover to the payment's source account"
+    },
+    {
+      "name": "tron-message-not-the-permit-digest",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0xabababababababababababababababababababababababababababababababab",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "Commitment",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed digest is not the EIP-712 hash of message_prehash"
+    },
+    {
+      "name": "tron-malformed-prehash",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "not json",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash is not a single valid JSON document"
+    },
+    {
+      "name": "tron-wrong-token",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "Rejected",
+      "expectMessageContains": "permit token does not match the source asset"
+    },
+    {
+      "name": "tron-permit2-override-not-an-address",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000,
+        "permit2Contract": "Tnot-an-address"
+      },
+      "signed": {
+        "message": "0x47dace4c26d1ff7355d4643c99bb9ae8b995f662d3657575e8140257cd0dd525",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x4a73a896e8ffa9dc28b02cc7701bfa847cf6dd27e82a8add9b4779885620b2301a94b0ab029fe3fe6e1b8482123d33bafa76dc02559bd0054ac6458273ae1d9a1c"
+      },
+      "expect": "Rejected",
+      "expectMessageContains": "is not a Tron address"
+    },
+    {
+      "name": "tron-deadline-beyond-safe-integer",
+      "network": "tron:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "tron:mainnet",
+        "asset": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "account": "TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB"
+          }
+        ],
+        "requestId": "req_tron_neg"
+      },
+      "expected": {
+        "escrowContract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+        "quoteSelector": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "fulfillmentVerifierAccount": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "fulfillmentVerifierEndpoint": "https://verifier.example.com",
+        "fulfillmentProxy": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "maxSourceAmount": "10000000",
+        "reserver": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "releaser": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "nowSec": 1700000000
+      },
+      "signed": {
+        "message": "0x79f1626066802540e685a7138852e5b12d3b7e6a03fcfb5bee95e50000056271",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"10000000\"},\"spender\":\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\",\"nonce\":\"456\",\"deadline\":\"9007199254740992\",\"witness\":{\"depositRequestHash\":\"0xa6f77827187d6dd9d8647688763b37a1b196e1df04b0962f83131acd75adbe1f\",\"destination\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\",\"reserver\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\",\"releaser\":\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\"}}}",
+        "signature": "0x090594aba72bd9443c6c406b0f6ad00aa234bee71bf4a1234aa4750b292220c0000bcefc8d947445082f5c2f2b3288b6146767171c8711e27aad5095e40486021b"
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed deadline is beyond the largest supported value"
+    },
+    {
+      "name": "solana-quote-amount-above-permit",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "quoteSourceAmount": "1000001"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "solana-quote-amount-below-permit",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "quoteSourceAmount": "999999"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "PermitAmountMismatch",
+      "expectMessageContains": "permit amount does not match the quote source_amount"
+    },
+    {
+      "name": "solana-wrong-depositor",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-recover-signer-non-canonical-s",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe493bc4432e81d937579afa5b707d57017b6ef4e977ccd1b083569ee220645bb14",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-recover-signer-small-order-r",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0x0100000000000000000000000000000000000000000000000000000000000000602e4a638b828685fabfa748a68db8e77ddda49bce12e241425b4831acfc0d0c",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-recover-signer-small-order-key",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xfd1724385aa0c75b64fb78cd602fa1d991fdebf76b13c58ed702eac835e9f618843f0c38c733615ffb38f4ea78f13f692b7ca4a9495d204f255bacf578c74c06",
+        "payload": {
+          "delegate_signer": "4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM"
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-recover-signer-message-without-prefix",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "solana-recover-signer-signature-without-prefix",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "ec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "RecoveryFailed"
+    },
+    {
+      "name": "solana-recover-signer-delegate-empty",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": ""
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-recover-signer-delegate-number",
+      "network": "solana:mainnet",
+      "call": "recoverSigner",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": 1
+        }
+      },
+      "expect": "SignerMismatch"
+    },
+    {
+      "name": "solana-delegate-signer-not-the-payer",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the delegate signer is not the payment's source account"
+    },
+    {
+      "name": "solana-domain-below-4",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 3,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "commitment_absent",
+      "expectDetail": "the escrow's signature domain version 3 commits no destination; every deployed escrow requires version 4 or later"
+    },
+    {
+      "name": "solana-commitment-destination-mismatch",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "destination_mismatch",
+      "expectDetail": "the payer signed a deposit payable to \"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\", but this payment pays \"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\""
+    },
+    {
+      "name": "solana-depositor-not-the-payer",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0xbe42e440b2de8fdfac1291b881ecb32aab73433a5803fec29a20b420c57b29f5",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xa870a98d204bd51255bf76f510b04e5d61b5a7bb0adcdc8a778274e6f1639844cfb790ccac377d8613614ecfd9dd25cb12c15b774c3005c729ffea54355f0f0f",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "signer_mismatch",
+      "expectDetail": "the signed deposit's depositor is not the payment's source account"
+    },
+    {
+      "name": "solana-message-not-the-deposit-hash",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0xabababababababababababababababababababababababababababababababab",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed digest is not the Solana deposit hash of message_prehash"
+    },
+    {
+      "name": "solana-malformed-prehash",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "not json",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash is not a single valid JSON document"
+    },
+    {
+      "name": "solana-member-spelled-twice",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\",\"issuedAt\":\"1700000000\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "message_prehash spells one member two ways"
+    },
+    {
+      "name": "solana-destination-absent",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "commitment_absent",
+      "expectDetail": "the deposit witness commits no destination, and every deployed escrow requires one"
+    },
+    {
+      "name": "solana-request-hash-absent",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "commitment_absent",
+      "expectDetail": "the deposit witness commits no depositRequestHash, and every deployed escrow requires one"
+    },
+    {
+      "name": "solana-domain-version-above-255",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 261,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0x56fd7f4d425833f5dd342da3088b0f99be4f51d93ed51271c5ffa15e6dd67ffc",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"1700000120\"}",
+        "signature": "0xec4fc62338df0334f1670371042c59bd12e6f312a62e5a79ac5dc864c2b2ebe4a6e84ed5cdba801da312ae1429db9102b6ef4e977ccd1b083569ee220645bb04",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "Commitment",
+      "expectOutcome": "verifier_misconfigured",
+      "expectDetail": "the Solana escrow signature domain version must be between 1 and 255"
+    },
+    {
+      "name": "solana-deadline-beyond-safe-integer",
+      "network": "solana:mainnet",
+      "call": "recoverAndVerify",
+      "source": {
+        "network": "solana:mainnet",
+        "asset": "cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN",
+        "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+      },
+      "commitment": {
+        "destinations": [
+          {
+            "asset_identifier": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+            "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4"
+          }
+        ],
+        "requestId": "req_sol_neg"
+      },
+      "expected": {
+        "escrowContract": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "quoteSelector": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "fulfillmentVerifierAccount": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8",
+        "fulfillmentVerifierEndpoint": "https://verifier.example",
+        "fulfillmentProxy": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "svmSignatureClusterId": "devnet",
+        "svmSignatureDomainVersion": 5,
+        "maxSourceAmount": "1000000",
+        "reserver": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "releaser": "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"
+      },
+      "signed": {
+        "message": "0xe343758460fba8ecec6dd9bee2b3fbbdc3213958e772a2dac14b49a8cbdd8961",
+        "message_prehash": "{\"deposit_request_hash\":\"0x0b8bc29abb08011d9f051913eceb7eaf2aea38b9081a043853f8774ae7cd2348\",\"destination\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\",\"depositor\":\"GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse\",\"mint\":\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"amount\":\"1000000\",\"reserver\":\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\",\"releaser\":\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\",\"nonce\":\"515396075550\",\"issued_at\":\"1700000000\",\"deadline\":\"9007199254740992\"}",
+        "signature": "0x9029eccf087184a201cc551a836af8b2ec512a6b440c331ec428fcba9b5cd984b9c088be41004d120227dd878a60698428098c97e2856928765fe38a60d52f0f",
+        "payload": {
+          "delegate_signer": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse"
+        }
+      },
+      "expect": "MalformedPrehash",
+      "expectOutcome": "prehash_mismatch",
+      "expectDetail": "the signed deadline is beyond the largest supported value"
+    }
+  ],
+  "nonceVectors": [
+    {
+      "name": "evm-permit-nonce",
+      "kind": "permit",
+      "requestId": "req_vec_evm",
+      "depositor": "0x5555555555555555555555555555555555555555",
+      "expectedNonce": "60763428786531202221495179422434594547133688306876418280332011901225877618143"
+    },
+    {
+      "name": "tron-permit-nonce",
+      "kind": "permit",
+      "requestId": "req_vec_tron",
+      "depositor": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "expectedNonce": "75987089033785155589797877282923894863439753240371073753907005540083395320944"
+    },
+    {
+      "name": "solana-deposit-nonce",
+      "kind": "solana",
+      "requestId": "req_vec_sol",
+      "depositor": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+      "expectedNonce": "678604832922"
+    },
+    {
+      "name": "evm-permit-nonce-checksummed",
+      "kind": "permit",
+      "requestId": "req_vec_case",
+      "depositor": "0xAbCdEf0123456789aBcDeF0123456789AbCdEf01",
+      "expectedNonce": "69413251440531816122126347078390570457822438353845745948337703080405500170743"
+    },
+    {
+      "name": "evm-permit-nonce-lowercase",
+      "kind": "permit",
+      "requestId": "req_vec_case",
+      "depositor": "0xabcdef0123456789abcdef0123456789abcdef01",
+      "expectedNonce": "69413251440531816122126347078390570457822438353845745948337703080405500170743"
+    },
+    {
+      "name": "evm-permit-nonce-uppercase-prefix",
+      "kind": "permit",
+      "requestId": "req_vec_case",
+      "depositor": "0XABCDEF0123456789ABCDEF0123456789ABCDEF01",
+      "expectedNonce": "69413251440531816122126347078390570457822438353845745948337703080405500170743"
+    }
+  ],
+  "requestIdVectors": [
+    {
+      "name": "evm-request-id",
+      "anchor": "order-4711",
+      "account": "0x5555555555555555555555555555555555555555",
+      "prefix": "req_x402_",
+      "expectedRequestId": "req_x402_66f3736a3ead70224487f303"
+    },
+    {
+      "name": "tron-request-id",
+      "anchor": "order-4711",
+      "account": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "prefix": "req_x402_",
+      "expectedRequestId": "req_x402_45f8fced083888f106162d72"
+    },
+    {
+      "name": "solana-request-id",
+      "anchor": "order-4711",
+      "account": "GyGKxMyg1p9SsHfm15MkNUu1u9TN2JtTspcdmrtGUdse",
+      "prefix": "req_mpp_",
+      "expectedRequestId": "req_mpp_8579fe5cd7b0584a47c653e2"
+    },
+    {
+      "name": "evm-request-id-checksummed",
+      "anchor": "order-case",
+      "account": "0xAbCdEf0123456789aBcDeF0123456789AbCdEf01",
+      "prefix": "req_x402_",
+      "expectedRequestId": "req_x402_0728f68ee5a52270932b0ffb"
+    },
+    {
+      "name": "evm-request-id-lowercase",
+      "anchor": "order-case",
+      "account": "0xabcdef0123456789abcdef0123456789abcdef01",
+      "prefix": "req_x402_",
+      "expectedRequestId": "req_x402_0728f68ee5a52270932b0ffb"
+    },
+    {
+      "name": "evm-request-id-uppercase-prefix",
+      "anchor": "order-case",
+      "account": "0XABCDEF0123456789ABCDEF0123456789ABCDEF01",
+      "prefix": "req_x402_",
+      "expectedRequestId": "req_x402_0728f68ee5a52270932b0ffb"
+    }
+  ]
+}

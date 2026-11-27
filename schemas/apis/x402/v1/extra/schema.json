@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "file://apis/x402/v1/extra/schema.json",
+  "title": "AtumEscrowExtra",
+  "description": "The `extra.atum` object carried inside an atum-escrow x402 PaymentRequirements entry (accepts[]): the merchant's receive-side plus the contract/role addresses and deadline budgets. Scheme-specific data the standard x402 `extra` bag treats as opaque, so it is owned here and shared by all role mechanisms. Addresses are chain-general: an EVM `0x`-hex address (20 bytes) a base58-encoded address (Solana/Tron), or a Stellar strkey (a `G...` account or `C...` contract), per the field's CAIP-2 chain.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "destination",
+    "fulfillmentAmount",
+    "escrow",
+    "fulfillmentProxy",
+    "reserver",
+    "releaser",
+    "fulfillmentVerifierEndpoint",
+    "quoteDeadlineSeconds",
+    "fulfillmentDeadlineSeconds"
+  ],
+  "properties": {
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where the merchant receives (CAIP-2 chain, token, address).",
+      "required": ["network", "asset", "address"],
+      "properties": {
+        "network": {
+          "type": "string",
+          "pattern": "^[-a-z0-9]+:.+$",
+          "description": "CAIP-2 destination chain id (e.g. eip155:42161)."
+        },
+        "asset": {
+          "type": "string",
+          "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+          "description": "Destination token contract address (EVM hex, base58 or a Stellar strkey, per the destination chain)."
+        },
+        "address": {
+          "type": "string",
+          "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+          "description": "Merchant receive address (EVM hex, base58 or a Stellar strkey, per the destination chain)."
+        }
+      }
+    },
+    "fulfillmentAmount": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Exact amount the merchant receives, in atomic token units."
+    },
+    "escrow": {
+      "type": "string",
+      "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+      "description": "Source-chain escrow contract (the x402 payTo); EVM hex, base58 or a Stellar strkey, per the source chain."
+    },
+    "fulfillmentProxy": {
+      "type": "string",
+      "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+      "description": "Destination-chain fulfillment proxy contract (EVM hex, base58 or a Stellar strkey, per the destination chain)."
+    },
+    "reserver": {
+      "type": "string",
+      "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+      "description": "Atum reserver role address (escrow deposit witness); EVM hex, base58 or a Stellar strkey, per the source chain."
+    },
+    "releaser": {
+      "type": "string",
+      "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+      "description": "Atum releaser role address (escrow deposit witness); EVM hex, base58 or a Stellar strkey, per the source chain."
+    },
+    "fulfillmentVerifierEndpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "Source-chain fulfillment-verifier endpoint the payment request carries. The verifier account and the quote_selector are the releaser and reserver respectively (the network derives the deposit witness roles from them), so only the endpoint is not otherwise present in this object."
+    },
+    "quoteDeadlineSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Recommended quote-deadline budget in seconds, relative to signing time."
+    },
+    "fulfillmentDeadlineSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Recommended fulfillment-deadline budget in seconds, relative to signing time."
+    },
+    "svmSignatureClusterId": {
+      "type": "string",
+      "description": "Solana source only: cluster name used to build the 32-byte cluster_id in the V3 escrow signature domain. Optional; the facilitator requires it for a Solana source."
+    },
+    "svmSignatureDomainVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 255,
+      "description": "Solana source only: escrow signature-domain version (V3 domain separation). Optional; required for a Solana source."
+    },
+    "depositRequestHashVersions": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "The depositRequestHash versions the payer may sign for this source: 1 is keccak256 of the request_id, 2 is the hash of the payment terms. Absent means [1]. A client signs 2 when the list contains it and 1 otherwise. A client or facilitator that predates this field refuses a requirement carrying it, even [1], so a resource server publishes it only once its payers and its facilitator run a release that knows it, and lists 2 only once the payment gateway's GET /v1/defaults returns deposit_request_hash_version 2 for the source chain, the network-wide signal that every reader of the deposit reads version 2."
+    }
+  }
+}

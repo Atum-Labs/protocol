@@ -1,0 +1,17 @@
+{
+  "@context": [
+    "https://schemas.atum.network/declarations/AuthorizationResponse/v1/context.jsonld",
+    "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+  ],
+  "payment_id": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+  "counterparty_did": "did:pkh:eip155:1:0xfb6916095ca1df60bb79ce92ce3ea74c37c5d359",
+  "status": "authorized",
+  "proof": {
+    "type": "EcdsaSecp256k1RecoverySignature2020",
+    "created": "2026-04-29T14:30:00.000Z",
+    "verificationMethod": "did:pkh:eip155:1:0xfb6916095ca1df60bb79ce92ce3ea74c37c5d359#blockchainAccountId",
+    "proofPurpose": "assertionMethod",
+    "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..fakeSignatureBytesForExampleOnlyDoNotUseInProduction0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef00"
+  },
+  "verifiableCredential": []
+}

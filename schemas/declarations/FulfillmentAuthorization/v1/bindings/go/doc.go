@@ -1,0 +1,2 @@
+// Package fulfillmentauthorization validates FulfillmentAuthorization declarations.
+package fulfillmentauthorization

@@ -1,0 +1,73 @@
+{
+  "stellar:testnet": {
+    "name": "Stellar Testnet",
+    "mainnet": false,
+    "deployed": true,
+    "networkPassphrase": "Test SDF Network ; September 2015",
+    "networkId": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
+    "deployer": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+    "saltTag": "rc1-testnet-1",
+    "contracts": {
+      "Escrow": "CBF3JFX2BZREI5T53SSLEV3LHU2Y5YQKLX64CGSEIIXNZTJE3VCV622U",
+      "FulfillmentProxy": "CC6IPIDCVQIK7NUVAOJLLQWFYLAWWNMEAURJGC46TZ3TPTHTTGIMTJV4"
+    },
+    "wasm": {
+      "Escrow": {
+        "hash": "fc7daf6aabbc510b70dad5d90a6e242e1e1eb944f345be0b0ab8b6d3782f48a9",
+        "sizeBytes": 38936
+      },
+      "FulfillmentProxy": {
+        "hash": "15f3ebfc4a8969bc87b2777a416248a9b39b2875259e03904eb9238fa6b21ecd",
+        "sizeBytes": 15432
+      }
+    },
+    "roles": {
+      "Escrow": {
+        "defaultAdmin": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+        "adminDelaySecs": 1,
+        "Pauser": {
+          "holder": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+          "granted": true
+        },
+        "Treasurer": {
+          "holder": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+          "granted": true
+        },
+        "TokenConfig": {
+          "holder": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+          "granted": true
+        }
+      },
+      "FulfillmentProxy": {
+        "defaultAdmin": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+        "pauser": "GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE",
+        "adminDelaySecs": 1
+      }
+    },
+    "tokens": [
+      {
+        "contract": "CAWPJA4K5J4SMUMRKJP6HU6CW7VTJACYX7RX3ZPFVV56HMRIS6V6QW6R",
+        "decimals": 7,
+        "feePercentage6": 1000000,
+        "minFee6": "0",
+        "maxFee6": "0"
+      }
+    ],
+    "pendingAdminSteps": [],
+    "ttl": {
+      "extendTo": 3110399,
+      "liveUntilLedgerSeq": 8771347,
+      "observedAtLedger": 5660949
+    },
+    "transactions": {
+      "upload Escrow wasm": "b0f9d381b7204b34b21cad56522077688e95b4ac947bd844a04ec9ae737260e4",
+      "create Escrow instance": "2a9ecd4269715e9ef973500887be6bb985749cc43a561bff9c449181014f7be5",
+      "upload FulfillmentProxy wasm": "b5974ac2ea5e03e6b0945f8f4039e03f769ea6c914a3f24f875638b9997e3a43",
+      "create FulfillmentProxy instance": "aa8b826afab43144bedba75c834ccad43f5d8d295bbfcd4a1be2662340604d5a",
+      "grant Escrow role Pauser to GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE": "c09c473dbf9a4ef31a7c9d5861176104b1f6d84f5d732ce67ae97dc588677aa9",
+      "grant Escrow role Treasurer to GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE": "d9f88b055787907f280a7ed5101b55d9eac9f00d40c63f1b6d05f998f472173a",
+      "grant Escrow role TokenConfig to GDLGVDBBX2YB3DGYZOTOWK4IAAS7NM5XUFGHHQLTDMDHJSLPVMGV7TCE": "060473155ba80559a8371f256d9a580565122c3b58bc0b3a45c25c9dce47663c",
+      "allow token CAWPJA4K5J4SMUMRKJP6HU6CW7VTJACYX7RX3ZPFVV56HMRIS6V6QW6R + fees": "9f02263603fe9618ddd22ab5816c6df72185ecab769b686db3c30214e523de3b"
+    }
+  }
+}

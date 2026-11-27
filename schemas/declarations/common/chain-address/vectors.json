@@ -1,0 +1,507 @@
+{
+  "_comment": "FROZEN cross-language vectors for chain-address. Both go/parity_test.go and typescript/src/parity.test.ts assert against this file, so an expectation may only change when both implementations change with it. Regenerate with REGEN_VECTORS=1 go test ./... -run TestRegenerateVectors in go/, then verify with a separate go test ./... and the TypeScript suite.",
+  "accept": [
+    {
+      "name": "evm/lowercase",
+      "network": "eip155:42161",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "bytesHex": "90f79bf6eb2c4f870365e785982e1f101e93b906"
+    },
+    {
+      "name": "evm/uppercase-body",
+      "network": "eip155:42161",
+      "account": "0x90F79BF6EB2C4F870365E785982E1F101E93B906",
+      "bytesHex": "90f79bf6eb2c4f870365e785982e1f101e93b906"
+    },
+    {
+      "name": "evm/checksummed",
+      "network": "eip155:42161",
+      "account": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "bytesHex": "90f79bf6eb2c4f870365e785982e1f101e93b906"
+    },
+    {
+      "name": "evm/uppercase-0X-prefix-lowercase-body",
+      "network": "eip155:42161",
+      "account": "0X90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "bytesHex": "90f79bf6eb2c4f870365e785982e1f101e93b906"
+    },
+    {
+      "name": "evm/bare-hex-lowercase",
+      "network": "eip155:42161",
+      "account": "90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "bytesHex": "90f79bf6eb2c4f870365e785982e1f101e93b906"
+    },
+    {
+      "name": "solana/base58",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "bytesHex": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61"
+    },
+    {
+      "name": "tron/base58",
+      "network": "tron:mainnet",
+      "account": "TYaKH9ApqbdftVGSnTMPVL9kp1S5AQBQSs",
+      "bytesHex": "f7f690e038f3e0f29ce64f8dfff96a6e1004b7d0"
+    },
+    {
+      "name": "tron/prefixed-hex-lowercase",
+      "network": "tron:mainnet",
+      "account": "0x41f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f",
+      "bytesHex": "f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f"
+    },
+    {
+      "name": "tron/prefixed-hex-uppercase-0X",
+      "network": "tron:mainnet",
+      "account": "0X41f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f",
+      "bytesHex": "f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f"
+    },
+    {
+      "name": "tron/evm-hex-form",
+      "network": "tron:mainnet",
+      "account": "0xf1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f",
+      "bytesHex": "f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f"
+    },
+    {
+      "name": "tron/bare-hex",
+      "network": "tron:mainnet",
+      "account": "f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f",
+      "bytesHex": "f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f"
+    },
+    {
+      "name": "stellar/account-pubnet",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "bytesHex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+      "kind": "account"
+    },
+    {
+      "name": "stellar/account-testnet",
+      "network": "stellar:testnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "bytesHex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+      "kind": "account"
+    },
+    {
+      "name": "stellar/contract-pubnet",
+      "network": "stellar:pubnet",
+      "account": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OWCTE5",
+      "bytesHex": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "kind": "contract"
+    },
+    {
+      "name": "stellar/contract-testnet",
+      "network": "stellar:testnet",
+      "account": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OWCTE5",
+      "bytesHex": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "kind": "contract"
+    },
+    {
+      "name": "stellar/contract-with-the-bytes-of-an-account",
+      "network": "stellar:pubnet",
+      "account": "CA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCTO56",
+      "bytesHex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+      "kind": "contract"
+    }
+  ],
+  "reject": [
+    {
+      "name": "shared/empty",
+      "network": "eip155:1",
+      "account": "",
+      "reason": "EMPTY",
+      "message": "account is required and cannot be empty"
+    },
+    {
+      "name": "shared/whitespace-only",
+      "network": "eip155:1",
+      "account": "   ",
+      "reason": "EMPTY",
+      "message": "account is required and cannot be empty"
+    },
+    {
+      "name": "shared/leading-space",
+      "network": "eip155:1",
+      "account": " 0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "shared/trailing-newline",
+      "network": "eip155:1",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906\n",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "shared/internal-space",
+      "network": "eip155:1",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f1 1e93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:1"
+    },
+    {
+      "name": "shared/unsupported-namespace",
+      "network": "bip122:000000000019d6689c085ae165831e93",
+      "account": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+      "reason": "UNSUPPORTED_NAMESPACE",
+      "message": "no address rules are known for chain bip122:000000000019d6689c085ae165831e93"
+    },
+    {
+      "name": "shared/no-namespace-separator",
+      "network": "eip155",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "UNSUPPORTED_NAMESPACE",
+      "message": "no address rules are known for chain eip155"
+    },
+    {
+      "name": "shared/leading-bom",
+      "network": "eip155:1",
+      "account": "﻿0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "shared/trailing-nel",
+      "network": "eip155:1",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "shared/bom-only",
+      "network": "eip155:1",
+      "account": "﻿",
+      "reason": "EMPTY",
+      "message": "account is required and cannot be empty"
+    },
+    {
+      "name": "shared/nel-only",
+      "network": "eip155:1",
+      "account": "",
+      "reason": "EMPTY",
+      "message": "account is required and cannot be empty"
+    },
+    {
+      "name": "shared/leading-nbsp",
+      "network": "eip155:1",
+      "account": " 0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "evm/bad-checksum",
+      "network": "eip155:42161",
+      "account": "0x90f79Bf6EB2c4f870365E785982E1f101E93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:42161"
+    },
+    {
+      "name": "evm/bare-hex-checksummed",
+      "network": "eip155:42161",
+      "account": "90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:42161"
+    },
+    {
+      "name": "evm/too-short",
+      "network": "eip155:42161",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b90",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:42161"
+    },
+    {
+      "name": "evm/too-long",
+      "network": "eip155:42161",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b9066",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:42161"
+    },
+    {
+      "name": "evm/non-hex",
+      "network": "eip155:42161",
+      "account": "0xz0f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:42161"
+    },
+    {
+      "name": "evm/zero",
+      "network": "eip155:42161",
+      "account": "0x0000000000000000000000000000000000000000",
+      "reason": "ZERO",
+      "message": "account is the zero address on eip155:42161, which cannot receive a payout"
+    },
+    {
+      "name": "solana/hex-form-refused",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "0xc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    },
+    {
+      "name": "solana/base64-form-refused",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "xvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWE=",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    },
+    {
+      "name": "solana/short-decode",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "11111111111111111111111111111",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    },
+    {
+      "name": "solana/zero",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "11111111111111111111111111111111",
+      "reason": "ZERO",
+      "message": "account is the zero address on solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp, which cannot receive a payout"
+    },
+    {
+      "name": "tron/base58-bad-checksum",
+      "network": "tron:mainnet",
+      "account": "TYaKH9ApqbdftVGSnTMPVL9kp1S5AQBQSt",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for tron:mainnet"
+    },
+    {
+      "name": "tron/prefixed-hex-non-hex-body",
+      "network": "tron:mainnet",
+      "account": "0x41f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6ezz",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for tron:mainnet"
+    },
+    {
+      "name": "tron/prefixed-hex-partial-hex-body",
+      "network": "tron:mainnet",
+      "account": "0x41f1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7g",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for tron:mainnet"
+    },
+    {
+      "name": "tron/prefixed-hex-sign-in-body",
+      "network": "tron:mainnet",
+      "account": "0x41+1e1a9f3c39e7c6b6b7b8c9d0e1f2a3b4c5d6e7f",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for tron:mainnet"
+    },
+    {
+      "name": "tron/zero",
+      "network": "tron:mainnet",
+      "account": "0x410000000000000000000000000000000000000000",
+      "reason": "ZERO",
+      "message": "account is the zero address on tron:mainnet, which cannot receive a payout"
+    },
+    {
+      "name": "stellar/account-bad-checksum",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYG",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/contract-bad-checksum",
+      "network": "stellar:pubnet",
+      "account": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OWCTE6",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-lowercase",
+      "network": "stellar:pubnet",
+      "account": "ga5wuj54z23killcuounaktpbvzwkmqvo4o6eq5ghlaerimllhncskyh",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/non-base32-character",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSK1H",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/too-short",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKY",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/too-long",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYHH",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/muxed-contract-refused",
+      "network": "stellar:pubnet",
+      "account": "WADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4RQG",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/muxed-account-refused",
+      "network": "stellar:pubnet",
+      "account": "MADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA6OSU",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/s-prefixed-string-refused",
+      "network": "stellar:pubnet",
+      "account": "SA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCTOLY",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/hash-refused",
+      "network": "stellar:pubnet",
+      "account": "XA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSTPP",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-newline-middle",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUN\nAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-carriage-return-middle",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUN\rAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-newline-then-carriage-return",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKM\r\nQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-space-middle",
+      "network": "stellar:pubnet",
+      "account": "GA5WU J54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-newline-trailing",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ\n",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-newline-leading",
+      "network": "stellar:pubnet",
+      "account": "\nGA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "SURROUNDING_WHITESPACE",
+      "message": "account must not contain leading or trailing whitespace"
+    },
+    {
+      "name": "stellar/account-31-byte-payload-unpadded",
+      "network": "stellar:pubnet",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/contract-31-byte-payload-newline-middle",
+      "network": "stellar:pubnet",
+      "account": "CA5WUJ54Z23KILLCUOUN\nAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNBL7Y",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/t-prefixed-string-refused",
+      "network": "stellar:pubnet",
+      "account": "TA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCTXKW",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/signed-payload-refused",
+      "network": "stellar:pubnet",
+      "account": "PA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSAAAAACACAQDATGQY",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/muxed-contract-valid-crc-refused",
+      "network": "stellar:pubnet",
+      "account": "WA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSAAAAAAAAAAAAC4AS",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/muxed-account-valid-crc-refused",
+      "network": "stellar:pubnet",
+      "account": "MA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSAAAAAAAAAAAAADCA",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "stellar/zero-account",
+      "network": "stellar:pubnet",
+      "account": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+      "reason": "ZERO",
+      "message": "account is the zero address on stellar:pubnet, which cannot receive a payout"
+    },
+    {
+      "name": "stellar/zero-contract",
+      "network": "stellar:pubnet",
+      "account": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+      "reason": "ZERO",
+      "message": "account is the zero address on stellar:pubnet, which cannot receive a payout"
+    },
+    {
+      "name": "cross/evm-address-on-stellar",
+      "network": "stellar:pubnet",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "cross/solana-address-on-stellar",
+      "network": "stellar:pubnet",
+      "account": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for stellar:pubnet"
+    },
+    {
+      "name": "cross/stellar-address-on-solana",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    },
+    {
+      "name": "cross/stellar-address-on-evm",
+      "network": "eip155:1",
+      "account": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:1"
+    },
+    {
+      "name": "cross/evm-address-on-solana",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "account": "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+    },
+    {
+      "name": "cross/solana-address-on-evm",
+      "network": "eip155:1",
+      "account": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "reason": "UNPARSEABLE",
+      "message": "account is not a valid address for eip155:1"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@atum-labs/stellar-escrow-encoding",
+  "version": "0.1.0",
+  "description": "TypeScript bindings for Stellar (Soroban) escrow digest generation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.4.0"
+  },
+  "devDependencies": {
+    "@noble/curves": "^1.9.7",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "license": "Apache-2.0"
+}

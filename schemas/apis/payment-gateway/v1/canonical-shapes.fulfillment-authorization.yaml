@@ -1,0 +1,25 @@
+# FulfillmentAuthorization is a signed declaration the settler emits when the payment
+# request's fulfill executor is "originator". Payment status surfaces it verbatim on the
+# wire; the gateway does not re-marshal through a typed struct.
+#
+# To change this shape, edit the declaration named in `source` and regenerate:
+#
+#     make -C schemas generate-canonical-shapes
+#
+# The generated block is committed, and the build verifies it still matches.
+
+target: openapi.yaml
+source: ../../../declarations/FulfillmentAuthorization/v1/schema.json
+
+shapes:
+  - name: FulfillmentAuthorization
+    from: .
+    reason: |
+      OpenAPI component documentation points integrators at the canonical JSON Schema path
+      and published URL; the declaration description alone does not carry those pointers.
+    overlay:
+      description: |-
+        Authorization for an originator to fulfill a payment request. The settler produces this declaration after authorizeFulfillment when the payment request's fulfill executor is "originator". A settler fulfill does not produce it.
+
+        Canonical JSON Schema: schemas/declarations/FulfillmentAuthorization/v1/schema.json
+        Published at https://schemas.atum.xyz/declarations/FulfillmentAuthorization/v1

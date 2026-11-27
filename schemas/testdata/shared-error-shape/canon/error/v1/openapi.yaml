@@ -1,0 +1,35 @@
+# Fixture stand-in for apis/error/v1/openapi.yaml. Deliberately synthetic and
+# minimal: the guard is what is under test, not the real error contract, so this
+# does not track field additions to the real spec.
+openapi: 3.0.3
+info:
+  title: Fixture canonical error components
+  version: 1.0.0
+components:
+  schemas:
+    # Internal-only shape. A service that $refs THIS instead of ErrorResponse
+    # is leaking the internal error, so the guard must reject it.
+    AtumError:
+      type: object
+      required: [code, message, timestamp]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        timestamp: {type: string}
+        details: {type: object}
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        request_id: {type: string}
+        docs_url: {type: string}
+        retry_count: {type: integer}
+    # Exists only so a $ref whose fragment merely STARTS WITH ErrorResponse has
+    # a real target to point at.
+    ErrorResponseV2:
+      type: object
+      required: [code]
+      properties:
+        code: {type: string}

@@ -1,0 +1,5 @@
+@alexroan/=node_modules/@alexroan/
+@openzeppelin/=node_modules/@openzeppelin/
+forge-std/=lib/forge-std/src/
+solmate/=node_modules/solmate/
+tronbox/=node_modules/tronbox/

@@ -1,0 +1,34 @@
+# Shapes this declaration shares with the others are generated from
+# declarations/common/shapes/v1/schema.json rather than written here, so a producer and a
+# verifier reading different declarations cannot end up with different ideas of what a
+# credential, a proof or a signed message looks like.
+#
+# Where this declaration restricts a shared shape further, or names the specific value a
+# field binds to, that is listed under `overlay` with the reason. Everything else comes
+# from the shared definition unchanged.
+#
+# To change one of these, edit the shared source and run:
+#
+#     make -C schemas generate-canonical-shapes
+
+target: schema.json
+source: ../../common/shapes/v1/schema.json
+
+shapes:
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+  - name: VPDataIntegrityProof
+    from: $defs/VPDataIntegrityProof
+    reason: |
+      Names the value this envelope's challenge binds to and the service identifier its
+      domain must equal. Both are specific to this envelope; the shared definition states
+      only the rule.
+
+      The challenge here is a content hash, so its form is fixed and stated as a pattern.
+    overlay:
+      properties:
+        challenge:
+          pattern: "^0x[0-9a-f]{64}$"
+          description: "Replay-binding challenge. MUST equal the content hash of the declared SettlementResult carried in settlement_result_json (ComputeSettlementResultHash, built on lddataintegrity.ComputeContentHash), formatted \"0x\"+64 lowercase hex. The verifier recomputes it from the declared JSON and asserts equality, so the envelope cannot be lifted onto another report. Replay across payments is prevented because payment_id is part of the declared content."
+        domain:
+          description: "Replay-binding domain. The verifier requires this to equal its configured service identifier, the same did:web:settler.<env>.atum.network value a FulfillmentQuoteEnvelope carries. Without this, a captured envelope from one environment could be replayed against another by the same settler."

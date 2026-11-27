@@ -1,0 +1,439 @@
+{
+  "//": "Shared rejection cases for both encoder bindings. The vectors.json digests compare hash BYTES; these assert WHICH guard fires, so a guard present in one language and absent in the other fails until it is mirrored. `error` is the TypeScript class name, `goError` the Go sentinel. A case Go cannot express (a fixed-size array makes the check structural) sets goError to a string starting 'n/a' and says why. Adding a case here is what makes both languages go red. The contract's own rejections (ledger-time checks, delegate limits, allowance) are covered by the escrow crate's tests, not here.",
+  "cases": [
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "networkId",
+      "input": "wrongLength",
+      "error": "InvalidEscrowDomainError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "networkId",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "contractId",
+      "input": "wrongLength",
+      "error": "InvalidEscrowDomainError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "contractId",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "networkPassphrase",
+      "input": "empty",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "escrow",
+      "input": "notContract",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "escrow",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "reserver",
+      "input": "zero",
+      "error": "ZeroReserverError",
+      "goError": "ErrZeroReserver"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "releaser",
+      "input": "zero",
+      "error": "ZeroReleaserError",
+      "goError": "ErrZeroReleaser"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "depositRequestHash",
+      "input": "zero",
+      "error": "ZeroDepositRequestHashError",
+      "goError": "ErrZeroDepositRequestHash"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "empty",
+      "error": "EmptyDestinationError",
+      "goError": "ErrEmptyDestination"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "tooLong",
+      "error": "DestinationTooLongError",
+      "goError": "ErrDestinationTooLong"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "tooLongMultibyte",
+      "error": "DestinationTooLongError",
+      "goError": "ErrDestinationTooLong"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "amount",
+      "input": "zero",
+      "error": "ZeroAmountError",
+      "goError": "ErrZeroAmount"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "amount",
+      "input": "negative",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "amount",
+      "input": "overI128",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "issuedAt",
+      "input": "afterDeadline",
+      "error": "InconsistentTimestampsError",
+      "goError": "ErrInconsistentTimestamps"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "deadline",
+      "input": "windowTooLong",
+      "error": "DeadlineTooFarInFutureError",
+      "goError": "ErrDeadlineTooFarInFuture"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "depositRequestHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "invalidUtf8",
+      "error": "InvalidDestinationError",
+      "goError": "ErrInvalidDestination"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "depositId",
+      "input": "zero",
+      "error": "ZeroDepositIdError",
+      "goError": "ErrZeroDepositID"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "quoteHash",
+      "input": "zero",
+      "error": "ZeroQuoteHashError",
+      "goError": "ErrZeroQuoteHash"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "sourceAmount",
+      "input": "zero",
+      "error": "ZeroSourceAmountError",
+      "goError": "ErrZeroSourceAmount"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "sourceAmount",
+      "input": "negative",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "sourceAmount",
+      "input": "overI128",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "depositId",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "quoteHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "checkSourceAmount",
+      "field": "sourceAmount",
+      "input": "aboveCeiling",
+      "error": "InvalidSourceAmountError",
+      "goError": "ErrInvalidSourceAmount"
+    },
+    {
+      "fn": "checkSourceAmount",
+      "field": "sourceAmount",
+      "input": "zero",
+      "error": "ZeroSourceAmountError",
+      "goError": "ErrZeroSourceAmount"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "quoteHash",
+      "input": "zero",
+      "error": "ZeroQuoteHashError",
+      "goError": "ErrZeroQuoteHash"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "depositId",
+      "input": "zero",
+      "error": "ZeroDepositIdError",
+      "goError": "ErrZeroDepositID"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "amount",
+      "input": "negative",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "feeAmount",
+      "input": "overI128",
+      "error": "AmountOutOfRangeError",
+      "goError": "ErrAmountOutOfRange"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "depositId",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "quoteHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "depositRequestHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "destinationHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeReleaseHash",
+      "field": "destinationHash",
+      "input": "empty",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "quoteHash",
+      "input": "zero",
+      "error": "ZeroQuoteHashError",
+      "goError": "ErrZeroQuoteHash"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "depositId",
+      "input": "zero",
+      "error": "ZeroDepositIdError",
+      "goError": "ErrZeroDepositID"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "depositId",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "quoteHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "depositRequestHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "destinationHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeRefundHash",
+      "field": "destinationHash",
+      "input": "empty",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeActiveDepositHash",
+      "field": "quoteHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeActiveDepositHash",
+      "field": "depositRequestHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeActiveDepositHash",
+      "field": "destinationHash",
+      "input": "wrongLength",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "computeActiveDepositHash",
+      "field": "destinationHash",
+      "input": "empty",
+      "error": "InvalidFieldLengthError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "muxed",
+      "error": "UnsupportedAddressError",
+      "goError": "ErrUnsupportedAddress"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "claimableBalance",
+      "error": "UnsupportedAddressError",
+      "goError": "ErrUnsupportedAddress"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "secretSeed",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "badChecksum",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "lowercase",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "truncated",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "empty",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "embeddedNewline",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "embeddedCarriageReturn",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "parseAddress",
+      "field": "strkey",
+      "input": "trailingNewline",
+      "error": "InvalidStrkeyError",
+      "goError": "ErrInvalidStrkey"
+    },
+    {
+      "fn": "pubkeyFromStrkey",
+      "field": "strkey",
+      "input": "contract",
+      "error": "UnsupportedAddressError",
+      "goError": "ErrUnsupportedAddress"
+    },
+    {
+      "fn": "pubkeyFromHex",
+      "field": "hex",
+      "input": "oddLength",
+      "error": "InvalidHexError",
+      "goError": "ErrInvalidHex"
+    },
+    {
+      "fn": "pubkeyFromHex",
+      "field": "hex",
+      "input": "wrongLength",
+      "error": "InvalidPubkeyLengthError",
+      "goError": "ErrInvalidPubkeyLength"
+    }
+  ]
+}

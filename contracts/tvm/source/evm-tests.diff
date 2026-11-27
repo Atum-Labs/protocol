@@ -1,0 +1,471 @@
+diff -ru ../evm-contracts/test/Escrow.accessControl.t.sol ./foundry_tests/Escrow.accessControl.t.sol
+--- ../evm-contracts/test/Escrow.accessControl.t.sol	2026-02-02 16:20:28
++++ ./foundry_tests/Escrow.accessControl.t.sol	2026-02-02 16:28:40
+@@ -1,24 +1,25 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test} from "forge-std/Test.sol";
+-import {MockToken, MockToken2Decimals, MockToken6Decimals, MockTokenCustomDecimals} from "./mock/MockToken.sol";
++import {MockToken2Decimals, MockToken6Decimals, MockTokenCustomDecimals} from "./mock/MockToken.sol";
+ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+-import {Escrow} from "../src/Escrow.sol";
+-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
++import {Escrow} from "../contracts/Escrow.sol";
++import {IPermit2} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
+ import {TestHelpers} from "./helpers/TestHelpers.sol";
+ import {
+     IAccessControl,
+     IAccessControlDefaultAdminRules
+ } from "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
+-import {DeployCoreContracts} from "../script/deploy/DeployCoreContracts.s.sol";
+-import {IEscrow} from "../src/interfaces/IEscrow.sol";
+-import {ITokenConfig} from "../src/interfaces/ITokenConfig.sol";
++import {DeployCoreContracts} from "../foundry_scripts/DeployCoreContracts.s.sol";
++import {IEscrow} from "../contracts/interfaces/IEscrow.sol";
++import {ITokenConfig} from "../contracts/interfaces/ITokenConfig.sol";
++import {MockToken6DecimalsTransferReturnsFalse} from "./mock/MockToken.sol";
+ 
+ contract EscrowAccessControlTest is Test, TestHelpers {
+     // CONTRACTS
+     Escrow public s_escrow;
+-    MockToken public s_token;
++    MockToken6DecimalsTransferReturnsFalse public s_token;
+     IPermit2 public s_permit2;
+ 
+     address public s_pauser;
+@@ -26,7 +27,7 @@
+     address public s_tokenConfig;
+ 
+     // Test constants
+-    uint256 public constant DEPOSIT_AMOUNT = 1000e18;
++    uint256 public constant DEPOSIT_AMOUNT = 1000e6;
+     bytes32 public constant REQUEST_ID = keccak256("paymentId");
+ 
+     function setUp() public {
+@@ -41,7 +42,8 @@
+         s_permit2 = IPermit2(permit2Address);
+ 
+         // Deploy our contracts
+-        (s_escrow,) = deployCoreContracts.run();
++        s_token = new MockToken6DecimalsTransferReturnsFalse("Test Token", "TEST");
++        (s_escrow,) = deployCoreContracts.run(IERC20(address(s_token)));
+ 
+         s_pauser = makeAddr("pauser");
+         s_treasurer = makeAddr("treasurer");
+@@ -51,9 +53,8 @@
+         s_escrow.grantRole(s_escrow.TREASURER_ROLE(), s_treasurer);
+         s_escrow.grantRole(s_escrow.TOKEN_CONFIG_ROLE(), s_tokenConfig);
+ 
+-        s_token = new MockToken("Test Token", "TEST");
+         vm.startPrank(s_tokenConfig);
+-        s_escrow.allowToken(s_token, 18);
++        s_escrow.allowToken(s_token, 6);
+         vm.stopPrank();
+     }
+ 
+@@ -64,12 +65,12 @@
+ 
+     function test_constructor_permit2_cannot_be_zero_address() public {
+         vm.expectRevert(abi.encodeWithSelector(IEscrow.Permit2CannotBeZeroAddress.selector));
+-        new Escrow(IPermit2(address(0)), address(this));
++        new Escrow(IPermit2(address(0)), IERC20(address(0)), address(this));
+     }
+ 
+     function test_constructor_with_different_default_admin_role() public {
+         address newDefaultAdmin = makeAddr("newDefaultAdmin");
+-        Escrow newEscrow = new Escrow(s_permit2, newDefaultAdmin);
++        Escrow newEscrow = new Escrow(s_permit2, IERC20(address(s_token)), newDefaultAdmin);
+ 
+         // The constructor should use the owner parameter passed to it
+         assertTrue(newEscrow.hasRole(newEscrow.DEFAULT_ADMIN_ROLE(), newDefaultAdmin));
+@@ -82,7 +83,7 @@
+                 IAccessControlDefaultAdminRules.AccessControlInvalidDefaultAdmin.selector, address(0)
+             )
+         );
+-        new Escrow(s_permit2, address(0));
++        new Escrow(s_permit2, IERC20(address(s_token)), address(0));
+     }
+ 
+     function test_default_admin_role_is_not_zero_after_construction() public view {
+diff -ru ../evm-contracts/test/Escrow.depositFlow.t.sol ./foundry_tests/Escrow.depositFlow.t.sol
+--- ../evm-contracts/test/Escrow.depositFlow.t.sol	2026-02-03 12:32:47
++++ ./foundry_tests/Escrow.depositFlow.t.sol	2026-02-03 12:32:11
+@@ -1,22 +1,23 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test} from "forge-std/Test.sol";
+-import {MockToken, MockToken6Decimals} from "./mock/MockToken.sol";
++import {MockToken6Decimals} from "./mock/MockToken.sol";
+ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+-import {Escrow} from "../src/Escrow.sol";
++import {Escrow} from "../contracts/Escrow.sol";
+ import {IAccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+-import {IEscrow} from "../src/interfaces/IEscrow.sol";
+-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+-import {ISignatureTransfer} from "permit2/src/interfaces/ISignatureTransfer.sol";
++import {IEscrow} from "../contracts/interfaces/IEscrow.sol";
++import {IPermit2} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
++import {ISignatureTransfer} from "@alexroan/permit2-tron/contracts/interfaces/ISignatureTransfer.sol";
+ import {TestHelpers} from "./helpers/TestHelpers.sol";
+ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+-import {DeployCoreContracts} from "../script/deploy/DeployCoreContracts.s.sol";
+-import {ITokenConfig} from "../src/interfaces/ITokenConfig.sol";
++import {DeployCoreContracts} from "../foundry_scripts/DeployCoreContracts.s.sol";
++import {ITokenConfig} from "../contracts/interfaces/ITokenConfig.sol";
++import {MockToken6DecimalsTransferReturnsFalse} from "./mock/MockToken.sol";
+ 
+ contract EscrowDepositTest is Test, TestHelpers {
+     Escrow public s_escrow;
+-    MockToken public s_token;
++    MockToken6DecimalsTransferReturnsFalse public s_token;
+     IPermit2 public s_permit2;
+     // Depositor wallet (who owns tokens and signs the permit)
+     address public depositor;
+@@ -32,13 +33,14 @@
+     address public s_tokenConfig;
+ 
+     // Test constants
+-    uint256 public constant DEPOSIT_AMOUNT = 1000e18;
++    uint256 public constant DEPOSIT_AMOUNT = 1000e6;
+ 
+     // Helper function to check if deposit was completed (storage cleared)
+     function _depositWasCompleted(bytes32 paymentId) internal view returns (bool) {
+         return isDepositCompleted(s_escrow, paymentId);
+     }
+ 
++    // Wrapper for _constructDepositPermitWitness
+     function _depositWitness(address token, uint256 amount, address _reserver, address _releaser, uint256 nonce)
+         internal
+         view
+@@ -56,6 +58,7 @@
+         return _constructReserveWitness(paymentId, _settler);
+     }
+ 
++    // Helper to build ReleaseWitness
+     function _releaseWitness(
+         bytes32 paymentId,
+         address _depositor,
+@@ -65,7 +68,7 @@
+         address _reserver,
+         address _releaser,
+         address _settler
+-    ) internal view returns (IEscrow.ReleaseWitness memory) {
++    ) internal pure returns (IEscrow.ReleaseWitness memory) {
+         return IEscrow.ReleaseWitness({
+             paymentId: paymentId,
+             depositor: _depositor,
+@@ -78,6 +81,7 @@
+         });
+     }
+ 
++    // Helper to build RefundWitness
+     function _refundWitness(
+         bytes32 paymentId,
+         address _depositor,
+@@ -87,7 +91,7 @@
+         address _reserver,
+         address _releaser,
+         address _settler
+-    ) internal view returns (IEscrow.RefundWitness memory) {
++    ) internal pure returns (IEscrow.RefundWitness memory) {
+         return IEscrow.RefundWitness({
+             paymentId: paymentId,
+             depositor: _depositor,
+@@ -100,6 +104,7 @@
+         });
+     }
+ 
++    // Helper to build ActiveDeposit
+     function _activeDeposit(
+         address _depositor,
+         address token,
+@@ -108,7 +113,7 @@
+         address _reserver,
+         address _releaser,
+         address _settler
+-    ) internal view returns (IEscrow.ActiveDeposit memory) {
++    ) internal pure returns (IEscrow.ActiveDeposit memory) {
+         return IEscrow.ActiveDeposit({
+             depositor: _depositor,
+             token: token,
+@@ -131,10 +136,10 @@
+         s_permit2 = IPermit2(permit2Address);
+ 
+         // Deploy our contracts
+-        s_token = new MockToken("Test Token", "TEST");
++        s_token = new MockToken6DecimalsTransferReturnsFalse("Test Token", "TEST");
+ 
+         DeployCoreContracts deployCoreContracts = new DeployCoreContracts();
+-        (s_escrow,) = deployCoreContracts.run();
++        (s_escrow,) = deployCoreContracts.run(IERC20(address(s_token)));
+ 
+         s_pauser = makeAddr("pauser");
+         s_treasurer = makeAddr("treasurer");
+@@ -145,7 +150,7 @@
+         s_escrow.grantRole(s_escrow.TOKEN_CONFIG_ROLE(), s_tokenConfig);
+ 
+         vm.startPrank(s_tokenConfig);
+-        s_escrow.allowToken(s_token, 18);
++        s_escrow.allowToken(s_token, 6);
+         s_escrow.setTokenFeeConfig(s_token, 20000, 0, 25000000);
+         vm.stopPrank();
+ 
+@@ -167,7 +172,7 @@
+         ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
+             permitted: ISignatureTransfer.TokenPermissions({token: address(s_token), amount: 10 ** 18}),
+             nonce: nonce,
+-            deadline: block.timestamp + 100
++            deadline: vm.getBlockTimestamp() + 100
+         });
+ 
+         bytes memory sig = getPermitTransferSignature(permit, depositorPrivateKey, s_permit2.DOMAIN_SEPARATOR());
+@@ -684,7 +689,7 @@
+             _depositWitness(address(s_token), DEPOSIT_AMOUNT, reserver, releaser, 1);
+ 
+         // Set deadline to past
+-        permit.deadline = block.timestamp - 1;
++        permit.deadline = vm.getBlockTimestamp() - 1;
+ 
+         bytes memory depositSignature =
+             _constructDepositSignature(permit, depositWitness, s_permit2, address(s_escrow), depositorPrivateKey);
+@@ -712,7 +717,7 @@
+         (ISignatureTransfer.PermitTransferFrom memory permit, IEscrow.DepositWitness memory depositWitness) =
+             _depositWitness(address(s_token), DEPOSIT_AMOUNT, reserver, releaser, 1);
+ 
+-        permit.deadline = block.timestamp;
++        permit.deadline = vm.getBlockTimestamp();
+ 
+         bytes memory depositSignature =
+             _constructDepositSignature(permit, depositWitness, s_permit2, address(s_escrow), depositorPrivateKey);
+@@ -2339,10 +2344,11 @@
+ 
+     function test_depositMany_mixed_tokens() public {
+         // Deploy token2 and setup fees
+-        MockToken token2 = new MockToken("Test Token 2", "TEST2");
++        MockToken6DecimalsTransferReturnsFalse token2 =
++            new MockToken6DecimalsTransferReturnsFalse("Test Token 2", "TEST2");
+         address token2Addr = address(token2);
+         vm.startPrank(s_tokenConfig);
+-        s_escrow.allowToken(token2, 18);
++        s_escrow.allowToken(token2, 6);
+         s_escrow.setTokenFeeConfig(token2, 50000, 0, 25000000);
+         vm.stopPrank();
+ 
+@@ -2374,9 +2380,9 @@
+             // Instead, we'll check that the fee determined by the contract matches our expectation for that token type.
+ 
+             if (token == address(s_token)) {
+-                assertEq(expectedFee, 0.2e18, "Token 1 fee incorrect");
++                assertEq(expectedFee, 0.2e6, "Token 1 fee incorrect");
+             } else {
+-                assertEq(expectedFee, 0.5e18, "Token 2 fee incorrect");
++                assertEq(expectedFee, 0.5e6, "Token 2 fee incorrect");
+             }
+ 
+             // Verify the deposit exists (hash is non-zero)
+diff -ru ../evm-contracts/test/Escrow.fees.t.sol ./foundry_tests/Escrow.fees.t.sol
+--- ../evm-contracts/test/Escrow.fees.t.sol	2026-02-02 16:20:28
++++ ./foundry_tests/Escrow.fees.t.sol	2026-02-02 16:28:40
+@@ -1,15 +1,18 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test} from "forge-std/Test.sol";
+-import {Escrow} from "../src/Escrow.sol";
+-import {ITokenConfig} from "../src/interfaces/ITokenConfig.sol";
+-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+-import {DeployCoreContracts} from "../script/deploy/DeployCoreContracts.s.sol";
++import {Escrow} from "../contracts/Escrow.sol";
++import {ITokenConfig} from "../contracts/interfaces/ITokenConfig.sol";
++import {IPermit2} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
++import {DeployCoreContracts} from "../foundry_scripts/DeployCoreContracts.s.sol";
++import {MockToken6DecimalsTransferReturnsFalse} from "./mock/MockToken.sol";
++import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+ 
+ contract EscrowFeesTest is Test {
+     Escrow public s_escrow;
+     IPermit2 public s_permit2;
++    MockToken6DecimalsTransferReturnsFalse public s_token;
+ 
+     uint88 public constant STANDARD_FEE_PERCENTAGE = 0.02e6;
+     uint80 public constant STANDARD_MAX_FEE = 25e6;
+@@ -20,13 +23,15 @@
+         string memory rpcUrl = vm.envString("ETH_MAINNET_RPC");
+         vm.createSelectFork(rpcUrl);
+ 
++        s_token = new MockToken6DecimalsTransferReturnsFalse("Test Token", "TEST");
++
+         // Use existing Permit2 deployment on ethereum mainnet
+         address permit2Address = vm.envAddress("PERMIT2_ADDRESS");
+         s_permit2 = IPermit2(address(permit2Address));
+ 
+         // Deploy our contracts
+         DeployCoreContracts deployCoreContracts = new DeployCoreContracts();
+-        (s_escrow,) = deployCoreContracts.run();
++        (s_escrow,) = deployCoreContracts.run(IERC20(address(s_token)));
+     }
+ 
+     function _sixDecimalTokenConfig(uint80 min, uint80 max, uint88 feePercentage)
+diff -ru ../evm-contracts/test/FulfillmentProxy.t.sol ./foundry_tests/FulfillmentProxy.t.sol
+--- ../evm-contracts/test/FulfillmentProxy.t.sol	2026-02-03 12:32:47
++++ ./foundry_tests/FulfillmentProxy.t.sol	2026-02-03 12:32:11
+@@ -1,16 +1,16 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test} from "forge-std/Test.sol";
+-import {FulfillmentProxy} from "../src/FulfillmentProxy.sol";
+-import {IFulfillmentProxy} from "../src/interfaces/IFulfillmentProxy.sol";
+-import {MockToken} from "./mock/MockToken.sol";
++import {FulfillmentProxy} from "../contracts/FulfillmentProxy.sol";
++import {IFulfillmentProxy} from "../contracts/interfaces/IFulfillmentProxy.sol";
+ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+ import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
+ import {IAccessControl, AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+-import {DeployCoreContracts} from "../script/deploy/DeployCoreContracts.s.sol";
+-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+-import {IFulfillmentProxy} from "../src/interfaces/IFulfillmentProxy.sol";
++import {DeployCoreContracts} from "../foundry_scripts/DeployCoreContracts.s.sol";
++import {IPermit2} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
++import {IFulfillmentProxy} from "../contracts/interfaces/IFulfillmentProxy.sol";
++import {MockToken6DecimalsTransferReturnsFalse} from "./mock/MockToken.sol";
+ 
+ /**
+  * @title FulfillmentProxyTest
+@@ -19,7 +19,7 @@
+  */
+ contract FulfillmentProxyTest is Test {
+     FulfillmentProxy public s_fp;
+-    MockToken public token;
++    MockToken6DecimalsTransferReturnsFalse public token;
+ 
+     bytes32 public constant PAYMENT_ID = keccak256("payment");
+     address public constant SETTLER = address(0x1);
+@@ -30,15 +30,15 @@
+     address public s_tokenConfig;
+ 
+     function setUp() public {
++        token = new MockToken6DecimalsTransferReturnsFalse("MockToken", "MTK");
+         DeployCoreContracts deployCoreContracts = new DeployCoreContracts();
+-        (, s_fp) = deployCoreContracts.run();
++        (, s_fp) = deployCoreContracts.run(IERC20(address(token)));
+ 
+         s_pauser = makeAddr("pauser");
+         s_treasurer = makeAddr("treasurer");
+         s_tokenConfig = makeAddr("tokenConfig");
+ 
+         s_fp.grantRole(s_fp.PAUSER_ROLE(), s_pauser);
+-        token = new MockToken("MockToken", "MTK");
+         token.mint(address(this), type(uint128).max);
+         token.approve(address(s_fp), type(uint256).max);
+         vm.snapshotGasLastCall("token_approve_success");
+@@ -229,7 +229,7 @@
+                 new IFulfillmentProxy.Fulfillment[](benchmarks[i].numFulfillments);
+             for (uint256 j = 0; j < benchmarks[i].numFulfillments; j++) {
+                 params[j] = IFulfillmentProxy.Fulfillment({
+-                    paymentId: bytes32(abi.encodePacked("deposit", j)),
++                    paymentId: bytes32(abi.encodePacked("payment", j)),
+                     to: RECIPIENT,
+                     token: address(token),
+                     amount: 1000 * j
+@@ -627,9 +627,9 @@
+ 
+     // PARAMETER VALIDATION EDGE CASES
+ 
+-    function test_fulfill_with_different_deposit_hashes() public {
+-        bytes32 paymentId1 = keccak256("deposit1");
+-        bytes32 paymentId2 = keccak256("deposit2");
++    function test_fulfill_with_different_payment_hashes() public {
++        bytes32 paymentId1 = keccak256("payment1");
++        bytes32 paymentId2 = keccak256("payment2");
+ 
+         // First fulfillment
+         IFulfillmentProxy.Fulfillment memory fulfillment1 =
+@@ -706,7 +706,7 @@
+         for (uint256 i = 0; i < 5; i++) {
+             s_fp.fulfill(
+                 IFulfillmentProxy.Fulfillment({
+-                    paymentId: keccak256(abi.encode("deposit", i)), to: RECIPIENT, token: address(token), amount: 100
++                    paymentId: keccak256(abi.encode("payment", i)), to: RECIPIENT, token: address(token), amount: 100
+                 })
+             );
+         }
+diff -ru ../evm-contracts/test/helpers/Signatures.sol ./foundry_tests/helpers/Signatures.sol
+--- ../evm-contracts/test/helpers/Signatures.sol	2026-02-03 12:32:47
++++ ./foundry_tests/helpers/Signatures.sol	2026-02-03 12:32:11
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test, console} from "forge-std/Test.sol";
+-import {Escrow} from "../../src/Escrow.sol";
+-import {IEscrow} from "../../src/interfaces/IEscrow.sol";
+-import {IPermit2} from "permit2/src/interfaces/IPermit2.sol";
+-import {ISignatureTransfer} from "permit2/src/interfaces/ISignatureTransfer.sol";
++import {Escrow} from "../../contracts/Escrow.sol";
++import {IEscrow} from "../../contracts/interfaces/IEscrow.sol";
++import {IPermit2} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
++import {ISignatureTransfer} from "@alexroan/permit2-tron/contracts/interfaces/ISignatureTransfer.sol";
+ 
+ contract Signatures is Test {
+     bytes32 private constant DEPOSIT_WITNESS_TYPE_HASH = keccak256("DepositWitness(address reserver,address releaser)");
+diff -ru ../evm-contracts/test/helpers/TestHelpers.sol ./foundry_tests/helpers/TestHelpers.sol
+--- ../evm-contracts/test/helpers/TestHelpers.sol	2026-02-03 12:32:47
++++ ./foundry_tests/helpers/TestHelpers.sol	2026-02-03 12:32:11
+@@ -1,10 +1,10 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {Test, console} from "forge-std/Test.sol";
+-import {Escrow} from "../../src/Escrow.sol";
+-import {IEscrow} from "../../src/interfaces/IEscrow.sol";
+-import {ISignatureTransfer} from "permit2/src/interfaces/ISignatureTransfer.sol";
++import {Escrow} from "../../contracts/Escrow.sol";
++import {IEscrow} from "../../contracts/interfaces/IEscrow.sol";
++import {ISignatureTransfer} from "@alexroan/permit2-tron/contracts/interfaces/ISignatureTransfer.sol";
+ import {Signatures} from "./Signatures.sol";
+ 
+ contract TestHelpers is Test, Signatures {
+Only in ../evm-contracts/test: invariants
+diff -ru ../evm-contracts/test/mock/MockToken.sol ./foundry_tests/mock/MockToken.sol
+--- ../evm-contracts/test/mock/MockToken.sol	2026-02-02 16:20:28
++++ ./foundry_tests/mock/MockToken.sol	2026-02-02 16:28:40
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+@@ -211,4 +211,22 @@
+ 
+     // NO decimals() function implemented
+     // NO fallback function - should revert cleanly
++}
++
++/// @notice Mock token without TIP-2612 permit functionality for testing error cases
++contract MockToken6DecimalsTransferReturnsFalse is ERC20, Ownable, IMintable {
++    constructor(string memory name, string memory symbol) ERC20(name, symbol) Ownable(msg.sender) {}
++
++    function mint(address to, uint256 amount) public onlyOwner {
++        _mint(to, amount);
++    }
++
++    function decimals() public pure override returns (uint8) {
++        return 6;
++    }
++
++    function transfer(address to, uint256 amount) public override returns (bool) {
++        super.transfer(to, amount);
++        return false;
++    }
+ }
+Only in ../evm-contracts/test: script

@@ -1,0 +1,33 @@
+{
+  "name": "@atum-labs/fulfillment-confirmation",
+  "version": "1.0.0",
+  "description": "TypeScript types for Fulfillment Confirmation messages",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "clean": "rm -rf dist",
+    "generate": "json2ts ../../schema.json > src/types.ts"
+  },
+  "keywords": [
+    "atum",
+    "fulfillment",
+    "confirmation",
+    "typescript",
+    "schema"
+  ],
+  "author": "Atum Labs",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "json-schema-to-typescript": "^13.1.2",
+    "typescript": "^5.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

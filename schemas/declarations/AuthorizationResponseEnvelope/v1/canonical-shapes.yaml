@@ -1,0 +1,36 @@
+# Shapes this declaration shares with the others are generated from
+# declarations/common/shapes/v1/schema.json rather than written here, so a producer and a
+# verifier reading different declarations cannot end up with different ideas of what a
+# credential, a proof or a signed message looks like.
+#
+# Where this declaration restricts a shared shape further, or names the specific value a
+# field binds to, that is listed under `overlay` with the reason. Everything else comes
+# from the shared definition unchanged.
+#
+# To change one of these, edit the shared source and run:
+#
+#     make -C schemas generate-canonical-shapes
+
+target: schema.json
+source: ../../common/shapes/v1/schema.json
+
+shapes:
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+  - name: VPDataIntegrityProof
+    from: $defs/VPDataIntegrityProof
+    reason: |
+      Names the value this envelope's challenge binds to and the service identifier its
+      domain must equal. Both are specific to this envelope; the shared definition states
+      only the rule.
+
+      The challenge here is a content hash, so its form is fixed and stated as a pattern.
+      The shared definition carries no pattern: other envelopes bind their challenge to an
+      identifier whose form they set themselves.
+    overlay:
+      properties:
+        challenge:
+          pattern: "^0x[0-9a-f]{64}$"
+          description: "Replay-binding challenge. The verifier requires this to equal the authorization response hash \u2014 the content-addressed hash of the inner AuthorizationResponse this envelope wraps, formatted \"0x\"+64-lowercase-hex (keccak256 over the canonicalized, proof-stripped AuthorizationResponse). The verifier recomputes it from the inner AuthorizationResponse it receives and asserts equality, binding the holder's VP (and its VCs) to exactly this response so the envelope can't be lifted onto a different one. This mirrors PaymentRequestEnvelope, which binds challenge to its OWN inner declaration's content hash (the PaymentRequest's request_hash); the response side uses the AuthorizationResponse's own content hash, NOT the PaymentRequest's request_hash (the request's identity, not the response's) and NOT payment_id (a mutable correlator). Replay across payments is prevented because payment_id is part of the AuthorizationResponse's canonical content, so distinct payments yield distinct response hashes."
+        domain:
+          description: "Replay-binding domain. The verifier requires this to equal its configured service identifier \u2014 locked to a NETWORK-WIDE value `did:web:<env>.atum.network` (e.g., `did:web:atum.network`). Distinct from FQE's `did:web:settler.<env>.atum.network` so a captured envelope can't be misrouted to FQE-shaped verifiers. Without this, a captured envelope from one environment could be replayed against another by the same holder."

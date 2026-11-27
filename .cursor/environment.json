@@ -1,0 +1,5 @@
+{
+  "name": "Atum Protocol",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh"
+}

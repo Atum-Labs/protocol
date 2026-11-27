@@ -1,0 +1,48 @@
+{
+  "$comment": "Example AuthorizationResponseEnvelope as it is signed by the beneficiary PSP (counterparty) on the auth_response path. Response-side mirror of PaymentRequestEnvelope/v1's example.json. The embedded VC uses the production-realistic `type: [\"VerifiableCredential\", \"KnownToAtumVerifiableCredential\"]` with the `known-to-atum/v1` context \u2014 the type-alias-to-IRI binding that makes canonicalization cross-language byte-identical. credentialSubject.role is `psp` (the beneficiary PSP is a payment service provider); a dedicated `beneficiaryPsp` role may be introduced in the issuer phase. proof.challenge is the authorization response hash \u2014 the content-addressed hash of the inner AuthorizationResponse this envelope accompanies (\"0x\"+keccak256 over the canonicalized, proof-stripped response), recomputed and asserted by the payment gateway; it is the response-side analog of the PaymentRequest's request_hash that PRE binds (NOT the PaymentRequest's request_hash itself). The value below is a PLACEHOLDER \u2014 the real challenge is derived from the specific inner AuthorizationResponse, which travels alongside this envelope and is not embedded here. proof.domain is the NETWORK-WIDE `did:web:atum.network` (same as PRE, NOT service-specific like FQE's). The proof JWS / proofValue below are PLACEHOLDERs (not real signatures) \u2014 re-sign with the canonical signer to produce a verifying example.",
+  "version": "1.0",
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://schemas.atum.network/declarations/AuthorizationResponseEnvelope/v1/context.jsonld"
+  ],
+  "type": [
+    "VerifiablePresentation"
+  ],
+  "holder": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://schemas.atum.xyz/credentials/known-to-atum/v1"
+      ],
+      "id": "urn:uuid:9c2f6b14-7e3a-4d8c-bf21-5a0e3c1d8742",
+      "type": [
+        "VerifiableCredential",
+        "KnownToAtumVerifiableCredential"
+      ],
+      "issuer": "did:web:atum.network",
+      "issuanceDate": "2026-05-20T00:00:00.000Z",
+      "expirationDate": "2026-05-20T01:00:00.000Z",
+      "credentialSubject": {
+        "id": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "role": "psp"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2026-05-20T00:00:00.000Z",
+        "verificationMethod": "did:web:atum.network#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z4oXLMi8Xk76ueKDZU8DxFD3iqWM9cGP8RUqtBKQBQJFRCFRxenaWnz3wFdxtznawUnKp3TaU3AsrbawEYn6tWF7M"
+      }
+    }
+  ],
+  "proof": {
+    "type": "EcdsaSecp256k1RecoverySignature2020",
+    "created": "2026-05-20T00:01:00.000Z",
+    "verificationMethod": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8#blockchainAccountId",
+    "proofPurpose": "authentication",
+    "challenge": "0x3f2504e04f8941d39a0c0305e82c33015a0e3c1d87429c2f6b147e3a4d8cbf21",
+    "domain": "did:web:atum.network",
+    "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..PLACEHOLDER_JWS_NOT_VALID_BY_DESIGN"
+  }
+}

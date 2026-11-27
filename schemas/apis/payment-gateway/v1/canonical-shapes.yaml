@@ -1,0 +1,293 @@
+# Several of the shapes this API exchanges also describe data that is cryptographically
+# signed, and the definition that signing and verification use lives in
+# schemas/declarations. Those component schemas are generated from that definition rather
+# than written here, so the shape you sign and the shape you send are the same shape.
+#
+# For an integrator, that means schemas/declarations is the authority on these types:
+# where this file and the declaration could ever disagree, the declaration is what the
+# signature is computed over.
+#
+# This API does not publish every part of a declaration, and adds a little the declaration
+# has no reason to carry. Each such difference is listed below under `remove` or `overlay`,
+# with a `reason` describing what the endpoint actually accepts. Anything not listed comes
+# from the declaration unchanged.
+#
+# To change one of these shapes, edit the declaration named in `source` and regenerate:
+#
+#     make -C schemas generate-canonical-shapes
+#
+# The generated blocks are committed, and the build verifies they still match.
+
+target: openapi.yaml
+source: ../../../declarations/PaymentRequest/v1/schema.json
+
+# Constraints the declaration states that the OpenAPI 3.0.3 Schema Object cannot express,
+# and which this contract therefore does not publish. Each is listed deliberately: a
+# constraint dropped without a line here fails the build rather than being printed and
+# scrolled past.
+#
+# Both are `contains` assertions on a credential: the signed form requires the W3C
+# credentials context and the VerifiableCredential type to be present in their arrays. A
+# credential that omits either is still refused where it is verified; the published schema
+# simply cannot state the requirement, so a client validating only against this file will
+# not catch it locally.
+expected_drops:
+  - VerifiableCredential.properties.@context.contains
+  - VerifiableCredential.properties.type.contains
+
+shapes:
+  - name: PaymentRequest
+    from: .
+    reason: |
+      The HTTP contract serves the payment request itself, not the JSON-LD credential
+      envelope the declaration also describes, so the envelope fields are not published
+      here. sender_auth is required in this shape: it is what /v1/payments/prepare returns
+      and /v1/payments/authorizations accepts, and both always carry it, whereas the
+      declaration describes the object before the signature exists. The POST /v1/payments
+      body is SubmitPaymentRequest, where it is optional.
+
+      SubmitPaymentRequest reuses the `remove` list and overlay properties below through
+      their YAML anchors, so the two shapes cannot drift apart.
+
+    remove: &payment_request_remove
+      - properties.@context
+      - properties.originator_auth.description
+      - properties.presentation
+      - properties.proof
+      - properties.verifiableCredential
+    overlay:
+      description: |-
+        Structured payment request with sender authorization and optional W3C Verifiable Credentials
+      required:
+        - version
+        - request_id
+        - source
+        - destination
+        - fulfillment_amount
+        - sender_auth
+        - quote_deadline
+        - fulfillment_deadline
+        - fulfillment_verifier
+        - escrow_contract_address
+      properties: &payment_request_properties
+        request_id:
+          example: req_123456789
+        fulfillment_amount:
+          description: |-
+            The exact amount to be received at the destination (in the smallest unit, e.g., wei for ETH, cents for USD).
+          example: "1000000"
+        max_source_amount:
+          example: "1000000"
+        destination:
+          description: |-
+            Array of destination assets for the settlement agent to choose from (at least one required, at most 16).
+            The ceiling bounds the fan-out one request can buy: every consumer iterates this list.
+        quote_deadline:
+          description: |-
+            Required. The deadline for receiving price quotes from settlement providers. After this
+            point no new quotes are accepted. The gateway injects no default and validates the value
+            is in the future. The originator must supply it, and a request that omits it or supplies
+            a past value is rejected with 400.
+
+            Keep this window short. A settler holds its quoted price for a limited period of its
+            own choosing, and the gateway selects only once the window has closed, so a deadline
+            set beyond that hold leaves no quote still awardable and the request is declined with
+            QUOTE_WINDOW_TOO_LONG. That hold is set by each settler and is not part of this
+            contract, so treat 60 seconds as a practical upper bound and prefer a shorter window
+            where your integration allows. A submit with auto_accept can be awarded before the
+            window closes, but settlers still decline a window longer than their hold, so keep it
+            short either way.
+
+            Do not make it too short either. A settler that has work to do before it can quote,
+            such as sourcing the payout asset through a swap, and cannot finish it by this deadline
+            declines with QUOTE_WINDOW_TOO_SHORT. Once the payment has failed, reissue it with a
+            longer quote_deadline. That work time also varies by settler, so there is no fixed
+            minimum. A settler waiting on another service cannot tell slow from down, so if the
+            longer window is declined with a reason whose retry_classification is not
+            NOT_RETRYABLE_FIX_REQUEST, the cause is on the settler's side, not in your request.
+
+            Both bounds are counted from when a settler receives the request, not from when you
+            built it. A direct deposit signed at depositRequestHash v2 commits quote_deadline, so
+            you fix it before depositing: leave room for your deposit transactions and the finality
+            wait before the POST, on top of the window the settlers need. A reissue is a new
+            deposit, so recover the first one with refundUnreserved once the payment has failed,
+            not before.
+          example: "2024-12-25T10:30:00Z"
+        fulfillment_deadline:
+          description: |-
+            Required. The time by which the payout to the recipient must be mined on the destination
+            chain. If no payout is mined by then, your escrowed funds are refunded. The payout does
+            not have to be final by then: `completed` follows once the
+            destination chain judges it final. Leave room for your deposit to confirm on the source
+            chain first, which on some chains takes minutes. The gateway injects no default
+            and validates the value is in the future. The originator must supply it, and a request
+            that omits it or supplies a past value is rejected with 400.
+          example: "2024-12-25T11:00:00Z"
+        quote_selector:
+          example: "0x742D35cC6634c0532925a3b844Bc9e7595F41360"
+        escrow_contract_address:
+          example: "0x742D35cC6634c0532925a3b844Bc9e7595F41360"
+        fulfillment_proxy:
+          description: |-
+            Fulfillment Proxy contract address, used to emit proof of fulfillment on the destination chain. Leave empty to use the default.
+          example: "0x892BB2e4F6b14a2B5b82Ba8d33E5925D42D4431F"
+        fulfillment_verifier:
+          description: |-
+            The verification service that confirms the payment was delivered before the escrow
+            releases the source funds, and the account it signs with. Required on every chain:
+            the gateway's `/v1/defaults` response supplies it for each chain.
+          properties:
+            account:
+              example: "0x892BB2e4F6b14a2B5b82Ba8d33E5925D42D4431F"
+            endpoint:
+              description: |-
+                Origin of the fulfillment verifier service, with no path — the caller
+                appends the verifier's own API paths. The gateway's `/v1/defaults` response
+                supplies the default fulfillment verifier for each chain.
+              example: https://veri-fill.production-testnet.atum.xyz
+        settler_requirements:
+          properties:
+            whitelist:
+              example:
+                - did:pkh:eip155:1:0x742D35cC6634c0532925a3b844Bc9e7595F41360
+            blacklist:
+              example:
+                - did:pkh:eip155:1:0x892bb2E4F6b14a2B5b82bA8D33e5925d42d4432f
+
+  - name: SubmitPaymentRequest
+    from: .
+    reason: |
+      The body POST /v1/payments accepts. It is PaymentRequest with one difference:
+      sender_auth is optional, because an originator-executed deposit (executor.deposit
+      originator) is funded by the payer's own escrow deposit and carries no signature. A
+      Permit2-funded request still needs it, and the gateway refuses one that omits it with
+      MISSING_SENDER_AUTH.
+      PaymentRequest stays the shape /v1/payments/prepare returns and
+      /v1/payments/authorizations accepts, where sender_auth is always present.
+
+      Its `remove` list and overlay properties are PaymentRequest's, through YAML aliases;
+      only `required` and `description` are its own.
+
+    remove: *payment_request_remove
+    overlay:
+      description: |-
+        Structured payment request as submitted: sender authorization is required unless the payer funded the escrow deposit itself
+      required:
+        - version
+        - request_id
+        - source
+        - destination
+        - fulfillment_amount
+        - quote_deadline
+        - fulfillment_deadline
+        - fulfillment_verifier
+        - escrow_contract_address
+      properties: *payment_request_properties
+
+  - name: OwnedAsset
+    from: $defs/OwnedAsset
+    reason: |
+      account carries an upper bound this API enforces at ingress. The declaration has no
+      bound because a signed object is not size-limited by the format itself; dropping the
+      bound here would loosen what the endpoint accepts.
+    overlay:
+      properties:
+        asset_identifier:
+          example: eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+        account:
+          description: |-
+            The wallet address that owns this asset.
+            Format depends on the blockchain:
+            - Ethereum/EVM: 0x-prefixed hex address (42 characters)
+            - Solana: Base58 encoded address
+            - Tron: T-prefixed Base58 address
+            - Stellar: G... account or C... contract strkey
+
+            A destination account is checked at ingress and must be payable on the chain named by
+            its `asset_identifier`: it parses for that chain, carries a valid EIP-55 checksum when
+            mixed-case, has no surrounding whitespace, and is not the zero address. A receiver that
+            fails any of these is refused with `INVALID_DESTINATION_ACCOUNT`, before any funds move.
+          maxLength: 128
+          example: "0x742D35cC6634c0532925a3b844Bc9e7595F41360"
+
+  - name: SenderAuth
+    from: $defs/SenderAuth
+
+  - name: SenderAuthMessageScheme
+    from: $defs/SenderAuthMessageScheme
+
+  - name: SignedMessage
+    from: $defs/SignedMessage
+    reason: |
+      Examples documenting the wire format for each supported chain. The component is shared
+      with FulfillmentAuthorization.authorization, whose declaration leaves message_prehash
+      optional, so it stays optional here and the text says where it is required. The gateway validates a payment request against the
+      declaration, which requires it.
+    overlay:
+      required: [message, signature]
+      properties:
+        message:
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        message_prehash:
+          description: |-
+            The original data that `message` is the hash of. Required on every entry of a payment
+            request's `sender_auth.signed_messages`: the gateway reads the signed terms from it.
+          example: '{"permit":{"token":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","amount":"1000000"}}'
+        signature:
+          example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab1c"
+        payload:
+          example:
+            delegate_signer: 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin
+
+  - name: VerifiableCredentialAuth
+    from: $defs/VerifiableCredentialAuth
+    reason: |
+      Every field that carries this shape is deprecated, and OpenAPI 3.0.3 ignores a
+      description written beside a $ref, so a notice written at a field reaches only some
+      generators. Saying it on the shape is the one place the text reaches all of them, and
+      the one place it is true for all three sites: this contract publishes no replacement
+      field, so the notice must not name one.
+    overlay:
+      description: |-
+        Optional identity verification using cryptographic credentials.
+
+        DEPRECATED. Credentials are moving to a holder-signed W3C VerifiablePresentation that
+        travels alongside a request rather than inside it. That envelope is not part of this
+        HTTP contract, so there is nothing here to move them to yet: treat this as a legacy
+        carrier, and do not build a new integration on it.
+
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+    reason: |
+      The three free-form members stay explicitly open. additionalProperties: true is the
+      default either way, but stating it is what makes the generated bindings emit an open
+      map rather than an opaque value, and callers read those members directly.
+    overlay:
+      properties:
+        "@context":
+          example:
+            - https://www.w3.org/2018/credentials/v1
+        type:
+          example:
+            - VerifiableCredential
+            - KYCVerifiedCredential
+        credentialSubject:
+          additionalProperties: true
+        credentialStatus:
+          additionalProperties: true
+        proof:
+          additionalProperties: true
+
+  - name: DataIntegrityProof
+    from: $defs/DataIntegrityProof
+    reason: Examples showing the proof form this API issues and accepts.
+    overlay:
+      properties:
+        type:
+          example: EcdsaSecp256k1RecoverySignature2020
+        created:
+          example: "2026-04-29T12:00:00Z"
+        verificationMethod:
+          example: did:pkh:eip155:42161:0xabc...#blockchainAccountId
+        proofPurpose:
+          example: assertionMethod

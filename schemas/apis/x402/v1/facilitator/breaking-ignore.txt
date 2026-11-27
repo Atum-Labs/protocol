@@ -1,0 +1,45 @@
+# Breaks in this spec that were agreed and announced. oasdiff matches each line
+# against its own output; see schemas/Makefile (breaking-openapi).
+#
+# CORE-2388 (2026-09-11) — `extra.atum.issuedAt` removed from the atum-escrow
+# scheme. The merchant no longer stamps the Solana deposit's issue time; the payer
+# derives it at signing time, from the cluster clock the escrow judges it against.
+# A request that still carries the property is refused, deliberately: the `extra`
+# schema is closed, and silence would let a merchant reintroduce a field that makes
+# any payment crossing a wall-clock second unmatchable.
+POST /verify removed the request property `paymentRequirements/extra/atum/issuedAt`
+POST /settle removed the request property `paymentRequirements/extra/atum/issuedAt`
+#
+# CORE-3093 (2026-10-22) — Stellar. The address patterns of the atum-escrow scheme accept a
+# Stellar `G...` account or `C...` contract strkey beside 0x-hex and base58, and `STELLAR` is
+# a wire-valid `message_scheme`. Each pattern gains one alternative and loses none; oasdiff
+# cannot prove the new pattern is a superset of the old one, so it reports each as a warning.
+POST /settle changed the pattern of the request property `paymentPayload/accepted/asset` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentPayload/accepted/payTo` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentPayload/payload/paymentRequest/destination/items/account` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentPayload/payload/paymentRequest/source/account` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/destination/address` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/destination/asset` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/escrow` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/fulfillmentProxy` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/releaser` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /settle changed the pattern of the request property `paymentRequirements/extra/atum/reserver` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentPayload/accepted/asset` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentPayload/accepted/payTo` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentPayload/payload/paymentRequest/destination/items/account` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentPayload/payload/paymentRequest/source/account` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/destination/address` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/destination/asset` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/escrow` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/fulfillmentProxy` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/releaser` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+POST /verify changed the pattern of the request property `paymentRequirements/extra/atum/reserver` from `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$`
+#
+# CORE-2724 (2026-11-03) — a payment is bound to the page it pays for. Every atum-escrow
+# requirement carries `extra.atumResource`, which client and facilitator fold into
+# `request_id`, so a payment for one route cannot be replayed against another. Client,
+# server and facilitator move to 0.6.0 together.
+POST /verify added the new required request property `paymentPayload/accepted/extra/atumResource`
+POST /verify added the new required request property `paymentRequirements/extra/atumResource`
+POST /settle added the new required request property `paymentPayload/accepted/extra/atumResource`
+POST /settle added the new required request property `paymentRequirements/extra/atumResource`

@@ -1,0 +1,2 @@
+// Package authorizationresponseenvelope defines the AuthorizationResponseEnvelope type and context.
+package authorizationresponseenvelope

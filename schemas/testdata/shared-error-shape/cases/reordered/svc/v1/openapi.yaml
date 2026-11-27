@@ -1,0 +1,13 @@
+openapi: 3.0.3
+info: {title: svc, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, code]
+      properties:
+        retry_count: {type: integer}
+        docs_url: {type: string}
+        request_id: {type: string}
+        message: {type: string}
+        code: {type: string}

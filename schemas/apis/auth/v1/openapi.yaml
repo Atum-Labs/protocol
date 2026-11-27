@@ -1,0 +1,775 @@
+openapi: 3.0.3
+info:
+  title: Atum Auth Service API
+  description: |
+    The Atum Auth Service authorizes payment requests and returns the decision. A decline
+    made by the per-payment amount limit alone also names that limit, and nothing more.
+
+    It also issues session tokens. A caller proves control of its `did:pkh` by presenting a
+    Verifiable Presentation signed over a single-use nonce, and exchanges it for a short-lived
+    bearer token (RFC 8693 token exchange). `POST /v1/auth/nonce` issues the nonce, and
+    `POST /v1/auth/token` exchanges the presentation. The session contract, every path under
+    `/v1/auth/`, is frozen: a change to it must be backward compatible. The two are served
+    together or not at all: a deployment that has not enabled session authentication answers
+    both with `404 NOT_FOUND`.
+  version: 1.0.0
+  contact:
+    name: Atum Labs
+servers:
+  - url: https://auth.production-mainnet.atum.xyz
+    description: Mainnet
+  - url: https://auth.production-testnet.atum.xyz
+    description: Testnet
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /v1/payment-request:
+    post:
+      summary: Authorize a payment request
+      description: |
+        Authorizes a payment request and returns the decision. A decline made by the per-payment
+        amount limit alone also carries `decline_reason`. No other internal detail about how the
+        decision was reached is returned.
+      operationId: authorizePaymentRequest
+      tags:
+        - Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentAuthorizationRequest'
+      responses:
+        '200':
+          description: Authorization completed. Every decision, including a decline, is a 200; read `decision`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResponse'
+        '400':
+          description: |
+            The request was rejected. Returns `INVALID_REQUEST`, which is the only code
+            this endpoint produces for a rejection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            An unexpected internal failure, sent with an empty body. There is no response
+            body to parse.
+
+  /v1/auth/nonce:
+    post:
+      summary: Issue a nonce for a self-built presentation
+      description: |
+        Issues a single-use nonce for a caller that builds and signs its own Verifiable
+        Presentation. Put `nonce` in the presentation's `proof.challenge` and
+        `expected_domain` in its `proof.domain`, sign it with the holder's key, and send it
+        to `POST /v1/auth/token` within `expires_in` seconds.
+
+        The method is `POST` because issuing a nonce creates state, and each caller may hold
+        only a limited number of unused nonces. A `GET` can be sent without the caller asking
+        for it, by a prefetcher, a crawler, or an HTTP client that retries an idempotent
+        request on its own, and each of those would use up one of the caller's nonces.
+
+        The request has no body, like a request to the OpenID4VCI nonce endpoint, which is
+        also a `POST`. A body, if one is sent, is ignored.
+
+        A nonce is consumed the first time a presentation carrying it reaches
+        `POST /v1/auth/token`, before the presentation is verified. A refused attempt uses
+        it up too, so get a new nonce for every attempt.
+
+        No authentication is required. The response carries `Cache-Control: no-store`, and a
+        nonce must not be cached, logged or shared.
+
+        Errors are `ErrorResponse` bodies with a catalog code (schemas/apis/error/v1).
+      operationId: issueAuthNonce
+      tags:
+        - Session
+      responses:
+        '200':
+          description: A nonce was issued.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlNoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NonceResponse'
+        '404':
+          description: |
+            `NOT_FOUND`. Session authentication is not enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: |
+            `RATE_LIMIT_EXCEEDED`. This caller asked for too many nonces in a short period, or
+            holds too many unused ones. Nothing was issued. Wait for `Retry-After` when it is
+            sent, and otherwise back off before asking again.
+
+            A 429 can also come from the network edge in front of this service, and that
+            response may carry no `ErrorResponse` body and no `Retry-After`. Treat every 429
+            the same way, whatever its body.
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfterOptional'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            `INTERNAL_ERROR`. An unexpected internal failure. Nothing was issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: |
+            `SERVICE_BUSY`. The service cannot issue a nonce right now, for example because
+            it is at capacity or a dependency is unavailable. Nothing was issued.
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfterOptional'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/auth/token:
+    post:
+      summary: Exchange a presentation for a session token (frozen)
+      description: |
+        This contract is frozen so that clients and the API gateway can build against it. It is
+        served exactly where `POST /v1/auth/nonce` is: a deployment that has not enabled session
+        authentication answers both with `404 NOT_FOUND`.
+
+        An RFC 8693 token exchange. The body is form-encoded, as RFC 6749 requires of a token
+        endpoint, and `subject_token_type` says what `subject_token` holds:
+
+        | `subject_token_type` | `subject_token` | Status |
+        |---|---|---|
+        | `urn:atum:params:oauth:token-type:ldp_vp` | A Verifiable Presentation the caller built and signed over a nonce from `POST /v1/auth/nonce`, as JSON text. | Accepted. |
+        | `urn:ietf:params:oauth:token-type:access_token` | The caller's current, unexpired session token, to refresh it. | Reserved. Refused with `400 INVALID_REQUEST` until refresh ships. |
+        | `urn:atum:params:oauth:token-type:prepared_vp` | The holder's signature over a presentation this service prepared. Its encoding is defined when that door ships. | Reserved. Refused with `400 INVALID_REQUEST` until the server-prepared door ships. |
+
+        **The presentation** (`ldp_vp`) is a W3C Verifiable Presentation with an embedded
+        Data Integrity proof, and it is accepted only when all of these hold:
+        - `holder` is a `did:pkh`, and the proof was made by that holder's key.
+        - `proof.proofPurpose` is `authentication`.
+        - `proof.challenge` is a nonce from `POST /v1/auth/nonce` that is unexpired and unused.
+        - `proof.domain` equals the `expected_domain` returned with that nonce.
+        - It carries an unexpired `KnownToAtumVerifiableCredential` whose subject is the
+          holder, issued by an issuer this service trusts, with a valid proof.
+
+        The credential's issuer is compared with the issuers this service trusts before
+        anything about the issuer is resolved. An untrusted issuer is refused as
+        `CREDENTIAL_UNTRUSTED` without being resolved, so a presentation cannot make this
+        service fetch a DID document from a host the caller chose.
+
+        The nonce is consumed as soon as the presentation is read, before anything is
+        verified, so every attempt needs a new nonce.
+
+        **Refresh** (`access_token`) is a new exchange, not a refresh-token grant: no refresh
+        token is issued or stored. Send the current, unexpired session token as
+        `subject_token`. The response's `issued_token_type` is the same URN, so a response
+        can be exchanged again as it stands.
+
+        A refresh re-checks the denylist and re-reads the caller's tier records, as the first
+        exchange did. It carries no presentation, so it cannot re-check the credential: the
+        `KnownToAtumVerifiableCredential`'s expiry, issuer and proof are checked only in the
+        exchange that began the session, and a refresh does not see a later change to them,
+        such as the issuer no longer being trusted. The credential's expiry still applies,
+        because it bounds the session's absolute lifetime.
+
+        **A session's absolute lifetime** ends 24 hours after the exchange of the presentation
+        that began it, or at the `expirationDate` of the `KnownToAtumVerifiableCredential`
+        presented in that exchange, whichever is earlier. A credential with no
+        `expirationDate` leaves only the 24-hour bound. No token outlives the session, so a
+        token issued close to its end has a shorter `expires_in` than usual, and a refresh
+        after the end is refused with `TOKEN_EXPIRED`. A new session needs a new nonce and a
+        new presentation.
+
+        **Binding the token to a key (DPoP).** Where a deployment offers it, a `DPoP` header
+        carrying an RFC 9449 proof binds the token to a key the client holds. The proof must
+        be:
+        - a JWT whose header has `typ` `dpop+jwt`, `alg` `ES256`, and a `jwk` holding the
+          public P-256 key that signed it, with no private members;
+        - for `POST` (`htm`) to this endpoint's URL (`htu`), without query or fragment;
+        - made within 60 seconds of the server's clock either way (`iat`), with a `jti`;
+        - for this exchange: its `nonce` is the nonce from `POST /v1/auth/nonce` that the
+          presentation answers.
+
+        The token then carries `cnf.jkt`, the key's RFC 7638 thumbprint, and `token_type` is
+        `DPoP`. Send it as `Authorization: DPoP <access_token>`, with a new proof on every
+        request (RFC 9449 section 7) whose `ath` is the token's hash. The API gateway accepts
+        a bound token only with such a proof, so a copy of the token is of no use without the
+        key.
+
+        A proof is checked before the presentation is read, so a refused proof is a `400
+        INVALID_REQUEST` that does not consume the nonce. Without a `DPoP` header the token
+        is a bearer token, unless the deployment requires binding, which refuses the
+        exchange with `400 INVALID_REQUEST`. A deployment that does not offer binding ignores
+        the header and answers a bearer token, as RFC 9449 allows: read `token_type`.
+
+        **Refreshing a bound token.** To refresh a token whose `token_type` is `DPoP`, send a
+        `DPoP` proof made with the same key. The new token is bound to that key as well. A
+        refresh without a proof, or with a different key, is refused with `400
+        INVALID_REQUEST`.
+
+        **Parameters.** `grant_type`, `subject_token` and `subject_token_type` are required.
+        `requested_token_type` may be omitted, or set to
+        `urn:ietf:params:oauth:token-type:access_token`. These four are the parameters this
+        endpoint accepts. `resource`, `audience`, `scope`, `actor_token` and
+        `actor_token_type` are refused with `400 INVALID_REQUEST` when any value sent for one
+        of them is not empty: the token has one fixed audience and scope, and this endpoint
+        does no delegation or impersonation. As RFC 6749 section 3.2 requires:
+        - A parameter sent with an empty value is treated as omitted. So an empty `scope` is
+          accepted, and an empty required parameter counts as missing.
+        - An accepted parameter sent more than once is refused with `400 INVALID_REQUEST`,
+          even when the values agree.
+        - Any other parameter is ignored.
+
+        **Size.** `subject_token` is at most 65536 bytes as UTF-8, counted before form
+        encoding, and a longer one is refused with `400 INVALID_REQUEST`. The body is at most
+        262144 bytes (256 KiB), and a larger one is refused with `413 PAYLOAD_TOO_LARGE`. That
+        admits every request that sends only the accepted parameters, with a `subject_token`
+        within its limit, even with every byte percent-encoded.
+
+        **Errors are `ErrorResponse` bodies, not RFC 6749 section 5.2 bodies.** There is no
+        `error` member: branch on `code`. The HTTP status follows the Atum error catalog,
+        so a refused presentation is a `401` or `403` where an RFC 6749 server would send
+        `400`.
+
+        A `401` from this endpoint carries no `WWW-Authenticate` header. That is a
+        deliberate deviation from RFC 9110 section 15.5.2, which requires one on every `401`:
+        the caller authenticates with the `subject_token` in the body, not with an HTTP
+        authentication scheme, so there is no scheme for a challenge to name.
+
+        **After a `500` or `503`, get a new nonce.** Either can come after the nonce was
+        consumed, so before sending a presentation again, get a new nonce and sign a new
+        presentation over it. On this endpoint that instruction overrides the response's
+        `retry_classification`, which describes the code in general rather than this
+        endpoint. Sending the same presentation again does no harm: if its nonce was consumed,
+        it is refused with `CHALLENGE_REPLAYED` or `CHALLENGE_EXPIRED`. A refresh carries no
+        nonce, so a refresh may be sent again as it is.
+
+        The equivalent RFC 6749 or RFC 8693 code, for a client mapping one onto the other:
+
+        | `code` | Status | RFC 6749 / RFC 8693 `error` |
+        |---|---|---|
+        | `INVALID_REQUEST` | 400 | `invalid_request`; `unsupported_grant_type` for a wrong `grant_type`; `invalid_scope` for `scope`; `invalid_target` for `resource` or `audience`; `invalid_dpop_proof` for a refused `DPoP` proof |
+        | `MALFORMED_REQUEST_BODY` | 400 | `invalid_request` |
+        | `CHALLENGE_EXPIRED` | 401 | `invalid_request` |
+        | `CHALLENGE_REPLAYED` | 401 | `invalid_request` |
+        | `INVALID_PRESENTATION` | 401 | `invalid_request` |
+        | `TOKEN_EXPIRED` | 401 | `invalid_request` |
+        | `CREDENTIAL_MISSING` | 403 | `invalid_request` |
+        | `CREDENTIAL_UNTRUSTED` | 403 | `invalid_request` |
+        | `IDENTITY_DENYLISTED` | 403 | `invalid_request` |
+        | `PAYLOAD_TOO_LARGE` | 413 | `invalid_request` |
+        | `RATE_LIMIT_EXCEEDED` | 429 | none |
+        | `INTERNAL_ERROR` | 500 | none |
+        | `SERVICE_BUSY` | 503 | none |
+
+        RFC 8693 section 2.2.2 answers an invalid or unacceptable `subject_token` with
+        `invalid_request`, which is why those rows map there. That includes `TOKEN_EXPIRED`,
+        where the subject token is the expired session token: a client tells it apart from
+        the other `invalid_request` rows by `code`, not by `error`. RFC 6749 section 5.2
+        defines no token-endpoint code for a server failure (`server_error` and
+        `temporarily_unavailable` are authorization-endpoint codes, from section 4.1.2.1), so
+        the `5xx` rows have no equivalent.
+      operationId: exchangeToken
+      tags:
+        - Session
+      parameters:
+        - name: DPoP
+          in: header
+          required: false
+          description: |
+            An RFC 9449 proof that binds the issued token to the client's key. See "Binding
+            the token to a key (DPoP)" above.
+          schema:
+            type: string
+            maxLength: 4096
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenExchangeRequest'
+      responses:
+        '200':
+          description: A session token was issued.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlNoStore'
+            Pragma:
+              description: '`no-cache`, as RFC 6749 section 5.1 requires of a token response.'
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: |
+            The request was refused on its form alone, before the subject token was parsed.
+            Nothing was issued, and no nonce was consumed. One of:
+            - `MALFORMED_REQUEST_BODY`: the body could not be read as a form, for example
+              because its `Content-Type` is not `application/x-www-form-urlencoded`.
+            - `INVALID_REQUEST`: a required parameter is missing or empty, an accepted
+              parameter was sent more than once, a value is not one this contract allows
+              (including a `subject_token` over 65536 bytes), `subject_token_type` is a
+              reserved type, or a refused parameter was sent with a value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: |
+            The subject token did not authenticate the caller. Nothing was issued. The
+            response carries no `WWW-Authenticate` header, as the description above explains.
+            One of:
+            - `CHALLENGE_EXPIRED`: the presentation's nonce has expired, or this service did
+              not issue it.
+            - `CHALLENGE_REPLAYED`: the nonce was already consumed, including by an earlier
+              attempt that was refused. A nonce consumed long enough ago is reported as
+              `CHALLENGE_EXPIRED` instead, so treat the two alike: get a new nonce.
+            - `INVALID_PRESENTATION`: the presentation could not be read or verified, for
+              example a bad signature, a signer that is not the holder, a wrong
+              `proof.domain`, or a credential from a trusted issuer whose proof does not
+              verify.
+            - `TOKEN_EXPIRED`: on a refresh, once refresh ships, the session token is expired,
+              was not issued by this service, or is past the session's absolute lifetime.
+              Start a new session with a new nonce and a new presentation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: |
+            The caller authenticated, but this service will not issue it a token. Nothing
+            was issued. One of:
+            - `CREDENTIAL_MISSING`: no unexpired `KnownToAtumVerifiableCredential` whose
+              subject is the holder.
+            - `CREDENTIAL_UNTRUSTED`: a required credential was issued by an issuer this
+              service does not trust. The issuer was refused without being resolved.
+            - `IDENTITY_DENYLISTED`: this identity may not authenticate. The reason is not
+              given.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: |
+            `NOT_FOUND`. Session authentication is not enabled on this deployment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: |
+            `PAYLOAD_TOO_LARGE`. The body is over 262144 bytes (256 KiB). Nothing was issued,
+            and no nonce was consumed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: |
+            `RATE_LIMIT_EXCEEDED`. This caller sent too many exchanges in a short period.
+            Nothing was issued, and no nonce was consumed. Wait for `Retry-After` when it is
+            sent, and otherwise back off before sending another.
+
+            A 429 can also come from the network edge in front of this service, and that
+            response may carry no `ErrorResponse` body and no `Retry-After`. Treat every 429
+            the same way, whatever its body. After an edge 429 the nonce is unused too,
+            because the request never reached this service.
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfterOptional'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            `INTERNAL_ERROR`. An unexpected internal failure. Nothing was issued, and the
+            nonce may have been consumed, so get a new one before sending a presentation
+            again. This overrides the response's `retry_classification`, as the description
+            above explains.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: |
+            `SERVICE_BUSY`. The service cannot complete an exchange right now, for example
+            because it is at capacity or a dependency is unavailable. Nothing was issued, and
+            the nonce may have been consumed. Wait for `Retry-After` when it is sent, then get
+            a new nonce before sending a presentation again. This overrides the response's
+            `retry_classification`, as the description above explains. Tokens issued earlier
+            keep working until they expire.
+          headers:
+            Retry-After:
+              $ref: '#/components/headers/RetryAfterOptional'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns only whether the service can serve.
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                    example: ok
+        '503':
+          description: Service cannot serve
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - unhealthy
+                    example: unhealthy
+
+components:
+  headers:
+    CacheControlNoStore:
+      description: '`no-store`. The response carries a single-use secret and must not be cached.'
+      schema:
+        type: string
+        enum:
+          - no-store
+    RetryAfterOptional:
+      description: |
+        How many whole seconds to wait before sending another request, when the service can
+        estimate it. Absent means the wait is unknown, or on a 429 that the response came
+        from the network edge; back off rather than retrying at once.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      example: 5
+
+  schemas:
+    ErrorResponse:
+      type: object
+      description: >-
+        Safe, outward-facing error. Derived from an internal error through the shared
+        error catalog (schemas/apis/error/v1). The shape these endpoints return for any
+        handled failure. `message` is curated by the catalog and carries no request-specific
+        detail. Branch on `code`, and do not parse `message` or assume it is stable for
+        a given `code`.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Public, machine-readable error category in SCREAMING_SNAKE_CASE.
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          description: >-
+            Curated, safe, human-readable message from the catalog. Not request-specific,
+            and more than one may map to the same `code`.
+          maxLength: 500
+          example: "The request was malformed or missing required fields."
+        request_id:
+          type: string
+          description: Correlation id to quote to support to locate the internal error record.
+          example: "req_123456789"
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Absent when the error is not about
+            a specific payment.
+        docs_url:
+          type: string
+          format: uri
+          description: Link to the documentation page for this public code.
+        domain:
+          type: string
+          description: Originating service domain.
+          example: "AUTHORIZATION_SERVICE"
+        retry_classification:
+          type: string
+          description: >-
+            What the caller should do next. Absent means the condition has not been
+            classified, which is not the same as safe to retry.
+
+            Re-sending the same `request_id` is an idempotent replay and always safe.
+            This value is about submitting a new one, which starts a new operation. See
+            https://docs.atum.xyz/errors for the value set.
+          example: "RECONCILE_THEN_DECIDE"
+        request_id_reusable:
+          type: boolean
+          description: >-
+            Whether the caller may re-send this same request_id. True means no payment
+            was created for it, so the id is still free. False means a payment exists
+            for it, so the id is spent and re-sending only replays this outcome. Absent
+            means undetermined, which a caller should read as false. Separate from
+            retry_classification, which answers what the caller must change rather than
+            whether the id survived.
+          example: false
+    PaymentAuthorizationRequest:
+      type: object
+      required:
+        - payment_request
+      properties:
+        payment_request:
+          type: object
+          description: |
+            The payment request to authorize.
+            Uses the typed PaymentRequest schema (paymentrequest.SchemaJson).
+            See schemas/declarations/PaymentRequest/v1/schema.json for the full definition.
+          x-go-type: paymentrequest.SchemaJson
+          x-go-type-import:
+            path: github.com/atum-labs/protocol/schemas/declarations/PaymentRequest/v1/bindings/go/generated
+            name: paymentrequest
+          additionalProperties: true
+        payment_request_raw_json:
+          type: string
+          description: |
+            The VERBATIM original wire JSON of the inner PaymentRequest
+            (including the spliced PaymentRequestEnvelope `presentation` + inner
+            proof), exactly as the payment gateway received it. Carried as a string so the
+            bytes survive byte-for-byte. The typed payment_request re-marshal is
+            lossy on proof.created (millisecond form), which breaks W3C Data
+            Integrity signature recovery, so the service may verify over THESE bytes.
+            Absent, the service cannot verify over them and may decline the payment.
+
+    AuthorizationResponse:
+      type: object
+      description: |
+        The decision, and `decline_reason` when the per-payment amount limit alone declined the
+        payment. No other internal detail about how the decision was reached is returned.
+      required:
+        - request_id
+        - decision
+      properties:
+        request_id:
+          type: string
+          description: |
+            Request ID from the payment request being authorized.
+            This is the same request_id provided in the PaymentRequest.
+          example: "req_abc123xyz"
+        decision:
+          type: string
+          enum:
+            - APPROVED
+            - DECLINED
+            - RETRY
+          description: |
+            APPROVED: every configured check passed.
+            DECLINED: a check decided against the payment. It will not change on a retry.
+            RETRY: a check could not be completed, for example an internal dependency was
+            unavailable or at capacity. The payment is refused now and may pass on a retry.
+          example: "APPROVED"
+        decline_reason:
+          type: string
+          enum:
+            - AMOUNT_LIMIT
+          x-enum-varnames:
+            - DeclineReasonAmountLimit
+          description: |
+            Why the payment was declined, sent only when it is safe for the caller to know.
+            Present only when `decision` is `DECLINED` and every check passed except the one
+            named here. Absent for every other decline. A compliance check that declined, or
+            could not complete, alongside the limit leaves it absent too, so a compliance
+            decline is never reported as a limit. It names the kind of limit and never its
+            amount, what is left of it, or the caller's tier.
+
+            AMOUNT_LIMIT: the payment is over the per-payment amount limit for its source wallet.
+
+            New values may be added. Read a value you do not recognise as absent.
+          example: "AMOUNT_LIMIT"
+
+    NonceResponse:
+      type: object
+      description: A single-use nonce, and the domain a presentation signed over it must name.
+      required:
+        - nonce
+        - expected_domain
+        - expires_in
+      properties:
+        nonce:
+          type: string
+          description: |
+            32 random bytes, base64url-encoded (RFC 4648 section 5) without padding, so
+            always 43 characters. Copy it verbatim into the presentation's
+            `proof.challenge`. Single use.
+          minLength: 43
+          maxLength: 43
+          pattern: '^[A-Za-z0-9_-]{43}$'
+          example: "PqjJ4-GGgFV6VHW8hkXE_yJPRKtTbH58ahbdCxSmZiE"
+        expected_domain:
+          type: string
+          description: |
+            The value the presentation's `proof.domain` must equal, a `did:web` naming this
+            deployment. It is fixed per deployment and differs between deployments, so a
+            presentation built for one is refused by every other. Copy it; do not derive it.
+          pattern: '^did:web:[A-Za-z0-9.%-]+(:[A-Za-z0-9._%-]+)*$'
+          example: "did:web:auth.production-testnet.atum.xyz"
+        expires_in:
+          type: integer
+          format: int32
+          description: |
+            Seconds until the nonce expires. A presentation over it must reach
+            `POST /v1/auth/token` before then.
+          minimum: 1
+          example: 300
+
+    TokenExchangeRequest:
+      type: object
+      description: |
+        An RFC 8693 token exchange request, form-encoded. See `POST /v1/auth/token` for which
+        other RFC 8693 parameters are refused and which are ignored.
+      required:
+        - grant_type
+        - subject_token
+        - subject_token_type
+      properties:
+        grant_type:
+          type: string
+          description: The RFC 8693 token exchange grant. Any other grant is refused.
+          enum:
+            - urn:ietf:params:oauth:grant-type:token-exchange
+          x-enum-varnames:
+            - GrantTypeTokenExchange
+        subject_token:
+          type: string
+          description: |
+            What `subject_token_type` names. For `ldp_vp`, the signed Verifiable
+            Presentation as JSON text, which the form encoding percent-encodes. The service
+            verifies it as sent, without re-serializing it, so send it exactly as signed.
+            For `access_token`, the session token being refreshed.
+
+            At most 65536 bytes as UTF-8, counted before form encoding. `maxLength` counts
+            characters, so for text that is not ASCII it is the looser of the two limits,
+            and the byte limit is the one the service applies.
+          minLength: 1
+          maxLength: 65536
+        subject_token_type:
+          $ref: '#/components/schemas/SubjectTokenType'
+        requested_token_type:
+          $ref: '#/components/schemas/IssuedTokenType'
+
+    SubjectTokenType:
+      type: string
+      description: |
+        What `subject_token` holds.
+
+        `urn:atum:params:oauth:token-type:ldp_vp`: a self-built Verifiable Presentation with
+        an embedded Data Integrity proof. Accepted.
+
+        `urn:ietf:params:oauth:token-type:access_token`: a session token this service issued,
+        exchanged to refresh it. Reserved, and refused with `INVALID_REQUEST` until refresh
+        ships.
+
+        `urn:atum:params:oauth:token-type:prepared_vp`: the holder's signature over a
+        presentation this service prepared. Reserved, and refused with `INVALID_REQUEST`
+        until the server-prepared door ships, which also defines this value's encoding.
+      enum:
+        - urn:atum:params:oauth:token-type:ldp_vp
+        - urn:ietf:params:oauth:token-type:access_token
+        - urn:atum:params:oauth:token-type:prepared_vp
+      x-enum-varnames:
+        - SubjectTokenTypeLdpVp
+        - SubjectTokenTypeAccessToken
+        - SubjectTokenTypePreparedVp
+
+    IssuedTokenType:
+      type: string
+      description: |
+        The RFC 8693 type of an issued session token. Session tokens are OAuth access
+        tokens issued by this service, so this is the same URN a refresh sends as its
+        `subject_token_type`.
+      enum:
+        - urn:ietf:params:oauth:token-type:access_token
+      x-enum-varnames:
+        - IssuedTokenTypeAccessToken
+
+    TokenResponse:
+      type: object
+      description: |
+        An RFC 8693 token exchange response. No `refresh_token` is issued: refresh by
+        exchanging the current `access_token` at `POST /v1/auth/token`.
+      required:
+        - access_token
+        - issued_token_type
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: |
+            The session token. Send it as `Authorization: Bearer <access_token>`, or, when
+            `token_type` is `DPoP`, as `Authorization: DPoP <access_token>` with a DPoP
+            proof on every request. It is a signed JWT that the API gateway validates against
+            this service's published JWKS. Treat it as opaque, and do not log it.
+        issued_token_type:
+          $ref: '#/components/schemas/IssuedTokenType'
+        token_type:
+          type: string
+          description: |
+            `Bearer` (RFC 6750) for a bearer token, or `DPoP` (RFC 9449) for a token bound
+            to the key of the exchange's DPoP proof.
+          enum:
+            - Bearer
+            - DPoP
+          x-enum-varnames:
+            - TokenTypeBearer
+            - TokenTypeDPoP
+        expires_in:
+          type: integer
+          format: int32
+          description: |
+            Seconds until `access_token` expires. A token never outlives the session's
+            absolute lifetime, which ends 24 hours after the exchange that began the session
+            or when the credential presented in it expires, whichever is earlier. So a token
+            issued close to that bound, including a first token whose credential expires
+            soon, has a shorter `expires_in` than usual. Read this value rather than assuming
+            a lifetime.
+          minimum: 1
+          example: 14400
+
+tags:
+  - name: Authorization
+    description: Payment authorization
+  - name: Session
+    description: Session authentication by Verifiable Presentation and RFC 8693 token exchange
+  - name: Health
+    description: Service health monitoring

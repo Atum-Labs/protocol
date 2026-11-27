@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/AuthorizationResponse/v1/schema.json",
+  "title": "AuthorizationResponse",
+  "description": "Signed authorization decision returned by a beneficiary PSP for a payment authorization webhook request. Carries a W3C Data Integrity proof so the payment gateway that sent the request can verify the PSP authored the response and assert the response identity matches the original request.",
+  "type": "object",
+  "required": ["@context", "payment_id", "counterparty_did", "status"],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "description": "JSON-LD context array. Must include the AuthorizationResponse context URL and the W3C Data Integrity suite context URL the proof was signed under.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_id": {
+      "type": "string",
+      "description": "Correlation key matching the payment_id of the AuthorizationRequest the PSP received. The payment gateway cross-checks this against its own request-side value to defeat response forgery."
+    },
+    "counterparty_did": {
+      "type": "string",
+      "description": "Beneficiary DID. Must match the DID the payment gateway computed from the original PaymentRequest's destination (CAIP-2 derived). Cross-checked at verification time."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["authorized", "declined"],
+      "description": "Authorization decision. String (not boolean) to accommodate future values like 'pending_info' for step-up authorization."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Human-readable reason for decline. Omitted when status=authorized."
+    },
+    "proof": {
+      "$ref": "#/$defs/DataIntegrityProof",
+      "description": "W3C Data Integrity proof. Required for production use. Where the payment gateway is configured to enforce proof validation, a response without one is rejected as PROOF_INVALID."
+    },
+    "verifiableCredential": {
+      "type": "array",
+      "description": "W3C Verifiable Credentials attesting role/attributes of the counterparty (e.g., 'Known to Atum as a PSP'). Empty array in Phase 4; populated when Atum ID lands.",
+      "items": {
+        "$ref": "#/$defs/VerifiableCredential"
+      }
+    }
+  },
+  "$defs": {
+    "DataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof conforming to the Data Integrity 1.0 specification. Which of jws or proofValue is required depends on the cryptosuite named in type, and that pairing is checked where the proof is verified rather than by this schema, so a document can satisfy the schema and still be refused at verification.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. ECDSA-secp256k1 (recoverable, EVM-compatible) for did:pkh:eip155:* signers; Ed25519 for did:pkh:solana:* and did:pkh:stellar:* signers.",
+          "enum": [
+            "EcdsaSecp256k1RecoverySignature2020",
+            "Ed25519Signature2020"
+          ]
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "description": "Purpose of the proof. Always assertionMethod for authorization responses.",
+          "enum": [
+            "assertionMethod"
+          ]
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Required at runtime for EcdsaSecp256k1RecoverySignature2020."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase-encoded raw signature bytes. Required at runtime for Ed25519Signature2020; mutually exclusive with jws in practice."
+        }
+      }
+    },
+    "VerifiableCredential": {
+      "type": "object",
+      "description": "W3C Verifiable Credential structure conforming to the W3C Verifiable Credentials Data Model v1.1",
+      "required": [
+        "@context",
+        "id",
+        "type",
+        "issuer",
+        "issuanceDate",
+        "credentialSubject",
+        "proof"
+      ],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array, must include 'https://www.w3.org/2018/credentials/v1'",
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this credential"
+        },
+        "type": {
+          "type": "array",
+          "description": "Credential types, must include 'VerifiableCredential'",
+          "contains": {
+            "const": "VerifiableCredential"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "description": "DID or issuer object of the credential issuer"
+        },
+        "issuanceDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential was issued"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential expires"
+        },
+        "credentialSubject": {
+          "type": "object",
+          "description": "Claims about the credential subject (structure varies by issuer)"
+        },
+        "credentialStatus": {
+          "type": "object",
+          "description": "Information for credential revocation checking. Not consulted by the verifier today."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Cryptographic proof of credential integrity"
+        }
+      }
+    }
+  }
+}

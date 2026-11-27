@@ -1,0 +1,17 @@
+{
+  "code": "BROADCAST_REJECTED",
+  "message": "Insufficient funds for broadcast: sender balance below required gas cost",
+  "domain": "SETTLER_AGENT",
+  "timestamp": "2024-01-15T10:35:22Z",
+  "request_id": "abc123-def456-ghi789",
+  "details": {
+    "required_amount": "0.0042",
+    "available_amount": "0.0009",
+    "token": "ETH",
+    "sender_address": "0x742d35CC6634c0532925a3B844bC9e7595F0BeB4"
+  },
+  "blockchain_context": {
+    "chain_id": "eip155:1",
+    "contract_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  }
+}

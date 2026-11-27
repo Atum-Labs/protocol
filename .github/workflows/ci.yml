@@ -1,0 +1,1250 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  # dorny/paths-filter reads the PR's changed files via the API on pull_request.
+  pull-requests: read
+
+# Cancel superseded runs on the same ref so pushes don't pile up.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Only cancel superseded PR runs; never cancel a push to main mid-run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Detect which areas a PR touches so each lane runs only when relevant.
+  #
+  # Coverage model:
+  #   - go / typescript: language-wide lanes that build+test EVERY Go module and
+  #     EVERY pnpm workspace. Shared-folder fan-out (schemas -> generated bindings
+  #     -> consumers, escrow-encoding -> payment-gateway-client) is handled by
+  #     "run all", so a change to a shared package re-tests its dependents.
+  #   - schema-guards: schema/binding drift + version + JSON-LD (Go-side guards).
+  #   - evm / tvm / svm: the vendored contract SOURCE trees. Each is a pinned
+  #     snapshot of an upstream repo, so its lane runs only when THAT chain's
+  #     source or its escrow-encoding changes (independent per chain), keeping the
+  #     encoding and the contract it mirrors in parity.
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    # Filters narrow PR runs to the areas a PR touches. They are DELIBERATELY BYPASSED off
+    # pull_request -- i.e. on pushes to main -- so that every lane runs on the branch the release
+    # ships from.
+    #
+    # Why: a green run on main otherwise means only "the lanes this merge happened to touch
+    # passed". Merging an EVM-only change re-verifies nothing about SVM or TVM, so main can carry
+    # a lane whose last real execution was several merges ago, and nothing distinguishes
+    # "passed" from "skipped" at the run level. That is not hypothetical: the Anchor suite was
+    # skipped on main for BOTH the #49 and #50 merges because each touched only EVM/TVM paths,
+    # and the intervening state of a compute-budget test sitting on the 200k CU boundary was
+    # therefore unknown -- it passed on #48's merge and failed on the next PR to actually run it,
+    # against a byte-identical tree.
+    #
+    # The filters are still right for PRs, and broadening any individual filter would not fix
+    # this: nothing outside contracts/svm can change what the Anchor suite does. The gap is
+    # per-EVENT, not per-path.
+    #
+    # `&& 'true' || 'false'` is not redundant. It forces a STRING, because every lane below
+    # compares against 'true', and GitHub casts mismatched types to numbers when comparing --
+    # so a bare boolean `true` would compare against the string 'true' as NaN vs 1 and every
+    # lane would silently skip. That failure mode looks exactly like a green run.
+    outputs:
+      go: ${{ (steps.filter.outputs.go == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      ts: ${{ (steps.filter.outputs.ts == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      schemas: ${{ (steps.filter.outputs.schemas == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      evm: ${{ (steps.filter.outputs.evm == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      tvm: ${{ (steps.filter.outputs.tvm == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      svm: ${{ (steps.filter.outputs.svm == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      stellar: ${{ (steps.filter.outputs.stellar == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+      proto: ${{ (steps.filter.outputs.proto == 'true' || github.event_name != 'pull_request') && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3.0.3
+        id: filter
+        with:
+          filters: |
+            go:
+              - '**/*.go'
+              - '**/go.mod'
+              - '**/go.sum'
+              # Golden/vector files consumed by the Go parity tests are not .go,
+              # so include the binding trees and their conformance vectors to catch
+              # cross-language drift.
+              - 'contracts/*/bindings/**'
+              - 'contracts/*/conformance/**'
+              # The Go encoding guards read the vendored contract SOURCE at test
+              # time and treat it as the oracle: the witness typehashes are
+              # `private constant` (absent from the ABI), so
+              # escrow_source_typehash_test.go / solidity_source_test.go text-scan
+              # Escrow.sol + IEscrow.sol, and the binding/topic0 guards read
+              # source/generated/abi. A PR editing ONLY a contract source file
+              # matches none of the globs above, so without this line the go lane
+              # is skipped on the exact drift it exists to catch --
+              # and the evm-/tvm-contracts lanes that DO run on it are
+              # fmt+build only, with no forge test step.
+              - 'contracts/*/source/**'
+              # vectors.json is not .go either, and it is the oracle the Go parity test reads.
+              - 'schemas/declarations/common/chain-address/**'
+              # The sender-auth conformance vector and the Solana replay-bucket count are read by
+              # Go tests here (conformance_test.go, replay_buckets_parity_test.go) but live under
+              # schemas/, so without this line the go lane is skipped on the cross-language drift
+              # those guards exist to catch.
+              - 'schemas/declarations/PaymentRequest/**'
+              # Same reason: the FulfillmentAuthorization conformance fixtures and the embedded
+              # schema.json are the oracle its Go tests read, and neither is a .go file. Adding a
+              # member to a fixture fails `go test` while `pnpm test` stays green, so without this
+              # line a fixtures-only or schema-only PR merges green and first fails on main.
+              - 'schemas/declarations/FulfillmentAuthorization/**'
+              # The settler report content-hash goldens, plus the proto enums and decline catalog
+              # their coverage tests read, are oracles for Go tests and are not .go files.
+              - 'schemas/declarations/SettlementResult/**'
+              - 'schemas/declarations/BidDecline/**'
+              - 'schemas/apis/settler-gateway/v1/session-stream/settler.proto'
+              - 'schemas/apis/decline/v1/catalog.json'
+            ts:
+              - '**/*.ts'
+              - '**/*.mjs'
+              - '**/package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              # A schema edit regenerates the TS bindings, so the TS drift
+              # guards (check-ts-bindings, check-conformance-fixtures) must run
+              # on schema-only changes too, not just when a .ts file changes.
+              - 'schemas/**'
+              # Same reason as the go lane: golden/vector files are not .ts.
+              - 'contracts/*/bindings/**'
+              - 'contracts/*/conformance/**'
+              # Same source-oracle hole as the go lane: witness-typehash.test.ts
+              # and escrow-abi.test.ts read ../../../../source/{src,contracts}/Escrow.sol
+              # and source/generated/abi, so a contract-source-only PR must run
+              # this lane too.
+              - 'contracts/*/source/**'
+              # The publishable packages are guarded end-to-end here (build, pack,
+              # install, consumer type-check, runtime import), and that guard reads
+              # files no glob above matches: THIRD-PARTY-NOTICES.txt, LICENSE,
+              # README.md, tsconfig.json. Watch each package tree wholesale so a
+              # change to any of them re-runs the guard, rather than surfacing at
+              # publish time. tooling/publish-guard is watched for the same reason —
+              # it is the guard itself.
+              - 'schemas/apis/payment-gateway/v1/bindings/typescript/client/**'
+              - 'schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow/**'
+              - 'schemas/apis/x402/v1/bindings/x402-atum-escrow/**'
+              - 'tooling/publish-guard/**'
+              - 'tooling/verify-standalone-declarations.sh'
+              # The lint/format gate reads these. eslint.config.mjs and
+              # prettier.config.mjs already match '**/*.mjs' above, but
+              # .prettierignore matches nothing else here -- so without this line a
+              # PR touching only it skips the lane that would have caught the
+              # breakage, and it lands on the next unrelated TypeScript PR instead.
+              - '.prettierignore'
+            schemas:
+              - 'schemas/**'
+              - 'pnpm-lock.yaml'
+            # Each chain re-runs its contract suite when its own source, its bindings
+            # or its conformance vectors change (parity), and only then.
+            evm:
+              - 'contracts/evm/source/**'
+              - 'contracts/evm/bindings/**'
+              - 'contracts/evm/conformance/**'
+              # The SDK-built awards test/Escrow.awardSdkVectors.t.sol submits to the escrow.
+              - 'schemas/declarations/PaymentRequest/v1/conformance/award-sdk-vectors.json'
+            tvm:
+              - 'contracts/tvm/source/**'
+              - 'contracts/tvm/bindings/**'
+              - 'contracts/tvm/conformance/**'
+              # test/EscrowReserveSdk.test.js runs the SDK's award builders on the local node.
+              - 'schemas/declarations/PaymentRequest/v1/bindings/typescript/sender-auth/src/**'
+              - 'schemas/declarations/PaymentRequest/v1/bindings/typescript/sender-auth/package.json'
+            svm:
+              - 'contracts/svm/source/**'
+              - 'contracts/svm/bindings/**'
+              - 'contracts/svm/conformance/**'
+              # tests/16_reserve_sdk.ts runs the SDK's award builders on the local validator.
+              - 'schemas/declarations/PaymentRequest/v1/bindings/typescript/sender-auth/src/**'
+              - 'schemas/declarations/PaymentRequest/v1/bindings/typescript/sender-auth/package.json'
+            # Stellar: the Rust contracts and the conformance vectors they are checked against live
+            # in the same tree, so one filter covers both. The workflow file is included so an edit
+            # to this lane is exercised by the PR that makes it.
+            stellar:
+              - 'contracts/stellar/**'
+              - '.github/workflows/ci.yml'
+            # Wire (proto) contracts: lint + regenerate-and-check the committed bindings.
+            proto:
+              - '**/*.proto'
+              - '**/buf.yaml'
+              - '**/buf.gen.yaml'
+
+  go:
+    name: Go (build + test)
+    needs: changes
+    if: ${{ needs.changes.outputs.go == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.25"
+      - name: Build and test every Go module
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in $(git ls-files 'go.mod' '*/go.mod'); do
+            d=$(dirname "$f")
+            echo "::group::$d"
+            # The signing modules run under -race. They hold a package-level parsed JSON-LD
+            # context that every call shares and hands to the JSON-LD processor, and a gateway
+            # signs concurrently by definition. Comparing output bytes only catches a mutation
+            # that changes EVERY envelope; a genuine data race on that shared map passes 99 runs
+            # in 100 and then crashes a producer with "concurrent map read and map write".
+            # Scoped rather than repo-wide because -race roughly halves test throughput.
+            case "$d" in
+              */bindings/go/signing) race="-race" ;;
+              *)                     race="" ;;
+            esac
+            (cd "$d" && go build ./... && go test $race ./...)
+            echo "::endgroup::"
+          done
+      # contracts/{evm,tvm}/bindings/go/escrow-encoding/generated is committed abigen output. Regenerate it
+      # from the committed ABIs and fail on any diff, so a hand-edit or an ABI change without
+      # `make generate` cannot merge. TestGeneratedBindingsMatchSourceABI above only compares event
+      # topic0s for two contracts; this covers every function, event and error of every abigen
+      # binding (generated/IERC20Errors.go has no ABI source and is outside it, see the EVM
+      # Makefile). The ABIs are in turn anchored to the Solidity by `make check-abi` in the evm-contracts
+      # and tvm-contracts lanes. This lane already runs on any .go change and on
+      # contracts/*/source/**, which is every path that can make the bindings stale.
+      - name: Check the EVM and TVM contract bindings are regenerated from the ABIs
+        run: |
+          make -C contracts/evm/bindings/go/escrow-encoding check-generate
+          make -C contracts/tvm/bindings/go/escrow-encoding check-generate
+
+  typescript:
+    name: TypeScript (build + test)
+    needs: changes
+    if: ${{ needs.changes.outputs.ts == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: pnpm
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.25"
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      # Build every workspace package in dependency order. `pnpm -r build` walks
+      # the workspace graph topologically, so shared libs (ld-data-integrity,
+      # km-core, the escrow-encoding packages, ...) are built before the packages
+      # that consume them. schema-declarations is absent by design: it compiles
+      # nothing, exporting its .ts bindings directly, and regenerating them is the
+      # job of `make -C schemas check-ts-bindings` below.
+      - name: Build all workspace packages
+        run: pnpm -r build
+      # Lint AFTER the build, deliberately, even though it delays the failure.
+      #
+      # Most of the rule set is file-by-file and would run fine earlier, but three
+      # type-aware rules (no-floating-promises, no-misused-promises, await-thenable)
+      # read the @atum-labs/* siblings through their compiled output. With those
+      # unbuilt, the imports resolve to `any` and the rules quietly stop detecting
+      # instead of failing -- a green check that verified less than it appears to.
+      # Correctness of the gate beats reporting the failure a minute sooner.
+      - name: Lint the SDK packages
+        run: pnpm lint
+      # The payment-gateway-client bundles its @atum-labs/* siblings so it can be
+      # published standalone. Fail if that bundling regresses (a sibling back in
+      # runtime deps, or an un-inlined import in dist).
+      - name: Verify payment-gateway-client is publishable (validation only, does not publish)
+        run: node schemas/apis/payment-gateway/v1/bindings/typescript/client/scripts/check-publishable.mjs
+      # buildEnvelope hands the signer the PaymentRequestEnvelope context, which is inlined
+      # into the client because a path relative to the module resolves against a consumer's
+      # output once re-bundled. A stale copy would sign under the wrong terms.
+      - name: Verify the inlined PaymentRequestEnvelope context is current
+        run: node schemas/apis/payment-gateway/v1/bindings/typescript/client/scripts/gen-pre-context.mjs --check
+      # Same invariant for the mppx-atum-escrow method: it bundles its @atum-labs/*
+      # siblings so it publishes standalone. Fail if that bundling regresses.
+      - name: Verify mppx-atum-escrow bundles without workspace siblings
+        run: node schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow/scripts/check-publishable.mjs
+      # And for the x402 scheme mechanisms: same bundling invariant. The guard also
+      # scans what the build actually inlined into dist/ and fails if a component is
+      # copyleft or is missing from THIRD-PARTY-NOTICES.txt, so review that file's
+      # diff whenever the bundled dependency set changes.
+      - name: Verify x402-atum-escrow bundles without workspace siblings
+        run: node schemas/apis/x402/v1/bindings/x402-atum-escrow/scripts/check-publishable.mjs
+      - name: Check TypeScript bindings are up to date
+        run: make -C schemas check-ts-bindings
+      # The payment-gateway-client is generated from the payment-gateway OpenAPI contract
+      # but is not covered by check-ts-bindings, so a spec change could merge with a stale
+      # client and nothing would say so. This also fails on a hand-edit of the generated
+      # code, which the next `generate` would silently erase.
+      #
+      # This step used to carry its own copy of the regenerate-and-diff logic. It now calls
+      # the Makefile target, which is the one a developer can also run locally, so the two
+      # cannot disagree about which files they cover -- they previously did, and the copy
+      # here was the only one watching the whole directory.
+      #
+      # The PGC half specifically, not check-openapi-ts-clients: that also regenerates
+      # veri-fill, which needs oapi-codegen and `go mod tidy`. This lane installs Go but
+      # not the codegen binaries, so the full target would fail here on a missing command.
+      # The schema-guards lane, which does install them, runs both halves.
+      #
+      # If this fails right after a generator bump rather than a spec change, the diff will
+      # be large and unrelated to the contract: @hey-api/openapi-ts is a caret range, so
+      # reproducibility comes from pnpm-lock.yaml. Check whether the lockfile moved before
+      # hunting for drift in the spec.
+      - name: Check the payment-gateway client is regenerated from the contract
+        run: make -C schemas check-pgc-openapi-client
+      - name: Check the client default is generated from hosts.yaml
+        run: make -C schemas check-hosts
+      - name: Unit-test the hosts.yaml parser and deny-list
+        run: make -C schemas test-hosts
+      - name: Check conformance fixtures are up to date
+        run: make -C schemas check-conformance-fixtures
+      - name: Test all workspaces
+        run: pnpm -r test
+      # The FulfillmentAuthorization validate suite is a script on schema-declarations, the
+      # package its bindings live in, and it imports the FulfillmentQuote signing package's
+      # sources, whose dependencies only this workspace provides. Under the name `test` the
+      # step above would run it -- and so would a consumer's `turbo test` / `pnpm -r test`
+      # on a vendored schemas/declarations, where it fails on the first import it cannot
+      # resolve. So the script is named `test:declarations`, which no consumer selects, and
+      # is invoked here by name.
+      #
+      # `pnpm -r run`, not `--filter`: if the script is renamed or dropped, `-r run` fails
+      # with "none of the selected packages has a test:declarations script" while a
+      # `--filter` that matches no project exits 0 and the suite silently stops running.
+      - name: Test the FulfillmentAuthorization declaration bindings
+        run: pnpm -r run test:declarations
+      # The guard for the above: install schemas/declarations as the only member of a fresh
+      # workspace and run every script on it that a consumer's task runner selects by name.
+      # That one-member shape is deliberately stricter than any real consumer -- settler-agent
+      # lists this package in its pnpm workspace alongside some of its siblings, atum-core only
+      # path-maps it -- so it holds whichever siblings a consumer happens to install. A script
+      # that passes only because this workspace's siblings are installed next to it fails here
+      # before it fails downstream.
+      - name: Verify schemas/declarations runs standalone for a consumer
+        run: ./tooling/verify-standalone-declarations.sh
+      # Formatting runs LAST, even though it is the cheapest check in the lane.
+      #
+      # GitHub Actions stops a job at the first failing step, so putting it first meant a
+      # single missing trailing comma prevented the build, the lint, the publish guards,
+      # the drift guards and every test from running at all -- one trivial failure
+      # masking everything behind it, and two round-trips to learn what the first run
+      # could have told you. A formatting failure is always mechanical and always fixed
+      # by one command, so it is the one thing that should never block the rest.
+      #
+      # No new job for either this or the lint step above: this lane's `ts` path filter
+      # already covers `**/*.ts`, `**/*.mjs`, `**/package.json`, `.prettierignore` and
+      # all three package trees, and a new lane would have to be added to `ci-gate`'s
+      # `needs:` list or it would not block a merge.
+      - name: Check SDK package formatting
+        run: pnpm format:check
+
+  schema-guards:
+    name: Schema guards (version drift)
+    needs: changes
+    if: ${{ needs.changes.outputs.schemas == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # breaking-openapi and breaking-auth-session diff specs against origin/main,
+          # so the baseline ref has to be present in the checkout.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: pnpm
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.25"
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      - name: Install gojq
+        run: .github/scripts/go-install.sh gojq github.com/itchyny/gojq/cmd/gojq@v0.12.17
+      - name: Install go-jsonschema
+        run: .github/scripts/go-install.sh go-jsonschema github.com/atombender/go-jsonschema@v0.20.0
+      - name: Install oapi-codegen
+        run: .github/scripts/go-install.sh oapi-codegen github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+      - name: Verify schema version constants match schemas
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas verify-version
+      - name: Check Go bindings are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-go-bindings
+      - name: Check the shared component schemas match the canonical declarations
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-canonical-shapes
+      - name: Check deterministic API Go bindings + payment-gateway embed are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-api-bindings
+      - name: Check error catalog mirrors are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-error-catalog
+      - name: Check decline catalog mirrors are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-decline-catalog
+      - name: Self-test the shared error shape guard
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas test-shared-error-shape
+      # The generated-client guard was green when it should have been red for months,
+      # because it named 3 of the 13 files the generator emits. A guard nobody tests can
+      # regress to that silently, which is indistinguishable from working. This points it
+      # at scratch copies of the generated tree and asserts it fails on every kind of
+      # drift -- edited, added and deleted, at the top level and inside core/.
+      - name: Self-test the payment-gateway client drift guard
+        run: make -C schemas test-pgc-openapi-client-guard
+      - name: Check OpenAPI servers and the client default match hosts.yaml
+        run: make -C schemas check-hosts
+      - name: Unit-test the hosts.yaml parser and deny-list
+        run: make -C schemas test-hosts
+      - name: Check committed specs and the client for stray host literals
+        run: make -C schemas check-host-literals
+      - name: Check service specs use the error/v1 ErrorResponse field set
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-shared-error-shape
+      - name: Verify externally consumed specs stay compatible with main
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          .github/scripts/go-install.sh oasdiff github.com/oasdiff/oasdiff@v1.31.0
+          make -C schemas breaking-openapi BREAKING_REF=origin/main
+      # The auth session contract (/v1/auth/*) is frozen before it is served, but the auth
+      # spec is not in EXTERNAL_SPECS, so the step above does not cover it. This compares
+      # only those paths. It installs oasdiff itself, which is a cache hit after the step
+      # above, so it does not depend on that step having run.
+      - name: Verify the frozen auth session contract stays compatible with main
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          .github/scripts/go-install.sh oasdiff github.com/oasdiff/oasdiff@v1.31.0
+          make -C schemas breaking-auth-session BREAKING_REF=origin/main
+      - name: Check error/v1 code examples exist in the catalog
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-error-code-examples
+      - name: Check the OpenAPI TypeScript clients are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-openapi-ts-clients
+      - name: Check ld-verification context + go.mod drift
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-ld-verification-drift
+      - name: Validate schemas, JSON-LD contexts, and examples
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas lint-json validate-jsonld validate-context-sync validate-examples
+
+  # ── Vendored contract sources ────────────────────────────────────────────────
+  # contracts/{evm,tvm,svm}/source are pinned imports of upstream repos. We run
+  # only the parts of their suites that need no secret this repo does not hold.
+  #
+  # EVM: the Foundry suite RUNS IN FULL here and needs no RPC. Its setUps used to fork Ethereum
+  # mainnet solely to borrow canonical Permit2's bytecode; test/helpers/LocalPermit2.sol now etches
+  # the same precompiled runtime code locally (see the evm-contracts job for why that mattered for
+  # determinism). Exactly ONE thing still needs a chain — depositFlow's FORK_CONFIG mode, which
+  # attaches to a real deployed escrow rather than borrowing Permit2 — and it is opt-in, so the
+  # default configuration never reaches it. ScriptTests.t.sol was converted to the same helper.
+  #
+  # TVM: the Foundry mirror still forks in setUp and still only compiles + format-checks here; its
+  # tests stay with the upstream repo. Porting it to the same local-etch helper is the obvious
+  # follow-up and is not done in this change. TVM's TronBox suite runs against a local node in
+  # Docker, and SVM's anchor tests run against a local validator, so both of those run in full.
+
+  evm-contracts:
+    name: EVM contracts (build + format + test)
+    needs: changes
+    if: ${{ needs.changes.outputs.evm == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/evm/source
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          submodules: recursive
+      # Pin the TOOL, not just the action. The action SHA above is pinned, but its
+      # `version` input defaults to "stable", so `forge` floated to whatever released
+      # that morning. forge v1.8.0 (2026-08-27) changed how it formats chained calls,
+      # and `forge fmt --check` started failing on source nobody had touched: main was
+      # green at 262a53d9 on 08-24 and red at e94fc006 on 08-27, with the only change
+      # being upstream. A pinned action with an unpinned payload pins nothing that
+      # matters.
+      #
+      # v1.7.1 is what the committed Solidity is formatted for. Moving to 1.8.x is a
+      # deliberate change: it reformats chained calls, so it belongs in its own commit
+      # with the reformat, not as a silent consequence of the date CI ran.
+      - uses: foundry-rs/foundry-toolchain@b00af27efadbc7b4ca8b82abbd903b17cc874d2a # v1.9.0
+        with:
+          version: v1.7.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          run_install: false
+      # --ignore-workspace: this vendored project is NOT a member of the root
+      # pnpm workspace, so install it standalone against its own lockfile
+      # (OpenZeppelin sources the Solidity remappings resolve to).
+      - name: Install contract deps
+        run: pnpm install --ignore-workspace --frozen-lockfile
+      - name: Check formatting
+        run: forge fmt --check
+      - name: Build
+        run: forge build --sizes
+      # source/generated/abi is COMMITTED and is the oracle for the Go guards in
+      # evm/bindings/go/escrow-encoding (check-generate, TestEventTopic0Stability,
+      # TestGeneratedBindingsMatchSourceABI) and for escrow-abi.test.ts. Without this step,
+      # editing IEscrow.sol without running `make generate-abi` leaves the ABI and every
+      # binding stale together while every guard stays green. Mirrors the tvm-contracts lane.
+      - name: Check committed ABIs are up to date
+        run: make check-abi
+      # RUN THE ESCROW TESTS HERE.
+      #
+      # This step used to be absent, with the rationale that the suites fork Ethereum mainnet via
+      # ETH_MAINNET_RPC in setUp and therefore "run upstream, not here". That was sound while
+      # contracts/evm/source was a faithful pinned import of its upstream repository. It is no longer
+      # true: the witnesses were widened in THIS vendored tree (destinationHash / sourceAmount /
+      # depositRequestHash), and upstream still declares the pre-widening shapes with zero
+      # occurrences of those fields. So "the tests run upstream" now means the widened contracts'
+      # tests run NOWHERE -- including Escrow.destinationCommitment.t.sol, the
+      # InvalidSourceAmount overpayment guards in Escrow.depositFlow.t.sol, and
+      # Escrow.commitmentEvents.t.sol, which are the most direct proof the two features work.
+      #
+      # NO RPC IS REQUIRED, and that is load-bearing for this gate's trustworthiness.
+      #
+      # The suites' only reason to touch mainnet was to borrow canonical Permit2's bytecode, and
+      # every vm.createSelectFork call site passed NO block number — so each run forked at the chain
+      # tip, foundry's block-keyed RPC cache could never hit, and identical test code could go red on
+      # the next push with nothing changed in the repository. An endpoint hiccup or rate limit would
+      # have surfaced as a contract test failure, which is the worst possible reading of a red gate.
+      #
+      # test/helpers/LocalPermit2.sol removes that: it etches Uniswap's PRECOMPILED Permit2 runtime
+      # bytecode (vendored in lib/permit2) at the canonical address. Same code mainnet serves, so
+      # this is a substitution rather than a mock, and Escrow.canonicalDigest.t.sol independently
+      # asserts the etched instance's DOMAIN_SEPARATOR() against the out-of-band mainnet value.
+      #
+      # ETH_MAINNET_RPC is still exported for exactly one thing this step does not reach:
+      # Escrow.depositFlow.t.sol's FORK_CONFIG mode, which attaches to a real DEPLOYED escrow and
+      # reads its live roles and token config. It is opt-in via env, so `forge test` never selects
+      # it. If it is ever added to CI, PIN A BLOCK NUMBER first and cache ~/.foundry/cache/rpc —
+      # without a pinned block the cache cannot hit and the flakiness comes straight back.
+      #
+      # Verified: `forge test` — the exact command below, whole suite, nothing excluded — passes with
+      # ETH_MAINNET_RPC pointed at an unroutable address (http://127.0.0.1:1): 338 tests, 0 failures
+      # across 35 suites. Re-verified with --no-storage-caching so that a warm ~/.foundry RPC cache
+      # cannot be what makes it pass; CI runs cold, and a claim that only holds on a warm cache is
+      # the false green this change exists to remove.
+      # --gas-snapshot-check fails the run when a value in a committed snapshots/*.json changes.
+      # Without it a plain `forge test` silently rewrites the files.
+      - name: Test (Escrow suites)
+        env:
+          ETH_MAINNET_RPC: ${{ secrets.ETH_MAINNET_RPC || 'https://ethereum-rpc.publicnode.com' }}
+          PERMIT2_ADDRESS: "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+          SALT: "0x0000000000000000000000000000000000000000000000000000000000000000"
+        run: forge test --gas-snapshot-check=true
+      # The batching bench skips itself without --isolate, so the step above never checks
+      # snapshots/BatchingGasBench.json. Run it isolated, against the same gate.
+      - name: Test (batching gas bench, isolated)
+        env:
+          PERMIT2_ADDRESS: "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+          SALT: "0x0000000000000000000000000000000000000000000000000000000000000000"
+        run: |
+          set -o pipefail
+          forge test --isolate --gas-snapshot-check=true --match-contract '^BatchingGasBench$' | tee "$RUNNER_TEMP/bench.log"
+          # Without --isolate the suite skips all six tests and still exits 0, with nothing recorded.
+          grep -q ', 0 skipped' "$RUNNER_TEMP/bench.log"
+      # --gas-snapshot-check compares only keys present in both the committed file and the run, so an
+      # added or removed key passes it. Both forge runs rewrite snapshots/*.json, so a changed key set
+      # shows up here, and so does a new group, which is a new untracked file that git diff ignores.
+      - name: Check gas snapshots are committed
+        run: |
+          git diff --exit-code -- snapshots
+          test -z "$(git ls-files --others --exclude-standard -- snapshots)"
+      # deploy:local is what downstream e2e suites use to stand up these contracts, so it runs here
+      # against a fresh anvil. The image is pinned to v1.3.6, the anvil those suites run: it
+      # rejects an eth_estimateGas whose nonce is already used, while 1.7.x accepts it and would
+      # pass a script that reuses a stale nonce. On automine that reuse fails every run, not
+      # intermittently. Keep this pin independent of the forge version above.
+      - name: Build Permit2 (deploy:local artifact)
+        working-directory: contracts/evm/source/lib/permit2
+        run: forge build
+      - name: Deploy locally (deploy:local against anvil v1.3.6)
+        id: deploy-local
+        run: |
+          docker run -d --name anvil -p 8545:8545 --entrypoint anvil \
+            ghcr.io/foundry-rs/foundry:v1.3.6@sha256:7026b071fb16606a14426acc0a0e2cd57f80b96abd7e7d371fef8dafe1712cdf \
+            --host 0.0.0.0 --chain-id 31337
+          ready=false
+          for _ in $(seq 1 60); do
+            if curl -sf -X POST -H 'content-type: application/json' \
+              --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+              http://127.0.0.1:8545 >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "anvil did not answer on :8545 within 60s"
+            exit 1
+          fi
+          pnpm run deploy:local
+      - name: Anvil logs
+        if: failure() && steps.deploy-local.outcome == 'failure'
+        run: docker logs anvil 2>&1 | tail -n 200
+
+  tvm-contracts:
+    name: TVM contracts (build + format + tronbox)
+    needs: changes
+    if: ${{ needs.changes.outputs.tvm == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/tvm/source
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          submodules: recursive
+      # Pin the TOOL, not just the action. The action SHA above is pinned, but its
+      # `version` input defaults to "stable", so `forge` floated to whatever released
+      # that morning. forge v1.8.0 (2026-08-27) changed how it formats chained calls,
+      # and `forge fmt --check` started failing on source nobody had touched: main was
+      # green at 262a53d9 on 08-24 and red at e94fc006 on 08-27, with the only change
+      # being upstream. A pinned action with an unpinned payload pins nothing that
+      # matters.
+      #
+      # v1.7.1 is what the committed Solidity is formatted for. Moving to 1.8.x is a
+      # deliberate change: it reformats chained calls, so it belongs in its own commit
+      # with the reformat, not as a silent consequence of the date CI ran.
+      - uses: foundry-rs/foundry-toolchain@b00af27efadbc7b4ca8b82abbd903b17cc874d2a # v1.9.0
+        with:
+          version: v1.7.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          run_install: false
+      - name: Install contract deps
+        run: pnpm install --ignore-workspace --frozen-lockfile
+      # Needs no node and no build/, so it runs first and fails in seconds.
+      - name: deploy:local helper tests
+        run: pnpm run test:scripts
+      # Foundry mirror: format, build, AND TEST.
+      #
+      # The test step used to be omitted because these suites fork Ethereum mainnet via
+      # ETH_MAINNET_RPC in setUp, so they "run upstream". That held while contracts/tvm/source was a
+      # faithful pinned import of its upstream repository, and no longer does: the witnesses were
+      # widened in THIS vendored tree (destinationHash / sourceAmount / depositRequestHash) while
+      # upstream still declares the pre-widening shapes with zero occurrences of those fields.
+      # "Runs upstream" therefore meant the widened contracts' tests ran NOWHERE.
+      #
+      # NO RPC IS REQUIRED, and that is load-bearing for this gate's trustworthiness.
+      #
+      # The suites' only reason to touch mainnet was to borrow canonical Permit2's bytecode, and every
+      # vm.createSelectFork call site passed NO block number — so each run forked at the chain tip,
+      # foundry's block-keyed RPC cache could never hit, and identical test code could go red on the
+      # next push with nothing changed in the repository. An endpoint hiccup or rate limit would have
+      # surfaced as a contract test failure, which is the worst possible reading of a red gate.
+      #
+      # PINNING A BLOCK DOES NOT FIX IT, which is worth recording because it is the obvious remedy: a
+      # pinned historical block makes the cache work but turns every run into an ARCHIVE request, and
+      # the public endpoint this job defaulted to answers those with
+      # "HTTP 403: Archive requests require a personal token". Pinning alone trades flakiness for a
+      # hard dependency on an archive subscription.
+      #
+      # foundry_tests/helpers/LocalPermit2.sol removes the fork instead: it etches the Permit2 runtime
+      # bytecode that ships in the vendored permit2-tron build output — the same artifact the
+      # deployment migrations use, so it is the code Tron actually runs rather than a mock.
+      #
+      # Verified: `forge test` — the exact command below, whole suite, nothing excluded — passes with
+      # NO ETH_MAINNET_RPC set at all: 221 tests, 0 failures across 8 suites.
+      - name: Foundry format check
+        run: forge fmt --check
+      - name: Foundry build
+        run: forge build
+      - name: Foundry test (Escrow suites)
+        env:
+          PERMIT2_ADDRESS: "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+          SALT: "0x0000000000000000000000000000000000000000000000000000000000000000"
+        run: forge test
+      # TronBox suite against a local TRON node in Docker (heavy). Mirrors
+      # `make test-tronbox` but with the workspace-safe install above.
+      - name: Install TronBox
+        run: npm install -g tronbox
+      - name: Compile (tronbox)
+        run: pnpm run compile
+      # source/generated/abi is COMMITTED and is the oracle for the Go guards in
+      # tvm/bindings/go/escrow-encoding (TestEventTopic0Stability and
+      # TestGeneratedBindingsMatchSourceABI both read source/generated/abi/*.json
+      # rather than the bindings they police). Nothing else in CI regenerates it,
+      # so editing IEscrow.sol without running `make generate-abi` left the ABI and
+      # the bindings stale TOGETHER while every guard stayed green. This step is the
+      # anchor for that chain. It could not be added until generate-abi was made
+      # deterministic (TIP712's contract name collided with
+      # permit2-tron's, so the emitted ABI depended on tronbox's compile order).
+      - name: Check committed ABIs are up to date
+        run: make check-abi
+      # test/EscrowReserveSdk.test.js requires the SDK's build output and fails, never skips, without it.
+      - name: Install workspace
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+      - name: Build the sender-auth SDK
+        working-directory: .
+        run: pnpm --filter "@atum-labs/payment-request-sender-auth..." build
+      - name: Start local TRON node
+        run: |
+          docker compose --profile tron up -d tron-local
+          ./scripts/wait-for-tron.sh
+      - name: TronBox tests
+        run: pnpm run test:tronbox
+        env:
+          # Local TronBox node only. A fixed dummy key, never a real secret, so
+          # PR-controlled test code has no secret to read.
+          PRIVATE_KEY_NILE: '0000000000000000000000000000000000000000000000000000000000000000'
+      # The settler's Tron e2e runs exactly this script and reads exactly this file, so a change
+      # that breaks either fails here instead of in the settler. deploy:local exits non-zero on a
+      # DOMAIN_SEPARATOR mismatch and leaves no artifact. The check below also fails when the
+      # pinned image's chain id stops being 0xc845df2f, until this literal is updated; README.md,
+      # "Local node image", lists the other places that name it, the settler's included.
+      - name: deploy:local
+        id: deploy-local
+        run: pnpm run deploy:local
+      - name: TRON node logs
+        if: failure() && steps.deploy-local.outcome == 'failure'
+        run: docker logs tron-local-node 2>&1 | tail -n 200
+      - name: Check deployment-addresses.json
+        run: |
+          node -e '
+            const a = require("./deployment-addresses.json");
+            for (const k of ["escrow", "fulfillmentProxy", "permit2", "usdc", "usdt"]) {
+              if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a[k])) throw new Error(`${k} is not a base58 address: ${a[k]}`);
+            }
+            if (a.tronChainId !== "0xc845df2f") throw new Error(`tronChainId ${a.tronChainId}, the pinned tre digest gives 0xc845df2f`);
+            console.log(JSON.stringify(a, null, 2));
+          '
+      - name: Stop local TRON node
+        if: always()
+        run: docker compose --profile tron down
+
+  svm-contracts:
+    name: SVM contracts (anchor)
+    needs: changes
+    if: ${{ needs.changes.outputs.svm == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/svm/source
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30 # stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: contracts/svm/source
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.0/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      # anchor-cli pulls in hidapi, which needs the system libudev; the runner
+      # ships pkg-config but not the -dev headers.
+      - name: Install Anchor build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
+      - name: Install Anchor CLI 0.32.1
+        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.32.1 anchor-cli --locked
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          run_install: false
+      - name: Install contract deps
+        run: pnpm install --ignore-workspace --frozen-lockfile
+      - name: Rust format check
+        run: pnpm run rust:fmt:check
+      - name: Clippy
+        run: pnpm run rust:clippy
+      - name: Rust unit tests
+        run: cargo test --workspace
+      # anchor test uses the provider wallet to deploy to the local validator, but
+      # the runner has no default keypair. Generate a throwaway one.
+      - name: Generate a Solana keypair for anchor test
+        run: solana-keygen new --no-bip39-passphrase --silent
+      # tests/16_reserve_sdk.ts requires the SDK's build output and fails, never skips, without it.
+      - name: Install workspace
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+      - name: Build the sender-auth SDK
+        working-directory: .
+        run: pnpm --filter "@atum-labs/payment-request-sender-auth..." build
+      # anchor test builds the SBF programs and boots a local validator to run the
+      # ts-mocha suite (heavy).
+      - name: Anchor build + test
+        run: anchor test
+      # anchor test builds target/idl/escrow.json; fail if the committed IDL under
+      # escrow-encoding drifted from it (program changed without running sync-idl).
+      - name: Check the committed Solana IDL is in sync
+        # REQUIRE_IDL_CHECK=1: 'anchor test' above must have produced target/idl, so a
+        # missing target dir here means the build stopped emitting artifacts. Fail rather
+        # than report a green check that compared nothing.
+        run: REQUIRE_IDL_CHECK=1 bash ../bindings/typescript/escrow-encoding/scripts/check-idl.sh
+      # The error tables in docs/programs/*.md are written from that same IDL. Without this they
+      # are hand-pasted prose that goes stale the next time a variant is appended, while the doc
+      # keeps claiming it matches the program.
+      - name: Check the program error tables match the IDL
+        working-directory: contracts/svm/bindings/typescript/escrow-encoding
+        run: pnpm run check:error-tables
+
+  stellar-contracts:
+    name: Stellar contracts (soroban)
+    needs: changes
+    if: ${{ needs.changes.outputs.stellar == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/stellar/source
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      # The toolchain is whatever contracts/stellar/source/rust-toolchain.toml pins (channel,
+      # components, wasm32v1-none target); `rustup toolchain install` with no argument reads that
+      # file from the working directory. Not dtolnay/rust-toolchain: that action takes the channel
+      # from its own `toolchain` input and would ignore the pin.
+      - name: Install the pinned Rust toolchain
+        run: |
+          rustup toolchain install --profile minimal
+          # Idempotent when the file already lists them; makes the fmt and clippy steps independent of it
+          rustup component add rustfmt clippy
+          rustup show active-toolchain
+          rustc --version
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          workspaces: contracts/stellar/source
+      # cargo test builds natively, so soroban-sdk's build script does not require the Stellar CLI
+      # (it only checks STELLAR_CLI_VERSION on wasm targets). The wasm build is not part of this lane.
+      - name: Rust format check
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Rust unit tests
+        run: cargo test --workspace
+      # regenerate_vectors.py writes the Stellar conformance vectors the Go and TS encoders are
+      # checked against; --check fails if the committed vectors.json differs from what it would
+      # write. Run from the repo root, outside the cargo working directory.
+      - name: Check the conformance vectors are in sync
+        working-directory: .
+        # The generator signs the delegate vectors with the `cryptography` package, which the
+        # runner image does not guarantee. Ed25519 is deterministic, so the version does not
+        # change the output. A venv, because the system Python rejects global pip installs.
+        run: |
+          python3 -m venv "$RUNNER_TEMP/vectors-venv"
+          "$RUNNER_TEMP/vectors-venv/bin/pip" install --quiet cryptography==46.0.3
+          "$RUNNER_TEMP/vectors-venv/bin/python" contracts/stellar/conformance/regenerate_vectors.py --check
+
+  # The Stellar wasm is what gets deployed, and nothing else in CI builds it: the lane above runs the
+  # contracts natively. This one builds it with the Stellar CLI the deploy README pins and PUBLISHES the
+  # result: the two .wasm files and their sha256s (hashes.txt) as a workflow artifact, and the hashes in
+  # the job summary. It compares nothing, so a contract change does not turn it red.
+  #
+  # The Linux build is the reference build. escrow.wasm built on macOS has different bytes from the one
+  # built here (fulfillment_proxy.wasm matched on both; the cause is not yet known), so DEPLOYMENT MUST
+  # TAKE THE WASM FROM THIS ARTIFACT, never from a laptop build, and check the on-chain wasm hash against
+  # the artifact's hashes.txt. contracts/stellar/deploy/README.md has the procedure.
+  #
+  # Artifacts expire (retention-days below). Deploy from the push-to-main run of the commit being
+  # deployed; this lane runs on every push to main because the path filter is bypassed there. A pull
+  # request run builds GitHub's test merge of the PR and the base, not the head commit alone. If an
+  # artifact has expired, re-run this lane on that commit and use the new one.
+  #
+  # The CLI is built from the pinned commit: 30.0.0 is not released, and the released 28.x cannot build
+  # soroban-sdk 30. The commit is read from the README, the one place it is recorded. Move this lane to
+  # the released CLI (and drop the build step) once 30.0.0 and a stable soroban-sdk are out.
+  #
+  # NOT in ci-gate's needs, so it reports its own check but does not block a merge. It can become a
+  # gate (build, then compare with a recorded hash) once escrow.wasm reproduces across platforms.
+  stellar-wasm:
+    name: Stellar wasm build (publishes hashes and wasm)
+    needs: changes
+    if: ${{ needs.changes.outputs.stellar == 'true' }}
+    runs-on: ubuntu-latest
+    # A cold CLI build took about 25 minutes on a runner (run 41048213341: 25m08s of a 26m41s job);
+    # without a limit a stuck build holds the runner for the 6-hour default. The warm path (cache hit)
+    # is only the wasm build, the hashes and the upload.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Read the pinned Stellar CLI commit
+        id: cli
+        run: |
+          # "... built from `stellar-cli` commit `<40 hex>`" in the Reproducible build section. The README
+          # wraps that sentence across lines, so the newlines are turned into spaces before matching.
+          rev="$(tr '\n' ' ' < contracts/stellar/deploy/README.md | grep -Eo 'stellar-cli` commit +`[0-9a-f]{40}`' | grep -Eo '[0-9a-f]{40}' | head -n1 || true)"
+          if [ -z "$rev" ]; then
+            echo "::error::contracts/stellar/deploy/README.md does not name the Stellar CLI commit (expected: stellar-cli commit <40 hex>, in backticks)"
+            exit 1
+          fi
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+      # Only the compiled CLI is cached, keyed by commit: the cache is a speed-up, never an input to
+      # what is built, and a miss rebuilds the same binary from the same locked dependencies. It is
+      # saved by its own step right after the build: actions/cache saves in its post step only when the
+      # whole job succeeded, so a failure later in the job would otherwise discard a 25-minute CLI build
+      # each run.
+      - name: Restore the Stellar CLI
+        id: cli-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cargo/bin/stellar
+          key: stellar-cli-${{ runner.os }}-${{ steps.cli.outputs.rev }}
+      - name: Build the Stellar CLI from the pinned commit
+        if: steps.cli-cache.outputs.cache-hit != 'true'
+        run: |
+          # hidapi (a CLI dependency, for hardware wallets) links libudev; the keyring support links libdbus
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev libudev-dev pkg-config
+          cargo install --locked --git https://github.com/stellar/stellar-cli --rev "${{ steps.cli.outputs.rev }}" stellar-cli
+      - name: Save the Stellar CLI
+        if: steps.cli-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cargo/bin/stellar
+          key: stellar-cli-${{ runner.os }}-${{ steps.cli.outputs.rev }}
+      - name: Show the CLI
+        run: stellar version
+      # `rustup toolchain install` with no argument reads rust-toolchain.toml from the working directory
+      # (channel, components and the wasm32v1-none target), as in the lane above.
+      - name: Install the pinned Rust toolchain
+        working-directory: contracts/stellar/source
+        run: |
+          rustup toolchain install --profile minimal
+          rustc --version
+      - name: Build the wasm
+        working-directory: contracts/stellar/source
+        run: stellar contract build
+      # hashes.txt is in `sha256sum` format and sits beside the wasm files, so after downloading the
+      # artifact `sha256sum -c hashes.txt` checks the files. Both files are named, so a missing one fails
+      # the step rather than being left out.
+      - name: Write the hashes
+        working-directory: contracts/stellar/source/target/wasm32v1-none/release
+        env:
+          CLI_REV: ${{ steps.cli.outputs.rev }}
+        run: |
+          sha256sum escrow.wasm fulfillment_proxy.wasm | tee hashes.txt
+          rustc_version="$(cd "$GITHUB_WORKSPACE/contracts/stellar/source" && rustc --version)"
+          {
+            echo "### Stellar wasm hashes"
+            echo
+            echo "| Artefact | sha256 |"
+            echo "| --- | --- |"
+            while read -r hash file; do
+              echo "| \`$file\` | \`$hash\` |"
+            done < hashes.txt
+            echo
+            echo "| Build input | Value |"
+            echo "| --- | --- |"
+            echo "| Commit built | \`$GITHUB_SHA\` |"
+            echo "| stellar-cli commit | \`$CLI_REV\` |"
+            echo "| rustc | \`$rustc_version\` |"
+            echo "| Runner | \`$RUNNER_OS $RUNNER_ARCH\` |"
+            echo
+            echo "This is the reference build. Deploy from the artifact \`stellar-wasm-$GITHUB_SHA\`, not from a local build."
+          } >> "$GITHUB_STEP_SUMMARY"
+      # v4.6.2: the release line matching the other v4 actions here. retention-days is explicit so the
+      # window does not depend on a repository default that can change. 90 days because a deployment can
+      # come weeks after the merge, the artifact is the only trusted source of the wasm, and two small
+      # files cost next to nothing to keep. An organisation or repository retention cap below 90 wins.
+      # if-no-files-found: error and overwrite: true because a missing file must fail the lane and a
+      # re-run of the same run must not collide with the name of the first attempt's artifact.
+      - name: Publish the wasm and hashes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: stellar-wasm-${{ github.sha }}
+          path: |
+            contracts/stellar/source/target/wasm32v1-none/release/escrow.wasm
+            contracts/stellar/source/target/wasm32v1-none/release/fulfillment_proxy.wasm
+            contracts/stellar/source/target/wasm32v1-none/release/hashes.txt
+          retention-days: 90
+          if-no-files-found: error
+          overwrite: true
+      # Diagnostic for the escrow.wasm difference between macOS and Linux builds: the same build with the
+      # optimizer step off. Compare these hashes with a macOS `stellar contract build --optimize=false`
+      # (and with the optimized ones above) to tell a compile difference from an optimizer difference.
+      # It runs after the reference artifact is published, copies its output away because the build
+      # overwrites the files above, and is not a reference build: do not deploy from it.
+      - name: Build the wasm without the optimizer (diagnostic)
+        # A failure here must not turn the reference lane red: the reference artifact is already published.
+        continue-on-error: true
+        working-directory: contracts/stellar/source
+        run: |
+          stellar contract build --optimize=false
+          mkdir -p "$RUNNER_TEMP/unoptimized"
+          cp target/wasm32v1-none/release/escrow.wasm target/wasm32v1-none/release/fulfillment_proxy.wasm "$RUNNER_TEMP/unoptimized/"
+          cd "$RUNNER_TEMP/unoptimized"
+          sha256sum escrow.wasm fulfillment_proxy.wasm | tee hashes.txt
+          {
+            echo
+            echo "### Unoptimized wasm (diagnostic, not a reference build)"
+            echo
+            echo "| Artefact | sha256 |"
+            echo "| --- | --- |"
+            while read -r hash file; do
+              echo "| \`$file\` | \`$hash\` |"
+            done < hashes.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish the unoptimized wasm (diagnostic)
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: stellar-wasm-unoptimized-${{ github.sha }}
+          path: ${{ runner.temp }}/unoptimized/
+          retention-days: 14
+          if-no-files-found: error
+          overwrite: true
+
+  # Diagnostic, not a reference build: the same wasm build on a Linux arm64 and a macOS arm64 runner,
+  # next to the ubuntu-latest (x86_64) reference above, to tell whether the escrow.wasm difference
+  # between macOS and Linux comes from the operating system or from the CPU architecture. If Linux
+  # arm64 matches Linux x86_64 and differs from macOS arm64, the OS is the variable; if it matches
+  # macOS arm64, the CPU is. Both the optimized and the unoptimized wasm are hashed. Nothing here
+  # is deployed from, and a failure does not fail the workflow.
+  stellar-wasm-platforms:
+    name: Stellar wasm hashes (${{ matrix.os }}, diagnostic)
+    needs: changes
+    if: ${{ needs.changes.outputs.stellar == 'true' }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04-arm, macos-latest]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Read the pinned Stellar CLI commit
+        id: cli
+        run: |
+          rev="$(tr '\n' ' ' < contracts/stellar/deploy/README.md | grep -Eo 'stellar-cli` commit +`[0-9a-f]{40}`' | grep -Eo '[0-9a-f]{40}' | head -n1 || true)"
+          if [ -z "$rev" ]; then
+            echo "::error::contracts/stellar/deploy/README.md does not name the Stellar CLI commit"
+            exit 1
+          fi
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+      # The key carries the architecture: Linux x86_64 and Linux arm64 share runner.os, and a binary
+      # restored across architectures would not run.
+      - name: Restore the Stellar CLI
+        id: cli-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cargo/bin/stellar
+          key: stellar-cli-${{ runner.os }}-${{ runner.arch }}-${{ steps.cli.outputs.rev }}
+      - name: Build the Stellar CLI from the pinned commit
+        if: steps.cli-cache.outputs.cache-hit != 'true'
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libdbus-1-dev libudev-dev pkg-config
+          fi
+          cargo install --locked --git https://github.com/stellar/stellar-cli --rev "${{ steps.cli.outputs.rev }}" stellar-cli
+      - name: Save the Stellar CLI
+        if: steps.cli-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cargo/bin/stellar
+          key: stellar-cli-${{ runner.os }}-${{ runner.arch }}-${{ steps.cli.outputs.rev }}
+      - name: Install the pinned Rust toolchain
+        working-directory: contracts/stellar/source
+        run: |
+          rustup toolchain install --profile minimal
+          rustc --version -v
+      - name: Build the wasm, optimized and not, and hash both
+        working-directory: contracts/stellar/source
+        run: |
+          out="$RUNNER_TEMP/platform-wasm"
+          mkdir -p "$out/optimized" "$out/unoptimized"
+          stellar contract build
+          cp target/wasm32v1-none/release/escrow.wasm target/wasm32v1-none/release/fulfillment_proxy.wasm "$out/optimized/"
+          stellar contract build --optimize=false
+          cp target/wasm32v1-none/release/escrow.wasm target/wasm32v1-none/release/fulfillment_proxy.wasm "$out/unoptimized/"
+          for kind in optimized unoptimized; do
+            (cd "$out/$kind" && shasum -a 256 escrow.wasm fulfillment_proxy.wasm | tee hashes.txt)
+          done
+          {
+            echo "### Stellar wasm hashes on $RUNNER_OS $RUNNER_ARCH (diagnostic, not a reference build)"
+            echo
+            echo "| Build | Artefact | sha256 |"
+            echo "| --- | --- | --- |"
+            for kind in optimized unoptimized; do
+              while read -r hash file; do
+                echo "| $kind | \`$file\` | \`$hash\` |"
+              done < "$out/$kind/hashes.txt"
+            done
+            echo
+            echo "rustc: \`$(rustc --version)\` (host: \`$(rustc -vV | sed -n 's/^host: //p')\`)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish the platform wasm (diagnostic)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: stellar-wasm-platform-${{ matrix.os }}-${{ github.sha }}
+          path: ${{ runner.temp }}/platform-wasm/
+          retention-days: 14
+          if-no-files-found: error
+          overwrite: true
+
+  # schemas/apis/payment-gateway/v1/bindings/go/client/internal/ is a generated copy of the
+  # canonical packages listed in its scripts/flatten.mjs, under schemas/ and contracts/, which is
+  # what lets the module be `go get`-ed with no replace directives. The copy carries no tests, so
+  # this check is the only thing between a drifted copy and an integrator. It runs on every change with no path filter: its inputs span several trees,
+  # and a filter that missed one would skip the check exactly when it matters.
+  go-sdk-copy:
+    name: Go SDK copy matches its canonical packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.25"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: Check the Go SDK's flattened internal/ has not drifted
+        run: node schemas/apis/payment-gateway/v1/bindings/go/client/scripts/flatten.mjs --check
+
+  leaf-invariant:
+    name: Leaf invariant (no consumer-repo imports)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Fail on any dependency or import of a consumer repo
+        run: |
+          if git grep -nE "github\.com/atum-labs/(atum-core|settler-agent)" -- '*.go' 'go.mod' '*.ts' 'package.json' ':!*/node_modules/*' ':!*/dist/*'; then
+            echo "Leaf invariant violated: protocol must not depend on or import a consumer repo (atum-core, settler-agent)."
+            exit 1
+          fi
+          echo "Leaf invariant holds: no consumer-repo imports."
+
+  # Everything under .github/ is public once the repository is. Refuse internal issue
+  # identifiers in comments and the pull_request_target trigger; see the script for why.
+  process-references:
+    name: No internal process or infrastructure references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Check .github/ and the published SDK for issue identifiers and forbidden triggers
+        # Two invocations, not one: .github/ is the default surface, and the SDK paths are the
+        # package's `files` array, which ships further than this repository does.
+        run: |
+          .github/scripts/check-process-references.sh
+          .github/scripts/check-process-references.sh \
+            schemas/apis/payment-gateway/v1/bindings/typescript/client/src \
+            schemas/apis/payment-gateway/v1/bindings/typescript/client/docs \
+            schemas/apis/payment-gateway/v1/bindings/typescript/client/README.md \
+            schemas/apis/payment-gateway/v1/bindings/typescript/client/CHANGELOG.md
+      - name: Check the tree for deployment-infrastructure references
+        # Separate script, not a wider path list on the one above: that guard forbids CORE-<digits>
+        # everywhere it looks, and the audit accepted those keys outside .github/ and the published
+        # SDK. This one forbids a different set over the whole tree.
+        run: .github/scripts/check-infra-references.sh
+      - name: Check service host literals against hosts.yaml
+        run: node schemas/scripts/check-host-literals.mjs
+
+  proto:
+    name: Proto (lint + drift + wire compatibility)
+    needs: changes
+    if: ${{ needs.changes.outputs.proto == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # The wire-compatibility check diffs each proto module against origin/main, so the
+          # baseline ref has to be present in the checkout.
+          fetch-depth: 0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.25"
+      - name: Install buf
+        run: .github/scripts/go-install.sh buf github.com/bufbuild/buf/cmd/buf@v1.50.0
+      - name: Lint protos and verify generated bindings are up to date
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas check-proto
+      - name: Verify wire compatibility with main
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make -C schemas breaking-proto BREAKING_REF=origin/main
+
+  # Secret scan. Runs on every event regardless of which lanes a PR touches: the
+  # policy in .gitleaks.toml is the regression gate for the pre-publication audit
+  # (audit/pre-publication-2026-09-16.md), and every allowlist entry there is
+  # justified in that report. Both modes must stay at zero findings.
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # The history scan walks every reachable commit, so a shallow clone
+          # would silently scan only the tip.
+          fetch-depth: 0
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tgz
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+      - name: Scan working tree
+        run: gitleaks detect --no-git --source . --config .gitleaks.toml --redact --verbose
+      # On a PR, walk only the commits the PR adds. fetch-depth 0 also brings every
+      # other branch onto the runner, and `--all` would make a stale WIP branch fail
+      # every open PR with no way for the PR author to fix it.
+      - name: Scan PR commits
+        if: github.event_name == 'pull_request'
+        run: gitleaks detect --source . --log-opts="origin/${{ github.base_ref }}..HEAD" --config .gitleaks.toml --redact --verbose
+      # On main, walk the branch's whole reachable history. Merges land here only
+      # through PRs, so anything this catches was already on main before this job existed.
+      - name: Scan main history
+        if: github.event_name == 'push'
+        run: gitleaks detect --source . --log-opts="HEAD" --config .gitleaks.toml --redact --verbose
+
+  # Always-run aggregation gate. Make THIS the only required status check in
+  # branch protection: a lane skipped by the path filter reports no status, so
+  # requiring the lanes directly would wedge PRs. This gate always runs and
+  # fails only if a lane that did run failed or was cancelled.
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs: [changes, go, typescript, schema-guards, evm-contracts, tvm-contracts, svm-contracts, stellar-contracts, go-sdk-copy, leaf-invariant, process-references, proto, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any lane failed or was cancelled
+        shell: bash
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "lane results: $results"
+          for r in $results; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "A lane failed or was cancelled."
+              exit 1
+            fi
+          done
+          echo "All lanes passed or were legitimately skipped."

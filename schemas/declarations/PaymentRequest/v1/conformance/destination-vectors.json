@@ -1,0 +1,158 @@
+{
+  "_maintained_by": "Hand-authored. The Go (senderauth/destination.go) and TypeScript (sender-auth/src/destination.ts) implementations both read this file, so every vector here must hold in both.",
+  "depositRequestHashes": [
+    {
+      "requestId": "req-123",
+      "want": "0x66a85bfb3dc3941b66ed3a8462fc911295b9669aea5628b5a4512e527d95b2be",
+      "wantErr": false
+    },
+    {
+      "requestId": "550e8400-e29b-41d4-a716-446655440000",
+      "want": "0x2f779c94a35dceba72fe536ce28c5fea7566753044cdf9da29f6402ea964b7f9",
+      "wantErr": false
+    },
+    {
+      "requestId": "test-payment-ecddf2bd-e93a-47e6-aa9b-231dfa6d5682",
+      "want": "0x8e934d86a98b15f729cda46db917b5da338586bcfc80c2b0c227ccd95aa766c5",
+      "wantErr": false
+    },
+    {
+      "requestId": "0xdeadbeef",
+      "want": "0x4f440a001006a49f24a7de53c04eca3f79aef851ac58e460c9630d044277c8b0",
+      "wantErr": false
+    },
+    {
+      "requestId": "",
+      "wantErr": true
+    }
+  ],
+  "destinations": [
+    {
+      "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979",
+      "want": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+      "wantErr": false
+    },
+    {
+      "_comment": "A non-canonical chain namespace is REJECTED, not normalised. This vector previously asserted pass-through (want: 'EIP155:42220/ERC20:0xAbC@0xDEF', wantErr: false), which pinned a defect: 'EIP155' matched neither the eip155 normalisation branch nor any rejection, so non-canonical bytes were signed and two producers spelling the namespace differently committed two different hashes for one payee. ONCHAIN_SPEC.md ratifies the chain namespace as lowercase.",
+      "asset": "EIP155:42220/ERC20:0xAbC",
+      "account": "0xDEF",
+      "wantErr": true
+    },
+    {
+      "_comment": "Mixed case is rejected on the same rule; canonical lowercase of the same identifier is the vector above this block.",
+      "asset": "Solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": true
+    },
+    {
+      "_comment": "The ASSET namespace half of the same rule. The wholesale lowercasing runs for eip155 ONLY, so on any other namespace 'Token' vs 'token' reaches the commitment verbatim and two producers hash one payee two ways. The canonical lowercase counterpart is the solana '/token:' vector below, which must keep composing.",
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/Token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": true
+    },
+    {
+      "_comment": "eip155 is held to the rule too, and this vector pins a deliberate NARROWING: 'ERC20' used to compose, because the eip155 branch lowercases the whole side AFTER the namespace is read. Rejecting is consistent with 'EIP155:' already being rejected on the chain half, so the grammar keeps one policy rather than two.",
+      "asset": "eip155:8453/ERC20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979",
+      "wantErr": true
+    },
+    {
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "want": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": false
+    },
+    {
+      "_comment": "spl: is ACCEPTED, deliberately. Two SDKs (x402-atum-escrow, mppx-atum-escrow) emit this spelling while ONCHAIN_SPEC.md ratifies token:, and there is no asset-namespace allow-list -- an allow-list would reject the ratified slip44 example, the erc721 case the SDK tests assert, and the frozen ed25519 fixtures. This vector pins that BOTH spellings compose verbatim rather than one being silently rewritten: what prevents a stranded deposit is that the destination is derived once and transported verbatim to both signers, NOT that producers agree on the spelling. If this vector ever starts FAILING, someone has added normalisation or an allow-list, and every deposit signed under the other spelling became unreleasable.",
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/spl:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "want": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/spl:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": false
+    },
+    {
+      "asset": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+      "want": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+      "wantErr": false
+    },
+    {
+      "asset": "",
+      "account": "0xabc",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:1/erc20:0xabc",
+      "account": "",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:1/erc20:0xa@bc",
+      "account": "0xabc",
+      "wantErr": true
+    },
+    {
+      "asset": "solana:ref:mint",
+      "account": "acct",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:1",
+      "account": "0xabc",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:1/erc20",
+      "account": "0xabc",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155/erc20:0xabc",
+      "account": "0xabc",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979\u0130",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979\u03a3",
+      "wantErr": true
+    },
+    {
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token\ua7cb:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": true
+    },
+    {
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4 ",
+      "wantErr": true
+    },
+    {
+      "asset": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo",
+      "account": "\t7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979\u007f",
+      "wantErr": true
+    },
+    {
+      "asset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\u0000",
+      "account": "0xC0FFEE254729296a45a3885639AC7E10F9d54979",
+      "wantErr": true
+    },
+    {
+      "_comment": "The CAIP-2 reference used in Tron destinations (tron:0x2b6653dc, the hex chain id) is kept byte for byte. This vector spells its hex digits in mixed case and pays the same account as the lowercase tron:0x2b6653dc vector above, so the chain reference is the only difference between the two, yet they compose two different destinations. Only eip155 is lowercased; every other namespace is joined byte for byte, and a mixed-case chain reference is neither rejected, as an upper-case chain namespace is, nor rewritten to lowercase. Two producers spelling the reference differently therefore commit two different hashes for one payee, and only a destination composed once and carried verbatim is safe. Whether a mixed-case Tron reference should be refused instead is an open question: this vector pins what both implementations do today, so that changing it is a deliberate decision.",
+      "asset": "tron:0x2B6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "account": "TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+      "want": "tron:0x2B6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+      "wantErr": false
+    }
+  ],
+  "maxDestinationBytes": 256
+}

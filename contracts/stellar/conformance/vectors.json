@@ -1,0 +1,1995 @@
+{
+  "_comment": "Shared conformance vectors for the Stellar escrow digests. One fixture, three readers: the Rust contract tests (escrow/src/test_conformance.rs), Go (encoding/conformance_test.go) and TypeScript (src/conformance.test.ts) must each reproduce every `digest` from `input`. Generated OUT OF BAND by conformance/regenerate_vectors.py from docs/witness-layouts.md (own keccak-256, own strkey encoder, `cryptography` ed25519); never regenerate from the output of an implementation under test, and never edit by hand. A layout change is a reviewed vector bump: see the header of regenerate_vectors.py and contracts/encoding-parity.md. Amounts, nonces and times are decimal strings so no reader loses precision above 2^53.",
+  "signatureDomainVersion": 2,
+  "networks": {
+    "testnet": {
+      "passphrase": "Test SDF Network ; September 2015",
+      "networkId": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472"
+    },
+    "public": {
+      "passphrase": "Public Global Stellar Network ; September 2015",
+      "networkId": "7ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979"
+    }
+  },
+  "delegate": {
+    "seed": "7777777777777777777777777777777777777777777777777777777777777777",
+    "publicKey": "c853ad0f0cd2b619aea92ceec4fd56a24d6499d584ce79257e45cfd8139b60a7"
+  },
+  "addresses": [
+    {
+      "strkey": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+      "type": "account",
+      "key": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "strkey": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "type": "contract",
+      "key": "d7928b72c2703ccfeaf7eb9ff4ef4d504a55a8b979fc9b450ea2c842b4d1ce61"
+    },
+    {
+      "strkey": "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+      "type": "contract",
+      "key": "25b4fcd859aec2fa6348438c489b3c3c10c98b6d21be4fd3cb30cb68953ef977"
+    },
+    {
+      "strkey": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+      "type": "account",
+      "key": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"
+    },
+    {
+      "strkey": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+      "type": "contract",
+      "key": "e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1"
+    }
+  ],
+  "rejectedAddresses": {
+    "muxed": "MCV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2WAAAAAAAAAAAA4WXK",
+    "claimableBalance": "BAAM3TONZXG43TONZXG43TONZXG43TONZXG43TONZXG43TONZXG43TLWLQ",
+    "secretSeed": "SAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC5MY"
+  },
+  "cases": [
+    {
+      "name": "destination/canonical-103-bytes",
+      "kind": "destinationHash",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979"
+      },
+      "digest": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef"
+    },
+    {
+      "name": "destination/one-byte",
+      "kind": "destinationHash",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "destination": "a"
+      },
+      "digest": "3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb"
+    },
+    {
+      "name": "destination/max-256-bytes",
+      "kind": "destinationHash",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "destination": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "digest": "e1ad069b6f85e2c234e986457b6cfe1a0ba288d8d415668970a5d95e65915c49"
+    },
+    {
+      "name": "destination/multibyte-256-bytes",
+      "kind": "destinationHash",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "destination": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+      },
+      "digest": "359d202d30240974a6553d1b55abf627a8c81b93145d13e0eb11de1ea628e4ae"
+    },
+    {
+      "name": "destination/stellar-case-significant",
+      "kind": "destinationHash",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "destination": "stellar:testnet/sep41:CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ@GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "32150a6aeae19845b7d1a5be7b3f7c9d364082f20bb3f11453586b6e4a321cef"
+    },
+    {
+      "name": "deposit/base",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+      "signer": "delegate",
+      "signature": "ec48e2d9cc0bff07e1d6c5fb9820fd8cc7a269fe3d3cc752afd46809472076d45327cc4482b64e91990cde344c545a667304692261d9fa526eddf8e6cd12fe0b"
+    },
+    {
+      "name": "deposit/change-network",
+      "kind": "deposit",
+      "network": "public",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "708f97942322b3d027730af1dc8359655b638e06cf2abbaa35f155189a64a6df",
+      "mutates": "deposit/base",
+      "field": "network"
+    },
+    {
+      "name": "deposit/change-depositRequestHash",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "9898989898989898989898989898989898989898989898989898989898989898",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "6888bbbebb173ebff177354dd31028fec939862d227b0a547c7bb24b7c6cf4a7",
+      "mutates": "deposit/base",
+      "field": "depositRequestHash"
+    },
+    {
+      "name": "deposit/change-destination",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54978",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "0ad83500550a0812171ebcb4ada89a17c17ec7cf8699eac0806d6265b3b86420",
+      "mutates": "deposit/base",
+      "field": "destination"
+    },
+    {
+      "name": "deposit/change-depositor",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFNZL",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "b5e6b4604000f60df3e6c12ea86833b56ca189c702e8b7e5aeb054917bf27676",
+      "mutates": "deposit/base",
+      "field": "depositor"
+    },
+    {
+      "name": "deposit/change-token",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROEN7O",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "1725310f2bcf09dcdcd4ac07deed91ab1291ffc0d7f88ac4b66480a5619e96d1",
+      "mutates": "deposit/base",
+      "field": "token"
+    },
+    {
+      "name": "deposit/change-epoch",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "2",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "9c7406a0cd16d8948b864cf6b1ca404ed3231713a98f584cf22439b27b8562f6",
+      "mutates": "deposit/base",
+      "field": "epoch"
+    },
+    {
+      "name": "deposit/change-amount",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250001",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "50870ab55ea68e67dcbaaf7c78adb82da361abe1211098c0f2b3ef1d7dbfe7b1",
+      "mutates": "deposit/base",
+      "field": "amount"
+    },
+    {
+      "name": "deposit/change-reserver",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "9494949494949494949494949494949494949494949494949494949494949494",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "8ca0e0a302a55f207d620f51b52f18c4c8ef20963182256aabc0d238791ee0db",
+      "mutates": "deposit/base",
+      "field": "reserver"
+    },
+    {
+      "name": "deposit/change-releaser",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "9393939393939393939393939393939393939393939393939393939393939393",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "580435834379358dd0cb71a05b34215043600620500c81691f788c35ebe38fea",
+      "mutates": "deposit/base",
+      "field": "releaser"
+    },
+    {
+      "name": "deposit/change-nonce",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967304",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "b6451b429b48906c7a6b0b6479aac99ff4f792c9e8b57d85fc2084ba5ab097de",
+      "mutates": "deposit/base",
+      "field": "nonce"
+    },
+    {
+      "name": "deposit/change-issuedAt",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000001",
+        "deadline": "1700000128"
+      },
+      "digest": "55d382d5ce485e3891d71a0e2afb19e6e9375674c39c4c0c6fb60f99676f13f8",
+      "mutates": "deposit/base",
+      "field": "issuedAt"
+    },
+    {
+      "name": "deposit/change-deadline",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000129"
+      },
+      "digest": "c3f5a25fd1845acdba4de2078accfaeec293073cc6b2ea5f2e9317a3a30c89bf",
+      "mutates": "deposit/base",
+      "field": "deadline"
+    },
+    {
+      "name": "deposit/change-contractId",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4CFV6",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "ce2a65e328ff203fcd5727ddee13dbb2dc579646d3c0a169f1b606b2266c8046",
+      "mutates": "deposit/base",
+      "field": "contractId"
+    },
+    {
+      "name": "deposit/min-destination",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "a",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "dffa50cec451f395dfbfa75ac9a0671c30ffe7f3f5e70de4e2d2b3c820bd24f2"
+    },
+    {
+      "name": "deposit/max-destination-256-bytes",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "34d1d0d8b319d73c8a5d66414a4ade4daad0dab03fc2df6721190c5b000c0803"
+    },
+    {
+      "name": "deposit/multibyte-destination-256-bytes",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "9cd9b2180e7919fd21ee405394f876ddc57b802d458c3e46f260237834c0abe9"
+    },
+    {
+      "name": "deposit/min-amount",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "d82987524694ce02726a5bda54bf6dc084ff2d7d5db95fe07a8535da56019187"
+    },
+    {
+      "name": "deposit/max-amount-i128",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "170141183460469231731687303715884105727",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "e03a2457c8ceb5dcf2a48eeb4c765bbe1ea7ed48184070661d55a0a89d6d93d2"
+    },
+    {
+      "name": "deposit/window-exactly-86400",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700086400"
+      },
+      "digest": "042f0bc045c4a09a7e89d0631c7ef3408ffecedc666c17c99703ac747e5ea254"
+    },
+    {
+      "name": "deposit/issued-equals-deadline",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000000"
+      },
+      "digest": "b51a5f64ba380deeff69e97172834c17986f582cbb7c8b4d3e4e7509784f776f"
+    },
+    {
+      "name": "deposit/u64-max-times-and-nonce",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "18446744073709551615",
+        "issuedAt": "18446744073709465215",
+        "deadline": "18446744073709551615"
+      },
+      "digest": "137ee8beae7767fbb35a38ff6ceee9c4f812def48718c972c63667539dd08a98"
+    },
+    {
+      "name": "deposit/zero-issued-at",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "0",
+        "issuedAt": "0",
+        "deadline": "128"
+      },
+      "digest": "7a17ef984d6e9f9e84b712af96712ed32ffb6582820532e113559ff5a91a6317"
+    },
+    {
+      "name": "deposit/depositor-is-contract",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "CDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DZUV",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "bd743f2f0643b053e2f907cb20d398f0c87535a5d5dbccf0ba7ace66fd26597f"
+    },
+    {
+      "name": "deposit/token-is-account-type",
+      "kind": "deposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "GDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6CZSQ",
+        "epoch": "1",
+        "amount": "1250000",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "nonce": "4294967303",
+        "issuedAt": "1700000000",
+        "deadline": "1700000128"
+      },
+      "digest": "2bb3f916b31665332233a4794301ad1619d2adfa00857bcd03163154df733f0e"
+    },
+    {
+      "name": "reserve/base",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1000000"
+      },
+      "digest": "827560933bcd171fc0ac5eb23d176b7fc5f0b2e5fbb7e84fd1d10acb99fb146f"
+    },
+    {
+      "name": "reserve/change-network",
+      "kind": "reserve",
+      "network": "public",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1000000"
+      },
+      "digest": "deaadc815436f6c44a3017756ca4f71aa1395ac6f9a43b12ff34026fe67d5109",
+      "mutates": "reserve/base",
+      "field": "network"
+    },
+    {
+      "name": "reserve/change-depositId",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "9595959595959595959595959595959595959595959595959595959595959595",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1000000"
+      },
+      "digest": "ac92a98d8067f3829c7d8469ecfb1f16ed1a05661f3c102bb4c90b5b5f843efb",
+      "mutates": "reserve/base",
+      "field": "depositId"
+    },
+    {
+      "name": "reserve/change-quoteHash",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "9797979797979797979797979797979797979797979797979797979797979797",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1000000"
+      },
+      "digest": "40371037c1ab215d182e751db00079fb6010c997cf52e0233749a0fd1e2cab56",
+      "mutates": "reserve/base",
+      "field": "quoteHash"
+    },
+    {
+      "name": "reserve/change-settler",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCTKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNG7S",
+        "sourceAmount": "1000000"
+      },
+      "digest": "738f892c740690e414f191c0aea57c4765386b043d7f3a5d8dd585e3d9bb927e",
+      "mutates": "reserve/base",
+      "field": "settler"
+    },
+    {
+      "name": "reserve/change-sourceAmount",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "999999"
+      },
+      "digest": "9cf016e41399411b99202c997e4db11cdabe0fc90cda2425f740f0a8930205d5",
+      "mutates": "reserve/base",
+      "field": "sourceAmount"
+    },
+    {
+      "name": "reserve/change-contractId",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4CFV6",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1000000"
+      },
+      "digest": "fc2d28310c50d1df550ccf50464e17c638a5f81b7f3d5c6cc3432865418417ea",
+      "mutates": "reserve/base",
+      "field": "contractId"
+    },
+    {
+      "name": "reserve/min-source-amount",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "1"
+      },
+      "digest": "57fb442ed060ae10af040684e291488d1ff87db8d2d01cdc556f7551e2dffe7d"
+    },
+    {
+      "name": "reserve/max-source-amount-i128",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV",
+        "sourceAmount": "170141183460469231731687303715884105727"
+      },
+      "digest": "a3b4a3860be38bbd55018e807b70f755034d79c4783d1ddf6371778c24713ddc"
+    },
+    {
+      "name": "reserve/settler-is-contract",
+      "kind": "reserve",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "settler": "CCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LSSM",
+        "sourceAmount": "1000000"
+      },
+      "digest": "24c2588b32b206fa04158fe89300b56390bee79c12f56124534e76a74d49e909"
+    },
+    {
+      "name": "release/base",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "1e047d0a87c1ed7a0d380b2c2d89f9484ccc18b4e2e56651b7c85e21117abaa4"
+    },
+    {
+      "name": "release/change-depositId",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "9595959595959595959595959595959595959595959595959595959595959595",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "1831ebe25150846f8aed492234115486407def0002d2271f9bb2064ffa3823b2",
+      "mutates": "release/base",
+      "field": "depositId"
+    },
+    {
+      "name": "release/change-quoteHash",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "9797979797979797979797979797979797979797979797979797979797979797",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "12def80961ed7ccbcdb3bc7a8b21e88aaa4f3bfad6f923715dad98b51ccfa7c4",
+      "mutates": "release/base",
+      "field": "quoteHash"
+    },
+    {
+      "name": "release/change-depositRequestHash",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "9898989898989898989898989898989898989898989898989898989898989898",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "1b4fbccac7a64afe9b2a8cf5dde1f060143a5615a7d5d54fd1f55670b011e66a",
+      "mutates": "release/base",
+      "field": "depositRequestHash"
+    },
+    {
+      "name": "release/change-destinationHash",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "9696969696969696969696969696969696969696969696969696969696969696",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "775124b0e62c72417dca3b1c05aba0088b0336b26633709167531c22cc4cd868",
+      "mutates": "release/base",
+      "field": "destinationHash"
+    },
+    {
+      "name": "release/change-depositor",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFNZL",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "64c79d239f6e6982af9ab61906144818cc010511666551dd9eab766dd2cfa0b9",
+      "mutates": "release/base",
+      "field": "depositor"
+    },
+    {
+      "name": "release/change-token",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROEN7O",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "2693f6e6a01b2f00b548905d83244b5e30642f2eea77e5a04c9e54cc2f25b8bc",
+      "mutates": "release/base",
+      "field": "token"
+    },
+    {
+      "name": "release/change-amount",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1250001",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "67016a5f4c471cf38b7f4360626415cd2b7de25aa3a04973c7122f908ac2b1e7",
+      "mutates": "release/base",
+      "field": "amount"
+    },
+    {
+      "name": "release/change-feeAmount",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "201",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "e1ff1e1d0b26f8c77eac2a56fbf9534b31d863998806baa6ebcda4b859883ef5",
+      "mutates": "release/base",
+      "field": "feeAmount"
+    },
+    {
+      "name": "release/change-reserver",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "9494949494949494949494949494949494949494949494949494949494949494",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "7dbddd8210186229dfa90213b32135c7e071e5b41851bb5429229d616e3a7abb",
+      "mutates": "release/base",
+      "field": "reserver"
+    },
+    {
+      "name": "release/change-releaser",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "9393939393939393939393939393939393939393939393939393939393939393",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "946fd43423abb9651ff592d7a3c6d00dd17721107251e67282fff15c25557aa3",
+      "mutates": "release/base",
+      "field": "releaser"
+    },
+    {
+      "name": "release/change-settler",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCTKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNG7S"
+      },
+      "digest": "e6dda688891ce013157e45f1161629b7f35057e3b72214d7631430235ff936bc",
+      "mutates": "release/base",
+      "field": "settler"
+    },
+    {
+      "name": "release/change-contractId",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4CFV6",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "24e6b5912f0bff85a1fc59f665f0132049dac606ce15380797092a12ce1eb342",
+      "mutates": "release/base",
+      "field": "contractId"
+    },
+    {
+      "name": "release/change-network",
+      "kind": "release",
+      "network": "public",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "3df4c75dc63439fd88fe60de9c2e143f1f48fa8e46859889ea72ec42ffc4cc36",
+      "mutates": "release/base",
+      "field": "network"
+    },
+    {
+      "name": "release/zero-fee",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "0",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "99b4a3929f09fa4bffc72d443010ea2355ba37c3c9dd63e47cdd2c3005166ce5"
+    },
+    {
+      "name": "release/min-amount",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1",
+        "feeAmount": "0",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "8abd6eb13fec12d0f388d675bf8935bf8c8e4a336104795583c98d47f7968c94"
+    },
+    {
+      "name": "release/max-amount-and-fee-i128",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "170141183460469231731687303715884105727",
+        "feeAmount": "170141183460469231731687303715884105727",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "b062a5bf6b1302cee844d147a5a12f6e66a0046bf5604d97e6aeeb337905f429"
+    },
+    {
+      "name": "release/token-is-account-type",
+      "kind": "release",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "GDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6CZSQ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "29816a8f1307e1130010351abdc61cbc844b820257db27764822f77a83f7093c"
+    },
+    {
+      "name": "refund/base",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "1a4f68fa5ba5f3e57a942fd0b6260e97e64b9e399635e454a144e3cf04b8b43c"
+    },
+    {
+      "name": "refund/change-depositId",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "9595959595959595959595959595959595959595959595959595959595959595",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "62e806b24d73bb4e5dc9fe73f5ec8d4e9955afb5ae5a48f89466a3821bbe6170",
+      "mutates": "refund/base",
+      "field": "depositId"
+    },
+    {
+      "name": "refund/change-quoteHash",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "9797979797979797979797979797979797979797979797979797979797979797",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "a5e31cc21ae2ddcb64cb99c66a5930de457cc914f791a273080588883368f23f",
+      "mutates": "refund/base",
+      "field": "quoteHash"
+    },
+    {
+      "name": "refund/change-depositRequestHash",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "9898989898989898989898989898989898989898989898989898989898989898",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "55204ff3203f4bc1c066fe8598fccf2c71cfd6a114560d4d85f5c0aa9e2a9d83",
+      "mutates": "refund/base",
+      "field": "depositRequestHash"
+    },
+    {
+      "name": "refund/change-destinationHash",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "9696969696969696969696969696969696969696969696969696969696969696",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "09ace5a2c987711d8e496a264232df13fac3815de6c4bcebf52e97e6fb71a2af",
+      "mutates": "refund/base",
+      "field": "destinationHash"
+    },
+    {
+      "name": "refund/change-depositor",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFNZL",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "4dd79567c764e44fc02906d9a7074ed95aaed68f68e30ced6c622c9e1dc230d2",
+      "mutates": "refund/base",
+      "field": "depositor"
+    },
+    {
+      "name": "refund/change-token",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROEN7O",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "472145a59262e6dc05a861090d5d35b2485b4846e0f95e9cb64b1cc9c042355b",
+      "mutates": "refund/base",
+      "field": "token"
+    },
+    {
+      "name": "refund/change-amount",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1250001",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "f1fce81e7d30f520f15e96b4f5798ab57aa95974af2c9ff3c4ccf9f34871022e",
+      "mutates": "refund/base",
+      "field": "amount"
+    },
+    {
+      "name": "refund/change-feeAmount",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "201",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "a6be306a149abf8330bba71e855a32d5df41d0a07434b8d06b65fc0b1c8d2007",
+      "mutates": "refund/base",
+      "field": "feeAmount"
+    },
+    {
+      "name": "refund/change-reserver",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "9494949494949494949494949494949494949494949494949494949494949494",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "d4de2e8147bfa0f460672646e9efbc3f4f6a2615b49b0fb5828d068cedc059ad",
+      "mutates": "refund/base",
+      "field": "reserver"
+    },
+    {
+      "name": "refund/change-releaser",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "9393939393939393939393939393939393939393939393939393939393939393",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "7debe7b8c83d8d0137cf70e05de5cf265e6492ca923f69a3fbd9c4b4bed2950b",
+      "mutates": "refund/base",
+      "field": "releaser"
+    },
+    {
+      "name": "refund/change-settler",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCTKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNG7S"
+      },
+      "digest": "2315c50fe09c19607d17d2c809ea8ba395bda94ff91fc3ff7b184d7aeb7aa984",
+      "mutates": "refund/base",
+      "field": "settler"
+    },
+    {
+      "name": "refund/change-contractId",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4CFV6",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "7458130eefab4695e6601b108e963e15c3df936ee622f271b138d74254be4ad7",
+      "mutates": "refund/base",
+      "field": "contractId"
+    },
+    {
+      "name": "refund/change-network",
+      "kind": "refund",
+      "network": "public",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "26298935ce19c4905bd7b5c84ccbcd99f43395bf10d84f310bc1ec9f126c9fc5",
+      "mutates": "refund/base",
+      "field": "network"
+    },
+    {
+      "name": "refund/zero-fee",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "0",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "98c09d38e661dfc9476aaf9df63c9da2ead66540f547c10c8801218797739092"
+    },
+    {
+      "name": "refund/min-amount",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1",
+        "feeAmount": "0",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "bbc5b9f0ce8ab7a8179067a0b092cb63cf6cb2efa0ee5f81885598764f05fc52"
+    },
+    {
+      "name": "refund/max-amount-and-fee-i128",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "170141183460469231731687303715884105727",
+        "feeAmount": "170141183460469231731687303715884105727",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "66c4fe2e01880f6217a6ac2a7f58488021fc88978b2e3cbbe8374ec75b989fea"
+    },
+    {
+      "name": "refund/token-is-account-type",
+      "kind": "refund",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositId": "d28667e7c40efa69ab7ba45db817a82044cb10840fe95a45425e7b99556f6a65",
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "GDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6CZSQ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "3128404afa950b335516e25fcbc02a5865828e13647ddb7ba2f7cd934c6134b3"
+    },
+    {
+      "name": "renounce/base",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "99e54f1290c5bd5d79f2d9c502ea157fbbfa2745776cef4be1f82c4643c43589",
+      "signer": "delegate",
+      "signature": "3b49fc8c1bd76acedb29ae5896f01384e364d3cd6d112ac06f431cefe7b66aa04a9def71623f490e8fbc070eff05b79c621254298e561291372b6202e232bf06"
+    },
+    {
+      "name": "renounce/change-depositor",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFNZL",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "d3a638916d88d9cdd4f723fb24bbceade74f15af68ff0ab97d96b8aedd527800",
+      "mutates": "renounce/base",
+      "field": "depositor"
+    },
+    {
+      "name": "renounce/change-token",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROEN7O",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "4b3e7a3c767fe0e584aeecf851ebd00a12e3131434a2aea2f8621f8bfdbe69a4",
+      "mutates": "renounce/base",
+      "field": "token"
+    },
+    {
+      "name": "renounce/change-epoch",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "2",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "6e1c216945a3786aecb4d447b555d18371a29a49bc1cc3b3707630540616d38c",
+      "mutates": "renounce/base",
+      "field": "epoch"
+    },
+    {
+      "name": "renounce/change-nonce",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "4294967304",
+        "deadline": "1700000128"
+      },
+      "digest": "6e3f50e596cb4184ffc4c145c481942299056605dbe4d737731280409f8f1b53",
+      "mutates": "renounce/base",
+      "field": "nonce"
+    },
+    {
+      "name": "renounce/change-deadline",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000129"
+      },
+      "digest": "5edd77ee9d5fbdb490c5341792d5528d8847e2348ebfc4613dab772ea6957179",
+      "mutates": "renounce/base",
+      "field": "deadline"
+    },
+    {
+      "name": "renounce/change-contractId",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4CFV6",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "5c4d162220244de951f38134c91b802121ab3cbfcbd1bbeb614666ceaf95c049",
+      "mutates": "renounce/base",
+      "field": "contractId"
+    },
+    {
+      "name": "renounce/change-network",
+      "kind": "renounce",
+      "network": "public",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "1700000128"
+      },
+      "digest": "30be1a1f78dfaa32373aa2b33443a77e62b839c02519460a1b98b66b528f0864",
+      "mutates": "renounce/base",
+      "field": "network"
+    },
+    {
+      "name": "renounce/u64-max-epoch-and-nonce",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "18446744073709551615",
+        "nonce": "18446744073709551615",
+        "deadline": "1700000128"
+      },
+      "digest": "e69c63d22c59761944cae19dac4111d27ada98f1ba85f5597add6b558321aef0"
+    },
+    {
+      "name": "renounce/zero-nonce",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "0",
+        "deadline": "1700000128"
+      },
+      "digest": "11a3c3dfeef0528ebe2836231be3cc1e5e3edfbfe35a4b54df7f406e3ed0187e"
+    },
+    {
+      "name": "renounce/zero-deadline",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "0"
+      },
+      "digest": "1a2d1311b43549014569c2f4da1b724eee8d9be542d5c966e9199923c502a4e7"
+    },
+    {
+      "name": "renounce/u64-max-deadline",
+      "kind": "renounce",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "epoch": "1",
+        "nonce": "900",
+        "deadline": "18446744073709551615"
+      },
+      "digest": "eba7fc2df6638d58d5ce24a7082226a6bdd75a7a3b05da5f0eab9d8e09cb19d9"
+    },
+    {
+      "name": "activeDeposit/base",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "f1c27186532d82e2c3bf509335bcac128d234e8c3537188e9b13681cf8b710e6"
+    },
+    {
+      "name": "activeDeposit/change-quoteHash",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "9797979797979797979797979797979797979797979797979797979797979797",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "447ae3fbef080a6039d2a618c14c5942935f8c48d08541bff359220a2b9aad1c",
+      "mutates": "activeDeposit/base",
+      "field": "quoteHash"
+    },
+    {
+      "name": "activeDeposit/change-depositRequestHash",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "9898989898989898989898989898989898989898989898989898989898989898",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "72df565ddeeaf0bdc4d4fe7f161a14a3e68bbeef4d91d957964c9ff95f42e6bf",
+      "mutates": "activeDeposit/base",
+      "field": "depositRequestHash"
+    },
+    {
+      "name": "activeDeposit/change-destinationHash",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "9696969696969696969696969696969696969696969696969696969696969696",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "e21ab4174d3accaa033fc756f060f6d790b07fb805031be6da8c741e939c7d03",
+      "mutates": "activeDeposit/base",
+      "field": "destinationHash"
+    },
+    {
+      "name": "activeDeposit/change-depositor",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFNZL",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "f06fb1b1181d93363da2c53a8e7464672cd4a84ac3175fb6bd7e7aa9e3b9f245",
+      "mutates": "activeDeposit/base",
+      "field": "depositor"
+    },
+    {
+      "name": "activeDeposit/change-token",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROFYXC4LROEN7O",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "9b0f5fe824613ad34b9e5a67b3d208d3bb78fef3a934ea82ea351b80c359fef0",
+      "mutates": "activeDeposit/base",
+      "field": "token"
+    },
+    {
+      "name": "activeDeposit/change-amount",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1250001",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "9cd3f7dc659f0166f3446473f8f2cbc77bc6c63952302789f3c7e156b63af1c7",
+      "mutates": "activeDeposit/base",
+      "field": "amount"
+    },
+    {
+      "name": "activeDeposit/change-feeAmount",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "201",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "69dab4f5240f50ae2fcba582a599cb5332f9641952e68e0766d3440e6268772b",
+      "mutates": "activeDeposit/base",
+      "field": "feeAmount"
+    },
+    {
+      "name": "activeDeposit/change-reserver",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "9494949494949494949494949494949494949494949494949494949494949494",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "12300d1ca88b35f9a9fe7c79e2d02538dadd0917af2904da853d784f707df296",
+      "mutates": "activeDeposit/base",
+      "field": "reserver"
+    },
+    {
+      "name": "activeDeposit/change-releaser",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "9393939393939393939393939393939393939393939393939393939393939393",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "fee49094c04a1e0e01f870756c5187ec2601dbdbd1f5a196588d67c2e7d71a20",
+      "mutates": "activeDeposit/base",
+      "field": "releaser"
+    },
+    {
+      "name": "activeDeposit/change-settler",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCTKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNJVGU2TKNG7S"
+      },
+      "digest": "087c2cf2da5d370300eae0919eb194c35a7f8ae639942c068af79cf2114c359f",
+      "mutates": "activeDeposit/base",
+      "field": "settler"
+    },
+    {
+      "name": "activeDeposit/max-amount-and-fee-i128",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "CDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6D5XJ",
+        "amount": "170141183460469231731687303715884105727",
+        "feeAmount": "170141183460469231731687303715884105727",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "886ed0e2e06ef2756d41a6f5a204fa809cb1f0b198159b1846b7a57b9da5acc4"
+    },
+    {
+      "name": "activeDeposit/token-is-account-type",
+      "kind": "activeDeposit",
+      "network": "testnet",
+      "contractId": "CDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBQGAYDAMBKN4",
+      "input": {
+        "quoteHash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "depositRequestHash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "destinationHash": "7e096a6d1abcfc4daab28cec3f3d3a458c3facbfa0f3493284bb891bdc9807ef",
+        "depositor": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+        "token": "GDQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6DYPB4HQ6CZSQ",
+        "amount": "1000000",
+        "feeAmount": "200",
+        "reserver": "5555555555555555555555555555555555555555555555555555555555555555",
+        "releaser": "6666666666666666666666666666666666666666666666666666666666666666",
+        "settler": "GCS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2LJNFUWS2KWXV"
+      },
+      "digest": "e4c1056d2d1322c631bd4841012801f588c076a8de9b242e28c6163f2a4017d0"
+    }
+  ]
+}

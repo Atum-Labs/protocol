@@ -1,0 +1,17 @@
+version: v2
+modules:
+  - path: .
+    # Exclude generated bindings so lint/generate only see message_bus.proto.
+    excludes:
+      - bindings
+lint:
+  use:
+    - STANDARD
+  except:
+    # package atum.pubsub.v1 is the deployed message-bus wire contract shared
+    # across the atum-core gateways. It cannot be relocated into an atum/pubsub/v1
+    # directory to satisfy this stylistic rule without breaking that contract.
+    - PACKAGE_DIRECTORY_MATCH
+breaking:
+  use:
+    - WIRE_JSON

@@ -1,0 +1,46 @@
+# Shapes this declaration shares with the others are generated from
+# declarations/common/shapes/v1/schema.json rather than written here, so a producer and a
+# verifier reading different declarations cannot end up with different ideas of what a
+# credential, a proof or a signed message looks like.
+#
+# Where this declaration restricts a shared shape further, or names the specific value a
+# field binds to, that is listed under `overlay` with the reason. Everything else comes
+# from the shared definition unchanged.
+#
+# To change one of these, edit the shared source and run:
+#
+#     make -C schemas generate-canonical-shapes
+
+target: schema.json
+source: ../../common/shapes/v1/schema.json
+
+shapes:
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+  - name: DataIntegrityProof
+    from: $defs/DataIntegrityProof
+  - name: VPDataIntegrityProof
+    from: $defs/VPDataIntegrityProof
+    reason: |
+      This declaration inlines the envelope under `presentation`, so its copy names the same
+      binding the envelope does: the verifier recomputes request_hash from the request it
+      received and requires the challenge to equal it.
+    overlay:
+      properties:
+        challenge:
+          description: "Replay-binding challenge. The verifier requires this to equal request_hash \u2014 the content hash of the inner PaymentRequest \u2014 recomputed from the received request; mismatch indicates either a stale PRE from a different request or a forged envelope. request_hash includes request_id (the idempotency key) so distinct requests get distinct challenges; binding to the content hash rather than payment_id re-anchors replay protection to a real protocol-level identity."
+        domain:
+          description: "Replay-binding domain. The verifier requires this to equal its configured service identifier \u2014 locked to a NETWORK-WIDE value `did:web:<env>.atum.network` (e.g., `did:web:atum.network`). Distinct from FQE's `did:web:settler.<env>.atum.network` so a captured PRE can't be misrouted to FQE-shaped verifiers. Without this, a captured PRE from one environment could be replayed against another by the same originator."
+  - name: SignedMessage
+    from: $defs/SignedMessage
+    reason: |
+      In a payment request the deposit's message is the digest the payer signed, and verifiers
+      require the 0x prefix on every chain. Every message also carries its prehash, because
+      the commitment check reads the signed terms from it.
+    overlay:
+      required: [message, message_prehash, signature]
+      properties:
+        message:
+          description: "The data that was signed, hex-encoded with a 0x prefix on every supported chain. For the deposit (signed_messages[0]) it is the 32-byte hash of message_prehash."
+        message_prehash:
+          description: "The original data that `message` is the hash of: the typed data on EVM and Tron, the deposit record on Solana. Required: a verifier reads the signed terms, including the destination the deposit commits to, from it."

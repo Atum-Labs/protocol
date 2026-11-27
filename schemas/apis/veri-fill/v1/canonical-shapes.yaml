@@ -1,0 +1,82 @@
+# Shapes this API exchanges that are also cryptographically signed are generated
+# from schemas/declarations. The declaration is the authority: where this file
+# and the declaration could disagree, the declaration is what was signed.
+#
+# This route publishes the FulfillmentAuthorization and adds locators the
+# declaration has no reason to carry. Each difference is an overlay with a
+# reason. Anything not listed comes from the declaration unchanged.
+#
+# To change one of these shapes, edit the declaration named in `source` and
+# regenerate:
+#
+#     make -C schemas generate-canonical-shapes
+#
+# The generated blocks are committed, and the build verifies they still match.
+
+target: openapi.yaml
+source: ../../../declarations/FulfillmentAuthorization/v1/schema.json
+
+shapes:
+  - name: FulfillmentAuthorization
+    from: .
+    reason: |
+      This description is API text the declaration does not carry.
+
+      fulfillment_quote_json maxLength 65536 is an ingress bound the
+      declaration does not carry.
+
+      evidence.log_index is the receipt logIndex of the log inside that
+      transaction's block, the same wording as OnchainLogLocator. The
+      declaration only types it as an integer.
+
+      authorization_used and token_transfer are API-only locators for the
+      eip155 destination token logs, which is all this route verifies. They
+      differ from evidence.transaction_id because evidence is the declaration's
+      multi-chain locator and may be a different transaction. Each locator is
+      self-contained (transaction_hash plus log_index). The request's top-level
+      transaction_hash stays; it is the existing verify-request field and must
+      equal authorization_used.transaction_hash. The service checks the two
+      hashes agree.
+    overlay:
+      description: |-
+        Authorization for an originator to fulfill a payment request. The settler produces this declaration after authorizeFulfillment when the payment request's fulfill executor is "originator". A settler fulfill does not produce it.
+
+        The route body is that declaration plus authorization_used and token_transfer. It is not the identity-signed document. The settler wraps the declaration with @context, type, and proof, the same way a quote is signed, and this route does not accept that wrapper.
+
+        When fulfillment_authorization is present, the caller must not also send fulfillment_quote. The request's transaction_hash must equal authorization_used.transaction_hash.
+      required:
+        - version
+        - scheme
+        - authorization
+        - fulfillment_quote_json
+        - evidence
+        - authorization_used
+        - token_transfer
+      properties:
+        fulfillment_quote_json:
+          maxLength: 65536
+        evidence:
+          properties:
+            log_index:
+              description: Receipt logIndex of the log inside that transaction's block.
+        authorization_used:
+          $ref: '#/components/schemas/OnchainLogLocator'
+        token_transfer:
+          $ref: '#/components/schemas/OnchainLogLocator'
+
+  - name: SignedMessage
+    from: $defs/SignedMessage
+    reason: |
+      This route verifies EIP-3009 on eip155, and message must equal
+      FulfillmentAuthorized.authorizationHash, so message is tightened to a
+      0x-prefixed 32-byte hash. That pattern is EVM-only. veri-fill does not
+      recover the signature. signature stays required; this overlay does not
+      remove it.
+    overlay:
+      description: |-
+        The EIP-3009 authorization carried on the fulfillment authorization.
+        message is the hash that was signed, and FulfillmentAuthorized.authorizationHash
+        must equal it. veri-fill does not recover the signature.
+      properties:
+        message:
+          pattern: '^0x[a-fA-F0-9]{64}$'

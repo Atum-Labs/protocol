@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info: {title: other, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [oops]
+      properties:
+        oops: {type: string}

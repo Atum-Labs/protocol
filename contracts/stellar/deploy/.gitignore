@@ -1,0 +1,5 @@
+# Throwaway local/standalone network runs must never be committed (git add -A safe).
+# Testnet and mainnet deployments files stay trackable.
+deployments-local.json
+deployments-local*.json
+*.tmp-*

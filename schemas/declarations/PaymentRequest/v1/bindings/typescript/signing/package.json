@@ -1,0 +1,47 @@
+{
+  "name": "@atum-labs/payment-request-ld-signing",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Signs PaymentRequests with W3C Data Integrity (EcdsaSecp256k1RecoverySignature2020 / detached ES256K-R JWS, or Ed25519Signature2020 / multibase z-base58btc proofValue).",
+  "type": "module",
+  "main": "dist/lib.js",
+  "types": "dist/lib.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/lib.js",
+      "require": "./dist-cjs/index.js",
+      "types": "./dist/lib.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "dist-cjs"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/copy-context.mjs",
+    "build:esm": "tsc",
+    "build:cjs": "node scripts/build-cjs.mjs",
+    "build": "npm run build:esm && npm run build:cjs",
+    "verify-context": "node scripts/copy-context.mjs --check",
+    "pretest": "node scripts/copy-context.mjs && mkdir -p src/contexts && cp dist/contexts/*.jsonld src/contexts/",
+    "test": "vitest run",
+    "gen-conformance-fixtures": "npm run build && node scripts/gen-conformance-fixtures.mjs",
+    "prepare": "pnpm run build"
+  },
+  "dependencies": {
+    "@atum-labs/stellar-escrow-encoding": "workspace:*",
+    "@atum-labs/ld-data-integrity": "workspace:*",
+    "@atum-labs/schema-declarations": "workspace:*",
+    "bs58": "^6.0.0",
+    "ethers": "^6.12.1",
+    "jsonld": "8.3.3",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/jsonld": "^1.5.15",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.11"
+  }
+}

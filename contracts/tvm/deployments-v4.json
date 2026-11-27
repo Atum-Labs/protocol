@@ -1,0 +1,20 @@
+{
+    "mainnet": {
+        "name": "Tron Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "TYj48kPL31aMpJfm2LKi96e9hEfVKGmv5Y",
+            "FulfillmentProxy": "TB32KsTZ9WKozgfgKtDVaJLu7f49qS88yo",
+            "Permit2": "TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m"
+        }
+    },
+    "shasta": {
+        "name": "Tron Shasta",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw",
+            "FulfillmentProxy": "TH88i2DKyLwjtH8hMzXTqSzGLr7U6eprbZ",
+            "Permit2": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp"
+        }
+    }
+}

@@ -1,0 +1,2 @@
+// Package authorizationresponse validates AuthorizationResponse declarations.
+package authorizationresponse

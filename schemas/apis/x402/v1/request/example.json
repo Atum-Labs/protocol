@@ -1,0 +1,22 @@
+{
+  "source": {
+    "network": "eip155:8453",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "amount": "10300000"
+  },
+  "extra": {
+    "destination": {
+      "network": "eip155:42161",
+      "asset": "0x52e52f345139e57b87d288c9ea794bb3fbe591c3",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    "fulfillmentAmount": "10000000",
+    "quoteDeadlineSeconds": 20,
+    "fulfillmentDeadlineSeconds": 300,
+    "escrow": "0x938deF3968f2227dD44Dbd270C491F6CAC1F2e33",
+    "fulfillmentProxy": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "reserver": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "releaser": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "fulfillmentVerifierEndpoint": "https://veri-fill.example.com"
+  }
+}

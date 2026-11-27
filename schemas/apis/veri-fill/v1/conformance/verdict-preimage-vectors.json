@@ -1,0 +1,212 @@
+{
+  "_comment": "FROZEN cross-language vectors for the FulfillmentVerdict signing preimage. The tag names the attestation kind, so a second kind signed by the same per-chain key renders to different bytes and its signatures cannot satisfy a verifier of this one. An expectation here may only change when every implementation changes with it, because changing the preimage invalidates every signature ever issued. bindings/go/verdict_test.go asserts against this file; a TypeScript or other verifier MUST assert against this same file rather than against its own fixtures. preimageHex is the authority, since it pins the trailing LF and the empty-value lines that a rendered string in a source file cannot show.",
+  "tag": "atum-verdict/fulfillment/1",
+  "memberOrder": [
+    "domain",
+    "payment_id",
+    "chain_id",
+    "outcome",
+    "block_number",
+    "block_hash",
+    "finality_policy",
+    "transaction_hash",
+    "fulfiller"
+  ],
+  "accept": [
+    {
+      "name": "eip155/delivered",
+      "why": "The happy path. Pins the tag line, the length prefixes, the nine LF bytes including the trailing one, and the lowercase-not-EIP-55 fulfiller encoding.",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "eip155:42161",
+        "outcome": "delivered",
+        "block_number": "21500000",
+        "block_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        "finality_policy": "confirmations:12",
+        "transaction_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "fulfiller": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4",
+        "signature_scheme": "eip712-secp256k1",
+        "signature": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab1b"
+      },
+      "byteLength": 468,
+      "sha256": "6beaa08caec71307246a30d66d7e2b7ee292b6367b202ef084aafd4c32879506",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d31323a6569703135353a34323136310a6f7574636f6d653d393a64656c6976657265640a626c6f636b5f6e756d6265723d383a32313530303030300a626c6f636b5f686173683d36363a3078616263646566313233343536373839306162636465663132333435363738393061626364656631323334353637383930616263646566313233343536373839300a66696e616c6974795f706f6c6963793d31363a636f6e6669726d6174696f6e733a31320a7472616e73616374696f6e5f686173683d36363a3078313233343536373839306162636465663132333435363738393061626364656631323334353637383930616263646566313233343536373839306162636465660a66756c66696c6c65723d34323a3078373432643335636336363334633035333239323561336238343462633965373539356630626562340a"
+    },
+    {
+      "name": "eip155/not-delivered-two-empty-members",
+      "why": "The vector this contract cannot ship without. Same logical shape as the happy path but with transaction_hash and fulfiller empty, so it pins that an empty member renders as `key=0:` and NOT as an omitted line. A renderer that interpolates a missing value emits its language's word for undefined here, which is a silent verification failure on the commonest path.",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "eip155:42161",
+        "outcome": "not_delivered",
+        "block_number": "21500123",
+        "block_hash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+        "finality_policy": "confirmations:12",
+        "transaction_hash": "",
+        "fulfiller": "",
+        "signature_scheme": "eip712-secp256k1",
+        "signature": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab1b"
+      },
+      "byteLength": 363,
+      "sha256": "d4b3427179ec1aeb4c7c281e7c72d5ea77709f0454e7a43cf1d9add2cb18c3cb",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d31323a6569703135353a34323136310a6f7574636f6d653d31333a6e6f745f64656c6976657265640a626c6f636b5f6e756d6265723d383a32313530303132330a626c6f636b5f686173683d36363a3078666564636261303938373635343332316665646362613039383736353433323166656463626130393837363534333231666564636261303938373635343332310a66696e616c6974795f706f6c6963793d31363a636f6e6669726d6174696f6e733a31320a7472616e73616374696f6e5f686173683d303a0a66756c66696c6c65723d303a0a"
+    },
+    {
+      "name": "eip155/undetermined",
+      "why": "Pins that the third outcome renders like any other value and is not special-cased. It shares the two-empty-member shape with the not-delivered vector, so the pair also pins that the only difference between a terminal negative and a non-terminal one is the outcome bytes: a renderer cannot tell them apart by structure, and a consumer that switched on structure rather than on the outcome would treat a payment that may still be paid as failed.",
+      "verdict": {
+        "block_hash": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "finality_policy": "confirmations:12",
+        "block_number": "21500456",
+        "chain_id": "eip155:42161",
+        "domain": "did:web:atum.network",
+        "fulfiller": "",
+        "outcome": "undetermined",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "signature_scheme": "eip712-secp256k1",
+        "transaction_hash": ""
+      },
+      "byteLength": 362,
+      "sha256": "b8c3292d0bc0e253285d1fac43997cdc0d75dc878145d2ab713aec99f89ca1c8",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d31323a6569703135353a34323136310a6f7574636f6d653d31323a756e64657465726d696e65640a626c6f636b5f6e756d6265723d383a32313530303435360a626c6f636b5f686173683d36363a3078303132333435363738396162636465663031323334353637383961626364656630313233343536373839616263646566303132333435363738396162636465660a66696e616c6974795f706f6c6963793d31363a636f6e6669726d6174696f6e733a31320a7472616e73616374696f6e5f686173683d303a0a66756c66696c6c65723d303a0a"
+    },
+    {
+      "name": "tron/delivered",
+      "why": "Pins that Tron hashes are 0x-prefixed here even though the bare form is conventional on that chain, and that the fulfiller is base58check rather than the 20-byte EVM-equivalent form this protocol's address library otherwise treats as the same account. Its scheme differs from the eip155 vector, so a single secp256k1 implementation cannot serve both.",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "tron:mainnet",
+        "outcome": "delivered",
+        "block_number": "67240249",
+        "block_hash": "0x0000000004029f79c1a2c6bfa2e2f2ba1d6a9e3f5c7b8d9e0f1a2b3c4d5e6f70",
+        "finality_policy": "confirmations:19",
+        "transaction_hash": "0xcf5cea05000000000000000000000000000000000000000000000000000000ab",
+        "fulfiller": "TLZVYZskxoJt4M4bYHPJm5hdM4ZAhcC25i",
+        "signature_scheme": "tip191-secp256k1",
+        "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd1c"
+      },
+      "byteLength": 460,
+      "sha256": "7257411eb1f479debd7b4dbfc1d3340849bd3ed67e9ff85169e1551f963efc14",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d31323a74726f6e3a6d61696e6e65740a6f7574636f6d653d393a64656c6976657265640a626c6f636b5f6e756d6265723d383a36373234303234390a626c6f636b5f686173683d36363a3078303030303030303030343032396637396331613263366266613265326632626131643661396533663563376238643965306631613262336334643565366637300a66696e616c6974795f706f6c6963793d31363a636f6e6669726d6174696f6e733a31390a7472616e73616374696f6e5f686173683d36363a3078636635636561303530303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303061620a66756c66696c6c65723d33343a544c5a56595a736b786f4a74344d34625948504a6d3568644d345a416863433235690a"
+    },
+    {
+      "name": "solana/delivered",
+      "why": "Pins the base58 encodings and, in the chain_id, the mixed-case genesis-hash prefix whose case is load-bearing and is signed verbatim. A producer that lowercases the CAIP-2 reference produces a different preimage and its signatures will not verify.",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "outcome": "delivered",
+        "block_number": "362000123",
+        "block_hash": "3jN5sUEycSXnmaswEkKQiiJnbPeCDyteJj775ypraaro",
+        "finality_policy": "commitment:finalized",
+        "transaction_hash": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "fulfiller": "9jJDiD25RUicWu4uVAmVtETvHVp5ooq3ntB7c1D9TqNP",
+        "signature_scheme": "ed25519-raw",
+        "signature": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+      },
+      "byteLength": 501,
+      "sha256": "40a8de81c6057172b7584fc5d85a4b11125e2e99f4dea633b9d9da61d5f3a0fb",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d33393a736f6c616e613a3565796b7434557346763850384e4a64545245705931767a714b715a4b7664700a6f7574636f6d653d393a64656c6976657265640a626c6f636b5f6e756d6265723d393a3336323030303132330a626c6f636b5f686173683d34343a336a4e35735545796353586e6d617377456b4b5169694a6e62506543447974654a6a3737357970726161726f0a66696e616c6974795f706f6c6963793d32303a636f6d6d69746d656e743a66696e616c697a65640a7472616e73616374696f6e5f686173683d38373a32416e613170557076325a624d566b77463546586170596542456a64784461744c6e376e764a6b68675453586273353953795a53783836366258697250676a385151564235377578484a4247315946766b5262466a34540a66756c66696c6c65723d34343a396a4a4469443235525569635775347556416d5674455476485670356f6f71336e7442376331443954714e500a"
+    },
+    {
+      "name": "eip155/three-digit-length-prefix-and-zero-block",
+      "why": "Pins the length prefix across the two-to-three digit boundary and a block_number of 0, both legal under their patterns and both absent from the other vectors. A prefix computed with an off-by-one, or with a character count rather than a byte count, shows up here rather than passing silently.",
+      "verdict": {
+        "domain": "did:web:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.verifier.atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "eip155:1",
+        "outcome": "not_delivered",
+        "block_number": "0",
+        "block_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "finality_policy": "confirmations:12",
+        "transaction_hash": "",
+        "fulfiller": "",
+        "signature_scheme": "eip712-secp256k1",
+        "signature": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab1b"
+      },
+      "byteLength": 443,
+      "sha256": "5141235a8b253c12c9cb45792a5dd4bd1dde2294f7ace0c5679f5369314d8a38",
+      "preimageHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d3131313a6469643a7765623a616161616161616161616161616161616161616161616161616161616161616161616161616161612e616161616161616161616161616161616161616161616161616161616161616161616161616161612e76657269666965722e6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d383a6569703135353a310a6f7574636f6d653d31333a6e6f745f64656c6976657265640a626c6f636b5f6e756d6265723d313a300a626c6f636b5f686173683d36363a3078303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030300a66696e616c6974795f706f6c6963793d31363a636f6e6669726d6174696f6e733a31320a7472616e73616374696f6e5f686173683d303a0a66756c66696c6c65723d303a0a"
+    }
+  ],
+  "reject": [
+    {
+      "name": "newline-injected-into-payment_id",
+      "why": "Under a bare key=value framing this payment_id renders the same bytes as a verdict whose payment_id stops at the hash and whose chain_id carries the injection, so one signature would authenticate a verdict on two different chains. The length prefix separates them, and the byte rejection refuses this outright. The colliding pair itself is exercised in the Go test, which asserts it collides bare and diverges framed.",
+      "member": "payment_id",
+      "value": "0x1234567890123456789012345678901234567890123456789012345678901234\nchain_id=eip155:1"
+    },
+    {
+      "name": "newline-injected-into-domain",
+      "why": "The same class through the member that binds the deployment, which is the one an attacker most wants to move.",
+      "member": "domain",
+      "value": "did:web:atum.network\npayment_id=0x00"
+    },
+    {
+      "name": "carriage-return-in-block_hash",
+      "why": "CR is never part of a preimage. A value carrying one is refused rather than normalised, since normalising would make the rendered bytes differ from the wire bytes.",
+      "member": "block_hash",
+      "value": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890\r"
+    },
+    {
+      "name": "equals-in-fulfiller",
+      "why": "The key/value separator is refused inside a value even though the length prefix already makes it unambiguous, so that a parser written to split on the first `=` cannot be fed a crafted value.",
+      "member": "fulfiller",
+      "value": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4=x"
+    },
+    {
+      "name": "newline-injected-into-chain_id",
+      "why": "chain_id is signed verbatim and selects the verifying key, so it is the member an attacker most wants to move.",
+      "member": "chain_id",
+      "value": "eip155:1\nchain_id=12:eip155:42161"
+    },
+    {
+      "name": "newline-injected-into-outcome",
+      "why": "outcome is a signed member. Without a case for it the reject path cannot exercise the member that decides what the signature claims.",
+      "member": "outcome",
+      "value": "delivered\noutcome=13:not_delivered"
+    },
+    {
+      "name": "newline-injected-into-block_number",
+      "why": "Completes coverage of the numeric member, otherwise the only one with no reject vector.",
+      "member": "block_number",
+      "value": "21500000\nblock_number=1:9"
+    },
+    {
+      "name": "newline-injected-into-transaction_hash",
+      "why": "The member a consumer is most likely to copy into a payer-facing field.",
+      "member": "transaction_hash",
+      "value": "0x00\ntransaction_hash=4:0x01"
+    },
+    {
+      "name": "non-ascii-in-domain",
+      "why": "A homoglyph such as a Cyrillic small o in a hostname is a realistic misconfiguration rather than a contrived input. Go measures the length in bytes and a naive JavaScript renderer measures UTF-16 code units, so the two would sign different preimages for the same verdict. Refused rather than rendered.",
+      "member": "domain",
+      "value": "did:web:atum.netоrk"
+    },
+    {
+      "name": "astral-plane-character-in-domain",
+      "why": "The same divergence via a surrogate pair, where the byte and code-unit lengths differ by two rather than one.",
+      "member": "domain",
+      "value": "did:web:atum.network🔒"
+    },
+    {
+      "name": "tab-in-block_hash",
+      "why": "A control byte that is neither LF nor CR still leaves printable ASCII, and would flip the signing backend's text payload encoding.",
+      "member": "block_hash",
+      "value": "0x0000000000000000000000000000000000000000000000000000000000000000\t"
+    },
+    {
+      "name": "nul-in-fulfiller",
+      "why": "A NUL byte renders in a naive implementation and truncates in several others.",
+      "member": "fulfiller",
+      "value": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4\u0000"
+    }
+  ],
+  "_signatureNote": "Each accept vector carries a placeholder `signature` of the correct length for its `signature_scheme`, so the verdict object is complete against the component's required list. It is NOT a real signature and NOT an input to the preimage: `signature` and `signature_scheme` are the envelope. These vectors pin the preimage bytes only. The preimage is what tip191-secp256k1 and ed25519-raw sign. eip155 verdicts are signed as EIP-712 typed data instead, so the eip155 vectors here pin the framing, which renders identically on every chain, and are NOT a signing input. Real signatures, and the EIP-712 digests eip155 verdicts are signed over, are pinned by verdict-signature-vectors.json."
+}

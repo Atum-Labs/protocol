@@ -1,0 +1,380 @@
+# Example SETTLER sub-org policy config for `apply-policies`.
+# Chain keys are arbitrary labels; they only have to be consistent within this file.
+# Values below are illustrative testnet values — replace with your deployment's real addresses.
+#
+# IMPORTANT: gas/fee caps (maxGasLimit, maxFeePerGasWei, maxFeeLimitSun) live under `extras` ONLY,
+# never in `allowlists`. Both blocks emit the SAME policy name for a cap, so setting a cap in both
+# is a config error (apply-policies fails closed). `allowlists` here carries only the allow rules
+# and per-call native-value ceiling.
+type: settler
+
+# Required: the agent's API user (create-api-key prints the id). It is the one non-root user that
+# holds every settler ALLOW unfenced. Apply refuses any other non-root user that `cowswapHook.users`
+# does not list, whatever its name.
+agentUser: { userId: '00000000-0000-4000-8000-000000000000', userName: settler-agent }
+
+# List EVERY chain the settler is configured for (see the agent's `signers:` block). Listing a chain
+# here only resolves its chainId for the blocks below; the ALLOW itself comes from `allowlists`.
+chains:
+  Arbitrum: { kind: evm, chainId: 'eip155:421614' }
+  Avalanche: { kind: evm, chainId: 'eip155:43113' }
+  Base: { kind: evm, chainId: 'eip155:84532' }
+  Celo: { kind: evm, chainId: 'eip155:11142220' }
+  Ethereum: { kind: evm, chainId: 'eip155:11155111' }
+  Optimism: { kind: evm, chainId: 'eip155:11155420' }
+  Polygon: { kind: evm, chainId: 'eip155:80002' }
+  Arc: { kind: evm, chainId: 'eip155:5042002' }
+  Tempo: { kind: evm, chainId: 'eip155:42431' }
+  Tron: { kind: tron, chainId: 'tron:shasta' }
+  Solana: { kind: solana, chainId: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1' }
+
+# Per-chain allowlist → derivePoliciesFromAllowlist. Emits the allowedTo ALLOW (each address bound to
+# its allowedSelectorsByTo selectors), the maxNativeValue DENY, denyNoOpHash, and (EVM) the
+# allowSelfSendNonceBurn carve-out for cancel / replace-by-fee. The carve-out targets the settler's
+# own EOA, which apply-policies resolves from the sub-org's Turnkey wallet.
+#
+# EVERY chain listed under `chains` needs an entry here. apply-policies SKIPS the derived allow/deny
+# set for a chain with no entry (it logs and continues), emitting only the extras/approveDeny blocks.
+# Turnkey then default-denies `sign_transaction` with HTTP 403 "add a policy granting this user
+# permissions" and every settlement on that chain fails.
+#
+# Escrow and fulfillment proxy are the same address WITHIN a network, but the testnet and mainnet
+# families differ (different constructor args -> different initcode hash -> different CREATE2
+# address). This is a TESTNET example; a mainnet sub-org needs the mainnet pair
+# (0x815d450f443466d52d3c1fb7a57d74d463d1e6f0 / 0xa8f40ed7437bcb6bf264832369e8364b80b06c83) and,
+# when its agent config lists it under fulfillmentProxy, the mainnet preview proxy
+# 0x1faf7640110fb09bad288dbef5b4f676b0ec1932 (FulfillmentProxyPreview in contracts/evm/deployments-v4.json,
+# built from a58ff7c0). That proxy needs an allowedTo entry on every mainnet chain, and on every
+# chain with an approveDeny entry its 0x-stripped lowercase form beside a8f40ed7... in
+# allowedSpendersHex, or the boot approve() to it fails with HTTP 403.
+#
+# Every EVM testnet also lists the PREVIEW fulfillment proxies: 0x3f2f4fa9ea195028f534851ddfd26994e4e3700c,
+# built before #217 so authorizeFulfillment does not pause on it, and the proxy redeployed from
+# a58ff7c0 that replaces it (CORE-2902). For an originator fulfill the settler calls
+# authorizeFulfillment (0x15922c85), so each preview proxy needs an allowedTo entry on every chain
+# whose agent config lists it under fulfillmentProxy (all eight original EVM testnets for both; Arc Testnet lists only the redeployed one). Keep the old
+# one until the last payment created on it has finished, then retire it as described under
+# approveDeny below. These two are TESTNET ONLY: a mainnet sub-org lists its own preview proxy (above).
+# Apart from the token, every EVM chain lists the same four addresses (Arc Testnet lists three). The settler approves every
+# token for EVERY fulfillmentProxy it trusts (a payment names the proxy it delivers through, and the
+# proxy's fulfill pulls the token with transferFrom), so each proxy is also an allowed spender in
+# approveDeny below, on every chain that has an approveDeny entry.
+#
+# THESE ADDRESSES ARE DEPLOYMENT STATE, AND A STALE ENTRY HERE IS AN OUTAGE, NOT A WARNING.
+# Turnkey pins `eth.tx.to`, so an address missing from allowedTo is default-DENIED with HTTP 403
+# "add a policy granting this user permissions". A redeploy that moves the escrow or proxy and
+# leaves this file behind takes down every settlement on the chain, including the settler's
+# boot-time ERC-20 approve() -- whose `to` is the TOKEN but which still needs the proxy reachable
+# for the fulfill that follows. When you repoint an agent at a redeployed contract, re-run
+# apply-policies in the SAME change, and ADD the new pair before removing the old one so agents
+# mid-rollout keep signing.
+allowlists:
+  Ethereum:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy (settler calls it to fulfill)
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238' # USDC (Sepolia)
+    # CORE-4353: each allowedTo address bound to the selectors the settler signs on it. Once a chain has
+    # this map every allowedTo entry needs a key; a selector missing here is a Turnkey 403 on that call.
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': &evmEscrowSelectors ['0xf2eb65e0', '0x63d478ca', '0xb4b6913b', '0xdf851fad', '0x269b634d', '0xeeb69408', '0x165b3f36'] # deposit, depositMany, reserve, release, releaseMany, refund, refundMany
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': &evmProxySelectors ['0xf0630329', '0x7905fbfa', '0xda00124e', '0x15922c85'] # fulfill, strictFulfill, fulfillMany, authorizeFulfillment
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': &tokenSelectors ['0x095ea7b3'] # approve, the boot approval of each trusted fulfillment proxy
+    maxNativeValue: '0'
+  Arbitrum:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy (settler calls it to fulfill)
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0x75faf114eafb1bdbe2f0316df893fd58ce46aa4d' # USDC (Arbitrum Sepolia)
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0x75faf114eafb1bdbe2f0316df893fd58ce46aa4d': *tokenSelectors
+    maxNativeValue: '0'
+  Avalanche:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  Base:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  Celo:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  Optimism:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  Polygon:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  # Arc Testnet came after the original preview proxy, which was never deployed there, so it lists
+  # three addresses, not four. Gas is USDC (the native coin), so maxNativeValue stays 0 as elsewhere.
+  Arc:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # redeployed preview fulfillment proxy
+      - '0x3600000000000000000000000000000000000000' # USDC (Arc Testnet)
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0x3600000000000000000000000000000000000000': *tokenSelectors
+    maxNativeValue: '0'
+  Tempo:
+    allowedTo:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow
+      - '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb' # fulfillment proxy
+      - '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c' # preview fulfillment proxy
+      - '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144' # preview fulfillment proxy redeployed from a58ff7c0 (CORE-2902)
+      - '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS' # settlement token on this chain
+    allowedSelectorsByTo:
+      '0x0f875601504c9179562506afa34b2d084268869b': *evmEscrowSelectors
+      '0x1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb': *evmProxySelectors
+      '0x3f2f4fa9ea195028f534851ddfd26994e4e3700c': *evmProxySelectors
+      '0xd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144': *evmProxySelectors
+      '0xREPLACE_WITH_YOUR_TOKEN_ADDRESS': *tokenSelectors
+    maxNativeValue: '0'
+  Tron:
+    allowedTo:
+      - 'TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw'
+      - 'TH88i2DKyLwjtH8hMzXTqSzGLr7U6eprbZ'
+    allowedSelectorsByTo:
+      'TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw': ['0xf2eb65e0', '0x63d478ca', '0xdf851fad', '0x269b634d', '0xeeb69408', '0x165b3f36'] # deposit, depositMany, release, releaseMany, refund, refundMany
+      'TH88i2DKyLwjtH8hMzXTqSzGLr7U6eprbZ': ['0xf0630329', '0x7905fbfa', '0xda00124e'] # fulfill, strictFulfill, fulfillMany
+    maxNativeValue: '0'
+  Solana:
+    # List EVERY program the fulfill flow invokes. Too narrow an allowlist will deny live txs.
+    allowedPrograms:
+      # v4, Solana DEVNET -- which is Atum's testnet cluster. Base58 is CASE-SENSITIVE: never
+      # lowercase these. NOTE the v4 program ids DIFFER PER CLUSTER, unlike v1/v3 where one pair
+      # served every cluster. A mainnet sub-org needs the mainnet pair instead:
+      #   escrow            5BD9UAUCRCg6Chv6CS5k4sBHGd7CciWpng9u7iJxJFjx
+      #   fulfillment proxy CMxMPzpmeJPJbyUK4DDSDEhEYdCCAUt7w5cr5SWEHoNJ
+      - '2MHznjRgbc4AbXkYaq69CiL4ZmnvBShg8QmyLxniwMkf' # Atum escrow (v4, devnet)
+      - 'FGMSseEvfdXHWnYwDcSyCorqJr3pT83zuasdy8ve8KmS' # Atum fulfillment (v4, devnet)
+      - '11111111111111111111111111111111' # System
+      - 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' # SPL Token
+      - 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' # Token-2022
+      - 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' # Associated Token Account
+      - 'ComputeBudget111111111111111111111111111111' # Compute Budget
+      - 'Ed25519SigVerify111111111111111111111111111' # Ed25519
+    maxNativeValue: '10000000' # 0.01 SOL headroom for ATA rent
+
+# Optional: deny ERC-20/TRC-20 approve() and the other allowance grants (increaseAllowance,
+# increaseApproval, approveAndCall) to any spender outside the allowlist
+# (approve-then-drain defense). Addresses are lowercase hex WITHOUT 0x for EVM; Tron tokens are
+# base58, spender hex.
+#
+# NOTE the failure direction differs from `allowlists` above. A chain missing there gets no ALLOW and
+# fails LOUD with a 403. A chain missing from this block, or from extras.allowedErc20Recipients,
+# simply emits no policy, so it fails SILENT: the settler may then approve any spender and transfer
+# to any recipient on that chain. apply-policies therefore refuses a chain whose allowedSelectorsByTo
+# lets a token be approved when the token has no entry here. extras.allowedErc20Recipients below is
+# Ethereum-only in this example; extend it per chain for a real deployment.
+approveDeny:
+  evm:
+    Ethereum:
+      tokenContractsHex:
+        - '1c7d4b196cb0c7b01d743fbc6116a902379c7238'
+      allowedSpendersHex: &testnetSpenders
+        # EVERY fulfillment proxy the settler trusts, 0x-stripped: ensureTokenApprovals() approves
+        # each one at boot. The v4 TESTNET proxy 0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb, the
+        # pre-#217 preview proxy 0x3f2F4Fa9EA195028f534851ddFd26994e4e3700c, and the preview proxy
+        # redeployed from a58ff7c0, 0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144 (CORE-2902). Same
+        # addresses as the allowedTo entries above. NOT the escrow: approving the escrow leaves the
+        # proxies denied. A proxy missing here makes the boot approve() fail with HTTP 403, and the
+        # chain defers fulfill until it is added.
+        #
+        # RETIRING the old preview proxy 0x3f2f... is more than removing it from the lists: the
+        # settler already gave it a MAX allowance on each token, and applying a policy without it
+        # does not touch that on-chain allowance (and authorizeFulfillment does not pause on it).
+        # In order: (1) drop it from the settler's fulfillmentProxy lists, or its boot approve()
+        # grants it again; (2) while it is STILL in this list, revoke with approve(0x3f2f..., 0) from
+        # the settler EOA on every chain and token, because the deny policy blocks any approve() to a
+        # spender outside the list, a zero amount included; (3) then apply-policies --update without it.
+        - '1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb'
+        - '3f2f4fa9ea195028f534851ddfd26994e4e3700c'
+        - 'd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144'
+    Arbitrum:
+      tokenContractsHex: ['75faf114eafb1bdbe2f0316df893fd58ce46aa4d'] # USDC (Arbitrum Sepolia)
+      allowedSpendersHex: *testnetSpenders
+    Avalanche:
+      tokenContractsHex: ['replace_with_your_token_address'] # settlement token as in allowedTo, lowercase, no 0x
+      allowedSpendersHex: *testnetSpenders
+    Base:
+      tokenContractsHex: ['replace_with_your_token_address']
+      allowedSpendersHex: *testnetSpenders
+    Celo:
+      tokenContractsHex: ['replace_with_your_token_address']
+      allowedSpendersHex: *testnetSpenders
+    Optimism:
+      tokenContractsHex: ['replace_with_your_token_address']
+      allowedSpendersHex: *testnetSpenders
+    Polygon:
+      tokenContractsHex: ['replace_with_your_token_address']
+      allowedSpendersHex: *testnetSpenders
+    # Arc Testnet never had the original preview proxy, so it trusts two spenders.
+    Arc:
+      tokenContractsHex: ['3600000000000000000000000000000000000000'] # USDC (Arc Testnet)
+      allowedSpendersHex:
+        - '1f1f8fa642bc5f530ba37f1db3a656e9eb8bafeb'
+        - 'd1254ef0f2bc75ad577fe48fc5cc9c3ec13b0144'
+    Tempo:
+      tokenContractsHex: ['replace_with_your_token_address']
+      allowedSpendersHex: *testnetSpenders
+  tron:
+    Tron:
+      tokenContractsBase58:
+        - 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs'
+      allowedSpendersHex:
+        # EVM-style hex, NOT base58, because the Turnkey condition compares the calldata form.
+        # This is TH88i2DKyLwjtH8hMzXTqSzGLr7U6eprbZ, the v4 shasta FULFILLMENT PROXY. Do not put
+        # the escrow TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw (hex 897930b6...) here.
+        - '4e790a3721f89603f126a0836d7523957b31045a'
+
+# Required: token contracts the settler signs EIP-3009 TransferWithAuthorization for (originator
+# fulfill), per EVM chain key, as 0x hex. Emits allowTransferWithAuthorizationTypedData, which binds
+# the token as the domain verifying contract, the primary type and `from` == the settler. A chain
+# left out cannot sign EIP-3009 (Turnkey 403). apply-policies fails if the key is absent; set `{}`
+# if the settler does no EIP-3009. Only EVM chains are accepted.
+transferWithAuthorizationTokens:
+  Base:
+    - '0x036CbD53842c5426634e7929541eC2318f3dCF7e' # USDC (Base Sepolia)
+
+# Recipient allowlists + gas/fee caps → buildExtrasPolicies. ERC-20 recipients are 0x hex, TRC-20
+# are Tron base58, SPL recipients are owner WALLETS (ATAs derived per wallet × mint). Caps live
+# here (see the note at the top of this file).
+extras:
+  allowedErc20Recipients:
+    Ethereum:
+      - '0x551DfeD720649704E79f4aa6ee6a227ce0139796'
+      - '0x3ef0833332156e10c23af6ed390033420145592f'
+  allowedTrc20Recipients:
+    Tron:
+      - 'TJPx3UdLcMmdaXKiZUvVKjK7VjaNGMU95u'
+  # A cap is a DENY. Set one too low and Turnkey rejects the settlement with the SAME HTTP 403
+  # "insufficient permissions" message you get from a missing ALLOW, which makes an exceeded cap
+  # easy to misread as an absent policy. When a chain 403s, compare the tx's `gasLimit` and
+  # `maxFeePerGas` against these numbers BEFORE assuming a policy is missing.
+  evmCaps:
+    Ethereum: { maxGasLimit: 3000000, maxFeePerGasWei: '100000000000' }
+    # ArbOS folds the L1 calldata surcharge into eth.tx.gas, so cap gas at the settler ceiling and
+    # let maxFeePerGasWei carry the cost bound.
+    Arbitrum: { maxGasLimit: 16777216, maxFeePerGasWei: '100000000000' }
+    # Avalanche keeps the 3M gas cap ON PURPOSE. If Avalanche settlements get denied for gas, do
+    # NOT raise this — the estimate is what is wrong. Avalanche C-Chain eth_estimateGas returns
+    # (gas ceiling / ~1.984) rather than the real cost, so it scales with whatever ceiling the
+    # caller passes and ignores the actual call. Passing the agent's gas.maxEstimateGasLimit
+    # (16_777_216) yields ~8.46M for work that costs ~31k-210k, which the agent's +20% buffer turns
+    # into ~10.1M. Ethereum/Polygon/Base return the same estimate for any hint. Fix it in the
+    # agent's gas estimation, not here.
+    Avalanche: { maxGasLimit: 3000000, maxFeePerGasWei: '100000000000' }
+    # Polygon needs a HIGH fee cap, not the 100-200 gwei typical of other chains: Amoy gas
+    # genuinely spikes and the settler has been observed submitting 600 gwei + 152 wei, so a
+    # 600 gwei ceiling is not enough. Worst-case spend stays bounded by maxGasLimit × this.
+    Polygon: { maxGasLimit: 3000000, maxFeePerGasWei: '700000000000' }
+    Base: { maxGasLimit: 3000000, maxFeePerGasWei: '100000000000' }
+    Celo: { maxGasLimit: 3000000, maxFeePerGasWei: '200000000000' }
+    Optimism: { maxGasLimit: 3000000, maxFeePerGasWei: '100000000000' }
+    Tempo: { maxGasLimit: 3000000, maxFeePerGasWei: '50000000000' }
+  tronCaps:
+    Tron: { maxFeeLimitSun: '1000000000' }
+
+# Optional. Stellar (CORE-3095). Uncomment the chain AND this block together; apply-policies refuses a
+# Stellar chain with no stellarSigners. Turnkey documents the Stellar account format
+# (ADDRESS_FORMAT_XLM, CURVE_ED25519) but no Stellar transaction parsing, so:
+#   - the chain gets NO `allowlists` entry (allowedTo and friends cannot be enforced server-side, and
+#     apply-policies refuses them for a Stellar chain; the settler's own signing policy enforces them);
+#   - the only server-side rule is `allowStellarEd25519RawPayload`: raw ed25519, NOT_APPLICABLE, hex or
+#     text, from the listed account(s) only. It binds NOTHING about the transaction, so a stolen agent
+#     credential can sign any Stellar transaction with that key. Hold only what the settler needs.
+# Add `Stellar: { kind: stellar, chainId: 'stellar:testnet' }` under `chains:` above, and keep this
+# sub-org free of an unscoped `allowEd25519RawPayload` (emitted whenever a Solana chain is listed)
+# if the Stellar account must be fenced to the list below.
+# stellarSigners:
+#   Stellar:
+#     - 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF' # PLACEHOLDER (all-zero key, refused), the sub-org's Stellar account (G...)
+
+# Required whenever extras.allowedSplRecipients is set — the asset mints per Solana chain key.
+solanaMints:
+  Solana:
+    - '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
+
+# Optional. Fenced API users on this wallet that sign CoW Swap orders and nothing else: the hook
+# service (cowswap-hook in settler-agent) and any swap CLI. Each listed user gets DENYs scoped to it
+# for everything except EIP-712 typed data under GPv2Settlement, and per listed chain one ALLOW for
+# a fill-or-kill, zero-fee CoW buy or sell order paying this wallet on one of that chain's token pairs.
+# The pairs are shared by every fenced user, so keep one fenced purpose per sub-org. Without the
+# block the set is unchanged, and apply refuses any non-root user other than `agentUser`. Create
+# each user with `turnkey:create-api-key --user-name <name>` (never a root user; apply refuses one)
+# and run the matrix in PROVISIONING.md with each user's key before deploying that key.
+# cowswapHook:
+#   users:
+#     - { userId: '00000000-0000-0000-0000-000000000000', userName: cowswap-hook }
+#   chains:
+#     Ethereum:
+#       pairs:
+#         - { sell: '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238', buy: '0x<payout token>' }

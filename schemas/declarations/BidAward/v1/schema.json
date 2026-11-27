@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/BidAward/v1/schema.json",
+  "title": "BidAward",
+  "description": "Bid award message containing authorization for reserving escrowed funds and fulfillment quote details",
+  "type": "object",
+  "required": ["version", "authorization", "fulfillment_quote_json"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver-shaped declaration version (MAJOR.MINOR). The major component is locked to this schema's parent directory (v1 → major must be 1). Producers MUST emit the canonical value exported by the bindings' Version constant; the canonical bumps on each additive minor evolution.",
+      "pattern": "^1\\.[0-9]+$",
+      "examples": ["1.0"]
+    },
+    "authorization": {
+      "$ref": "#/$defs/SignedMessage"
+    },
+    "fulfillment_quote_json": {
+      "type": "string",
+      "description": "Raw JSON of the fulfillment quote that includes payment request data"
+    },
+    "@context": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "JSON-LD context URLs for signed documents. Optional — present when the payment gateway wraps the award in a W3C Data Integrity envelope so the receiving settler can verify provenance. Enforcement is operator policy."
+    },
+    "proof": {
+      "$ref": "#/$defs/DataIntegrityProof",
+      "description": "W3C Data Integrity proof for document signing. Optional — when present, attests that the award was emitted by the signer identified in proof.verificationMethod (typically the payment gateway or a quote-selector key). Distinct from authorization, which is the chain-level signature consumed by the on-chain escrow."
+    },
+    "verifiableCredential": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/VerifiableCredential"
+      },
+      "description": "Array of W3C Verifiable Credentials for identity attestation (e.g., KnownToAtum about the awarding component). Used by settlers that want issuer-anchored claims about the award producer alongside the proof."
+    }
+  },
+  "$defs": {
+    "SignedMessage": {
+      "type": "object",
+      "description": "A message signed by the party authorizing the award, proving they control the key the award is attributed to.",
+      "required": [
+        "message",
+        "signature"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The data that was signed. Format depends on the blockchain:\n- EVM: Hex-encoded message hash (with 0x prefix)\n- Solana: Hex-encoded message hash (with 0x prefix)\n- Tron: Hex-encoded message hash (possibly without 0x prefix)"
+        },
+        "message_prehash": {
+          "type": "string",
+          "description": "Optional: If 'message' contains a hash, this field contains the original data before it was hashed. Useful for verification and debugging."
+        },
+        "signature": {
+          "type": "string",
+          "description": "The cryptographic signature proving you authorized this message. Hex-encoded with a 0x prefix on every supported chain. The signer's own public key is base58 on Solana, but the signature itself is not."
+        }
+      }
+    },
+    "DataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof conforming to the Data Integrity 1.0 specification. Which of jws or proofValue is required depends on the cryptosuite named in type, and that pairing is checked where the proof is verified rather than by this schema, so a document can satisfy the schema and still be refused at verification.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. ECDSA-secp256k1 (recoverable, EVM-compatible) for did:pkh:eip155:* signers; Ed25519 for did:pkh:solana:* and did:pkh:stellar:* signers."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "description": "Purpose of the proof (e.g., assertionMethod, authentication)."
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Required at runtime for EcdsaSecp256k1RecoverySignature2020."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase-encoded raw signature bytes. Required at runtime for Ed25519Signature2020; mutually exclusive with jws in practice."
+        }
+      }
+    },
+    "VerifiableCredential": {
+      "type": "object",
+      "description": "W3C Verifiable Credential structure conforming to the W3C Verifiable Credentials Data Model v1.1",
+      "required": [
+        "@context",
+        "id",
+        "type",
+        "issuer",
+        "issuanceDate",
+        "credentialSubject",
+        "proof"
+      ],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array, must include 'https://www.w3.org/2018/credentials/v1'",
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this credential"
+        },
+        "type": {
+          "type": "array",
+          "description": "Credential types, must include 'VerifiableCredential'",
+          "contains": {
+            "const": "VerifiableCredential"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "description": "DID or issuer object of the credential issuer"
+        },
+        "issuanceDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential was issued"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential expires"
+        },
+        "credentialSubject": {
+          "type": "object",
+          "description": "Claims about the credential subject (structure varies by issuer)"
+        },
+        "credentialStatus": {
+          "type": "object",
+          "description": "Information for credential revocation checking. Not consulted by the verifier today."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Cryptographic proof of credential integrity"
+        }
+      }
+    }
+  }
+} 

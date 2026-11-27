@@ -1,0 +1,85 @@
+{
+  "_comment": "FROZEN cross-language parity corpus for the PRE-v3 witness layouts. Originally produced by the on-chain escrow program's own compute_*_hash functions; the Go encoder (parity_golden_test.go) and the TS encoder (parity-golden.test.ts) both assert against it. WHAT 'FROZEN' MEANS HERE, precisely: the HASHES AND INPUT VALUES are frozen -- do not regenerate them and never 'fix' a mismatch by editing them, because a mismatch means an encoder changed a frozen layout, which is the bug. The JSON KEY NAMES are not frozen: they track the Go/TS field names so the fixture stays readable next to the encoders it pins, and renaming one cannot change a hash. The deposit case's key was renamed payment_id -> deposit_request_hash on that basis, in the same commit as both readers. DO NOT confuse this with SolanaDepositPrehash, whose JSON key deliberately STAYS payment_id: that is a WIRE shape that producers emit and consumers parse, so renaming it would break them. This file is a test fixture -- it is excluded from the npm package (files: dist, src, and it sits above the package root), has no go:embed, and its only readers are the two in-repo tests. If it is ever published or embedded, the key names become a real contract and this paragraph stops applying. The program can no longer produce these values: compute_reserve_hash/release/refund now always bind quote_hash (domain v3, CORE-2022) and compute_deposit_hash now always binds destination_hash (domain v4, CORE-2120). These cases pin domain versions 1 and 2, so they are exactly what the FROZEN legacy encoder functions must keep reproducing for historical deposits. New layouts get new anchors instead - see v4_destination_test.go and v2_quotehash_test.go.",
+  "program_id": "44DjKbs1uV3uq26HjJLY67EXuVvwCbBoSUC2tDBWbkrs",
+  "program_id_hex": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+  "cases": [
+    {
+      "name": "devnet-v2",
+      "domain": {
+        "cluster_name": "devnet",
+        "cluster_id": "6465766e65740000000000000000000000000000000000000000000000000000",
+        "signature_domain_version": 2
+      },
+      "deposit": {
+        "deposit_request_hash": "0101010101010101010101010101010101010101010101010101010101010101",
+        "depositor": "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "amount": "1000000",
+        "reserver": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "releaser": "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY",
+        "nonce": "100",
+        "issued_at": "1700000000",
+        "deadline": "1700000120"
+      },
+      "recipient": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "expected": {
+        "deposit_hash": "bfd1ea2295e71686ddbaafc7a0723b2ca5555069e5277009f08962117b6c7692",
+        "reserve_hash": "8a36e8d18abce3f51501489e9c5a60573a9c39a31a90c1d2161d4e1079fdb55b",
+        "release_hash": "57308a3900293887452da24c7796aecefc611845952cf10d155d48b0653d6e63",
+        "refund_hash": "e2f43723379cc8bbf2035060a9e1ebe7ce09c8f20603eefec136c579ff7861d8"
+      }
+    },
+    {
+      "name": "devnet-v1",
+      "domain": {
+        "cluster_name": "devnet",
+        "cluster_id": "6465766e65740000000000000000000000000000000000000000000000000000",
+        "signature_domain_version": 1
+      },
+      "deposit": {
+        "deposit_request_hash": "0202020202020202020202020202020202020202020202020202020202020202",
+        "depositor": "So11111111111111111111111111111111111111112",
+        "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+        "amount": "250000000",
+        "reserver": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "releaser": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "nonce": "0",
+        "issued_at": "1700000500",
+        "deadline": "1700000628"
+      },
+      "recipient": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+      "expected": {
+        "deposit_hash": "6902db2c653e9d1ddd2015ca624c9ed37a152fe56ac2b66a2e12040fb6f31e8a",
+        "reserve_hash": "526146897d405ffe38c0db131a20d4f56db358cf10e52e0f63ce1e4e9ea1e121",
+        "release_hash": "c441451d90b3a1e96cc239afb5b1d2c64ab8fda59c57dba0bfddc91e67d83692",
+        "refund_hash": "aded90aa1ebb3656305e219d788ff1c352b4eb54576b2d73cafea08339685ace"
+      }
+    },
+    {
+      "name": "mainnet-v2",
+      "domain": {
+        "cluster_name": "mainnet",
+        "cluster_id": "6d61696e6e657400000000000000000000000000000000000000000000000000",
+        "signature_domain_version": 2
+      },
+      "deposit": {
+        "deposit_request_hash": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+        "depositor": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "mint": "So11111111111111111111111111111111111111112",
+        "amount": "18446744073709551615",
+        "reserver": "LbUiWL3xVV8hTFYBVdbTNrpDo41NKS6o3LHHuDzjfcY",
+        "releaser": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+        "nonce": "18446744073709551615",
+        "issued_at": "1800000000",
+        "deadline": "1800000128"
+      },
+      "recipient": "So11111111111111111111111111111111111111112",
+      "expected": {
+        "deposit_hash": "73726da7b9adc2b9141e135e3f4eb1f8d8b3471f38c1715d9aa75adca9ff52ba",
+        "reserve_hash": "d3015895e826f61cd2c0eea002d0238900574fbe5708d759817e0e875a8dff33",
+        "release_hash": "d501cda1c60ce48b7045ce8a2dbd8195bd3717b49f67ce4f5e70eda9d610f183",
+        "refund_hash": "4d938e3bf2f647594826a28b0defabca071087f72265479862e2a92ce15ac128"
+      }
+    }
+  ]
+}

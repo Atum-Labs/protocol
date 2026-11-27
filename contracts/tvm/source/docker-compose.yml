@@ -1,0 +1,33 @@
+services:
+  tron-local:
+    # tronbox/tre is multi-arch (linux/amd64 AND linux/arm64); herryxcodes/blockchain-nodes-x86,
+    # which this used to pin, is amd64-only. Under emulation on an arm64 machine its FullNode never
+    # finishes starting — observed 400+ "FullNode is not already" retries over ~15 minutes — so the
+    # suite simply could not be run locally on Apple Silicon. tronbox/tre is ready in about 10
+    # seconds, and it is the image tronbox-config.js already documents this network as targeting.
+    #
+    # The two images print the TRE account listing differently (one line vs two); test-helpers.js
+    # parses both, so neither is locked in.
+    #
+    # Pinned by digest (the multi-arch index digest, so amd64 and arm64 both resolve), not `latest`:
+    # a new tag can move the genesis block, and with it the TIP-712 chain id every local signature
+    # is built for. This digest's chain id is 0xc845df2f. The settler's Tron e2e must run the same
+    # digest (its localnet tronChainId defaults to that id); bump both together. See README.md,
+    # "Local node image".
+    image: tronbox/tre@sha256:f4332e11df12a9f360639a4546fd046593909630fda48af00b30410c144342f0
+    container_name: tron-local-node
+    environment:
+      - useDefaultPrivateKey=true
+    ports:
+      - "9090:9090"  # HTTP/RPC port
+      - "50061:50051"  # gRPC port (changed from 50051 to 50061 to avoid payment-gw conflict)
+      - "50062:50052"  # gRPC port (SolidityNode) (changed from 50052 to 50062)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/wallet/getnowblock"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    profiles:
+      - tron
+      - full

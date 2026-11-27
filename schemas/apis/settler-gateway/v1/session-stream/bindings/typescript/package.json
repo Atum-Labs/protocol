@@ -1,0 +1,26 @@
+{
+  "name": "@atum-labs/settler-gateway-proto",
+  "version": "0.1.0",
+  "description": "TypeScript bindings for the Atum settler-gateway gRPC session-stream contract",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.6.3",
+    "@grpc/grpc-js": "^1.13.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

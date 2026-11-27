@@ -1,0 +1,50 @@
+{
+  "_comment": "FROZEN cross-side parity vectors (SVM). Go-authored, anchored to the Rust on-chain compute_reserve_hash. Both reserve_parity_test.go (Go) and reserve-parity.test.ts (TS) assert against this file; do not edit by hand. Regenerate via: REGEN_PARITY=1 go test ./... -run TestRegenerateReserveParityVectors",
+  "reserve": [
+    {
+      "name": "anchor/devnet-v2",
+      "version": 2,
+      "clusterId": "6465766e65740000000000000000000000000000000000000000000000000000",
+      "programId": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+      "recipient": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "depositHash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "expectedHash": "0x5241b6fea2b7ba0b3c0dd7a489967aab8a225c71a153c5a9552df51b1f198550"
+    },
+    {
+      "name": "devnet-v1",
+      "version": 1,
+      "clusterId": "6465766e65740000000000000000000000000000000000000000000000000000",
+      "programId": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+      "recipient": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "depositHash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "expectedHash": "0xc8b9df667022b28dc63b845b893e85d3c2231aa6843c19de01bbdef0857ea5a7"
+    },
+    {
+      "name": "max-deposit-hash-v2",
+      "version": 2,
+      "clusterId": "6465766e65740000000000000000000000000000000000000000000000000000",
+      "programId": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+      "recipient": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "depositHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "expectedHash": "0xecf59dec49117dad490f5590c16a6e6e9aa9486ec097e4cae99d53db876249a3"
+    },
+    {
+      "name": "alt-recipient-v2",
+      "version": 2,
+      "clusterId": "6465766e65740000000000000000000000000000000000000000000000000000",
+      "programId": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+      "recipient": "069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f00000000001",
+      "depositHash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "expectedHash": "0x9c8903ff7fdd993e4b83b30d92ec42b966001cd50c855f1e29fa37f0d146db94"
+    },
+    {
+      "name": "mainnet-cluster-v2",
+      "version": 2,
+      "clusterId": "6d61696e6e657400000000000000000000000000000000000000000000000000",
+      "programId": "2d66325a159b21433ca818ab4b70519d166c8c9684ddd218637147896c012238",
+      "recipient": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61",
+      "depositHash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "expectedHash": "0x3d16b03ad165f7684d376c81a64a6e9c64937f1b380efae6ccf0d40289fc54f7"
+    }
+  ]
+}

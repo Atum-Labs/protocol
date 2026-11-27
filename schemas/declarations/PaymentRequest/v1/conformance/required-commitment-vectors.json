@@ -1,0 +1,1456 @@
+{
+  "_comment": "Vectors for RequiredCommitmentOf (Go) and requiredCommitmentOf (TypeScript), asserted by both sender-auth suites. Each vector is a payment request, as the text a caller holds, an optional solana escrow domain, left out when none is supplied, optional tronChainIds, the verifier's own Tron chain ids by cluster, left out when none are supplied, and either want, the commitment the function must return, or result, the complete CommitmentResult its refusal must carry. The function returns what any deposit for the request must commit. When signed_messages[0] carries a message_prehash, even a blank one, it runs the check VerifyRequestCommitment runs and refuses exactly as it does: each such vector expects VerifyRequestCommitment's result for the same request and domain, which matches the commitment-vectors.json row with the same request and domain where there is one, and both suites assert that equality. Otherwise no signed commitment can be read (sender_auth or signed_messages is absent, or signed_messages[0] has no message_prehash, absent or null): it applies only the request's own rules, reads no Solana domain, never compares message_scheme and verifies no signature, so a request it accepts there may still be unpayable. Written by hand: each honest want is what the matching honest payment in commitment-vectors.json signed, and each other value follows from the rules in readme.md. Edit this file directly; there is nothing to regenerate.",
+  "vectors": [
+    {
+      "name": "eip155-unsigned",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "tron-mainnet-unsigned",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "tron-shasta-unsigned",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:shasta/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "solana-unsigned",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}]}",
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "eip155-signed",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "tron-signed",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x2b6653dc\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "solana-signed",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "solana-signed-no-domain",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Solana escrow domain (program id, cluster, domain version) was not supplied",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-signed-payee-rewritten",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x1111111111111111111111111111111111111111\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payer signed a deposit payable to \"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\", but this payment pays \"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111\"",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111",
+        "signedDepositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-signed-payee-rewritten",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x2b6653dc\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payer signed a deposit payable to \"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\", but this payment pays \"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m\"",
+        "namespace": "tron",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "expectedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "signedDepositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "solana-signed-payee-rewritten",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payer signed a deposit payable to \"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\", but this payment pays \"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\"",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "expectedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+        "signedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "solana-signed-payee-rewritten-no-domain",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Solana escrow domain (program id, cluster, domain version) was not supplied",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-signed-request-hash-uppercase-hex",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xA3AD893670A8451FADD71BE4B8A0D40DC1C7FBC5AECF458CB2B9BEF129D0E764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-signed-request-id-rewritten",
+      "request": "{\"request_id\":\"req_other\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payer signed a deposit for another request: depositRequestHash 0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764 is not keccak256 of request_id \"req_other\"",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "signedDepositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764",
+        "expectedDepositRequestHash": "0x4d344f4d0ff549a53054956fe2b9b6af2080b28f4deb61e624376f372d8fa4c0"
+      }
+    },
+    {
+      "name": "tron-signed-request-id-rewritten",
+      "request": "{\"request_id\":\"req_other\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x2b6653dc\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payer signed a deposit for another request: depositRequestHash 0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84 is not keccak256 of request_id \"req_other\"",
+        "namespace": "tron",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "expectedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "signedDepositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84",
+        "expectedDepositRequestHash": "0x4d344f4d0ff549a53054956fe2b9b6af2080b28f4deb61e624376f372d8fa4c0"
+      }
+    },
+    {
+      "name": "solana-signed-request-id-rewritten",
+      "request": "{\"request_id\":\"req_other\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payer signed a deposit for another request: depositRequestHash 0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491 is not keccak256 of request_id \"req_other\"",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "expectedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "signedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491",
+        "expectedDepositRequestHash": "0x4d344f4d0ff549a53054956fe2b9b6af2080b28f4deb61e624376f372d8fa4c0"
+      }
+    },
+    {
+      "name": "eip155-signed-payee-and-witness-rewritten",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x1111111111111111111111111111111111111111\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "prehash_mismatch",
+        "detail": "the signed digest is not the EIP-712 hash of message_prehash",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x1111111111111111111111111111111111111111",
+        "signedDepositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764",
+        "expectedDepositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "tron-signed-payee-and-witness-rewritten",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x2b6653dc\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "result": {
+        "outcome": "prehash_mismatch",
+        "detail": "the signed digest is not the EIP-712 hash of message_prehash",
+        "namespace": "tron",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "expectedDestination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m",
+        "signedDepositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84",
+        "expectedDepositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "solana-signed-record-rewritten",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "result": {
+        "outcome": "prehash_mismatch",
+        "detail": "the signed digest is not the Solana deposit hash of message_prehash",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+        "expectedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+        "signedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491",
+        "expectedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "solana-signed-source-account-rewritten",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"2KW2XRd9kwqet15Aha2oK3tYvd3nWbTFH1MBiRAv1BE1\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\"}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "result": {
+        "outcome": "signer_mismatch",
+        "detail": "the signed deposit's depositor is not the payment's source account",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "expectedDestination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "signedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491",
+        "expectedDepositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "eip155-signed-scheme-mismatch",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"TRON\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "message_scheme \"TRON\" cannot authorise a payment sourced on eip155",
+        "namespace": "eip155",
+        "scheme": "TRON",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-signed-scheme-absent",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "message_scheme \"\" cannot authorise a payment sourced on eip155",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-signed-two-legs",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"},{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 2 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "solana-signed-domain-version-3",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"message_prehash\":\"{\\\"deposit_request_hash\\\":\\\"0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491\\\",\\\"destination\\\":\\\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\\\",\\\"depositor\\\":\\\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\\\",\\\"mint\\\":\\\"cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\\\",\\\"amount\\\":\\\"1000000\\\",\\\"reserver\\\":\\\"8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR\\\",\\\"releaser\\\":\\\"CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8\\\",\\\"nonce\\\":\\\"459561500682\\\",\\\"issued_at\\\":\\\"1700000000\\\",\\\"deadline\\\":\\\"1700000120\\\"}\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 3
+      },
+      "result": {
+        "outcome": "commitment_absent",
+        "detail": "the escrow's signature domain version 3 commits no destination; every deployed escrow requires version 4 or later",
+        "namespace": "solana",
+        "scheme": "SOLANA",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-prehash-blank",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\" \\n\\t \",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "commitment_absent",
+        "detail": "no message_prehash, so the destination the payer signed cannot be read",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-prehash-empty",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "result": {
+        "outcome": "commitment_absent",
+        "detail": "no message_prehash, so the destination the payer signed cannot be read",
+        "namespace": "eip155",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-signed-second-message-ignored",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"},{\"message\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"signature\":\"0x\",\"message_prehash\":\"{}\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-second-message-prehash-not-read",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"},{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-prehash-absent",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-prehash-null",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":null,\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "tron-prehash-absent",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "tron-prehash-null",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0xcf5dc5b4cb2177fae74dd64fe4fdb9bcc0f7e438f336652c291e03c5187deeba\",\"message_prehash\":null,\"signature\":\"0x5cc0cc17b77b3c58abaf69957e519cc66deee1e2b7044ab62474076e2df13cf41de1f6659af7b8fed25e49ccbb84a075789c63fef76b43eb8922e71ce12287b01b\"}]}}",
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "solana-prehash-absent",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "solana-prehash-absent-with-domain",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "solana-prehash-absent-invalid-domain",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x7c8e008dd575095828f8a4ec8b8dd3513ff0a20fab8065358ac2685583e90847\",\"signature\":\"0xe42d350fd5ef5f7ebdd4b943a45053020c1e305c2a9485a693b023087ee853f6593d5e3e3aeb6441971309234821103d7f6b1c28297310a866a7384af4971a02\",\"payload\":{\"delegate_signer\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"}}]}}",
+      "solana": {
+        "escrowProgramId": "not-base58!",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "solana-unsigned-invalid-domain",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}]}",
+      "solana": {
+        "escrowProgramId": "not-base58!",
+        "clusterId": "devnet",
+        "domainVersion": 5
+      },
+      "want": {
+        "namespace": "solana",
+        "destination": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/token:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo@7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4",
+        "depositRequestHash": "0xc6482da29e7c698b455a3e30b475b1557bb0b85304be00b5c9b8d8c5f1ede491"
+      }
+    },
+    {
+      "name": "eip155-prehash-absent-scheme-mismatched",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-prehash-absent-two-legs",
+      "request": "{\"destination\":[{\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\",\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\"},{\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\",\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\"}],\"request_id\":\"req_commit_evm\",\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]},\"source\":{\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\",\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\"}}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 2 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-mixed-case-account-lowercased",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xc0FfEe254729296A45a3885639aC7e10f9D54979\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-upper-case-hex-lowercased",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589FCD6EDB6E08F4C7C32D4F71B54BDA02913\",\"account\":\"0xC0FFEE254729296A45A3885639AC7E10F9D54979\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "sender-auth-null",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":null}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "signed-messages-empty",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "signed-messages-null",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":null}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "sender-auth-empty-object",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "signed-message-only-prehash-null",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message_prehash\":null}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "message-scheme-not-compared",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"SOLANA\"}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "destination-at-max-bytes",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "request-id-surrogate-pair",
+      "request": "{\"request_id\":\"\\ud83d\\ude00req\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0x736dc81a1e154ee24e8ec6f0adcdc777de81bbf9e53bf65dbd9d009912665e6b"
+      }
+    },
+    {
+      "name": "eip155-chain-id-at-max",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:9007199254740991/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "no-legs",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 0 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "no-legs-with-scheme",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\"}}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 0 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "two-legs",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"},{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x1111111111111111111111111111111111111111\"}]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 2 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "leg-chain-namespace-upper-case",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"EIP155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment's destination cannot be committed to: sender_auth: destination asset_identifier \"EIP155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\" has a non-canonical chain namespace \"EIP155\": the ratified grammar requires it lowercase (\"eip155\"). It is rejected rather than normalised because the destination commitment is over these exact bytes",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "leg-account-with-separator",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979@0x1111111111111111111111111111111111111111\"}]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment's destination cannot be committed to: sender_auth: destination asset_identifier (\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\") and account (\"0xC0FFEE254729296a45a3885639AC7E10F9d54979@0x1111111111111111111111111111111111111111\") must not contain '@': it is the separator between them in the committed destination grammar",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "leg-asset-not-caip19",
+      "request": "{\"request_id\":\"req_commit_sol\",\"source\":{\"asset_identifier\":\"solana:mainnet/spl:cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN\",\"account\":\"8SFqwqnq4whPhs8icwHA2hQg3hUoN1qrCLK1SBx3WKwe\"},\"destination\":[{\"asset_identifier\":\"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\",\"account\":\"7hEM4QZEsz7e9BXXSxfbDLXi4GHt9dXwndvX3gr2uwX4\"}]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment's destination cannot be committed to: sender_auth: destination asset_identifier \"solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1:A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo\" is not CAIP-19: expected <caip2-chain-id>/<asset-namespace>:<asset-reference> (this looks like the deprecated `<chain>:<ref>:<asset>` form; migrate it to `<chain>:<ref>/<asset-namespace>:<asset-reference>`)",
+        "namespace": "solana",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "destination-over-max-bytes",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment's destination cannot be committed to: sender_auth: composed destination is 257 bytes, over the escrow's MAX_DESTINATION_BYTES of 256: the contract reverts DestinationTooLong, so this deposit could never be redeemed",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "destination-absent",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: destination is not an array",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "request-id-empty",
+      "request": "{\"request_id\":\"\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payment's request_id is empty, so no deposit request hash can be derived",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "request-id-absent",
+      "request": "{\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: request_id is not a string",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "request-id-not-string",
+      "request": "{\"request_id\":7,\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: request_id is not a string",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "request-id-lone-surrogate",
+      "request": "{\"request_id\":\"\\ud800req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payment's request_id is not well-formed text",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "request-id-replacement-character",
+      "request": "{\"request_id\":\"\\ufffdreq_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_hash_mismatch",
+        "detail": "the payment's request_id is not well-formed text",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "twin-top-level",
+      "request": "{\"Request_ID\":\"req_other\",\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request carries two members that differ only in letter case, at $.request_id",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "duplicate-top-level",
+      "request": "{\"request_id\":\"req_other\",\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request carries two members that differ only in letter case, at $.request_id",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "twin-nested-in-leg",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\",\"Account\":\"0x1111111111111111111111111111111111111111\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request carries two members that differ only in letter case, at $.destination[0].Account",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "twin-nested-in-sender-auth",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"Message_Scheme\":\"TRON\"}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request carries two members that differ only in letter case, at $.sender_auth.Message_Scheme",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "twin-nested-in-source",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\",\"Account\":\"0x1111111111111111111111111111111111111111\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request carries two members that differ only in letter case, at $.source.Account",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "twin-in-unread-credential",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"verifiableCredential\":[{\"credentialSubject\":{\"id\":\"did:example:a\",\"ID\":\"did:example:b\"}}]}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "twin-in-unread-presentation-signed",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x1d196e72182bfdc988c0663f6122d72ac5059232fdd747256eec7922580626a2\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0x1\\\",\\\"verifyingContract\\\":\\\"0x000000000022D473030F116dDEE9F6B43aC78BA3\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0x5555555555555555555555555555555555555555\\\",\\\"amount\\\":\\\"1000000\\\"},\\\"spender\\\":\\\"0x1111111111111111111111111111111111111111\\\",\\\"nonce\\\":\\\"123\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764\\\",\\\"destination\\\":\\\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979\\\",\\\"reserver\\\":\\\"0x2222222222222222222222222222222222222222\\\",\\\"releaser\\\":\\\"0x3333333333333333333333333333333333333333\\\"}}}\",\"signature\":\"0x200246c4cbb73903e5398c2ee66b64880b0070d17a690c1e6208a4fb2d3df0924e7acda7e8a27e0ad06b3a3a2fc89fd305e4d21aca1ec478e68affe25a28ddca1b\"}]},\"presentation\":{\"verifiableCredential\":[{\"credentialSubject\":{\"role\":\"awarder\",\"Role\":\"payer\"}}]}}",
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "invalid-json",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not a single valid JSON document",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "bom-prefix",
+      "request": "﻿{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not a single valid JSON document",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "trailing-garbage",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]} x",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not a single valid JSON document",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "two-documents",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not a single valid JSON document",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "array-root",
+      "request": "[{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}]",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: the document is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "sender-auth-not-object",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":\"EVM_PERMIT2\"}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "message-scheme-not-string",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":0}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.message_scheme is not a string",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-messages-not-array",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":{}}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages is not an array",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-message-prehash-not-string",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"signed_messages\":[{\"message\":\"0x\",\"signature\":\"0x\",\"message_prehash\":{}}]}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages[0].message_prehash is not a string",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "sender-auth-number",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":0}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "sender-auth-array",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":[]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-messages-string",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":\"\"}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages is not an array",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-message-string",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[\"x\"]}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages[0] is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-message-null",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[null]}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages[0] is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "signed-message-array",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[[]]}}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: sender_auth.signed_messages[0] is not an object",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "unsupported-namespace",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"cosmos:cosmoshub-4/slip44:118\",\"account\":\"cosmos1x\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain namespace \"cosmos\" has no destination commitment rule",
+        "namespace": "cosmos",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "unknown-tron-network",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:nile/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"tron:nile\" is not a supported tron network",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-supplied",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "localnet": 3360022319
+      },
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-not-supplied",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"tron:localnet\" is not a supported tron network",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-supplied-for-other-cluster",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "nile": 3360022319
+      },
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"tron:localnet\" is not a supported tron network",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-zero",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "localnet": 0
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"localnet\" is not an integer in 1..4294967295",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-over-uint32",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "localnet": 4294967296
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"localnet\" is not an integer in 1..4294967295",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-unsigned-chain-id-shasta-id",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "localnet": 2494104990
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"localnet\" is 2494104990, which the built-in table gives cluster \"shasta\"",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-quote-unsigned-chain-id-zero",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\\"quote/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\"quote": 0
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\\"quote\" is not an integer in 1..4294967295",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-quote-unsigned-chain-id-mainnet-id",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\\"quote/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\"quote": 728126428
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\\"quote\" is 728126428, which the built-in table gives cluster \"mainnet\"",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-backslash-unsigned-chain-id-zero",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\\\slash/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\\slash": 0
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\\\slash\" is not an integer in 1..4294967295",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-backslash-unsigned-chain-id-mainnet-id",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\\\slash/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\\slash": 728126428
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\\\slash\" is 728126428, which the built-in table gives cluster \"mainnet\"",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-newline-unsigned-chain-id-zero",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\nline/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\nline": 0
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\u000aline\" is not an integer in 1..4294967295",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-cluster-with-newline-unsigned-chain-id-mainnet-id",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:local\\nline/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "local\nline": 728126428
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"local\\u000aline\" is 728126428, which the built-in table gives cluster \"mainnet\"",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-mainnet-unsigned-chain-id-agrees",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "mainnet": 728126428
+      },
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "tron-mainnet-unsigned-chain-id-disagrees",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}]}",
+      "tronChainIds": {
+        "mainnet": 3360022319
+      },
+      "result": {
+        "outcome": "verifier_misconfigured",
+        "detail": "the Tron chain id supplied for cluster \"mainnet\" is 3360022319, but the built-in table has 728126428",
+        "namespace": "tron",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "tron-localnet-signed-chain-id-supplied",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x881d5deb9c350746322ca03403876a964cab56bdfdf2663c7c9c66aba6200356\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0xc845df2f\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x89dfeb075fe766284a822d9a0a34bc621183af23a6da21feeef3e76d16c687ba670ab85a12acd61b2c4544c9885bf7196cade30e107a5d8c4b1f6013e6e3ac601b\"}]}}",
+      "tronChainIds": {
+        "localnet": 3360022319
+      },
+      "want": {
+        "namespace": "tron",
+        "destination": "tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB",
+        "depositRequestHash": "0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84"
+      }
+    },
+    {
+      "name": "tron-localnet-signed-chain-id-not-supplied",
+      "request": "{\"request_id\":\"req_commit_tron\",\"source\":{\"asset_identifier\":\"tron:localnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TBvJUBXorwBPzqvV38vjDgegj5Eh6g2Tsq\"},\"destination\":[{\"asset_identifier\":\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\"}],\"sender_auth\":{\"message_scheme\":\"EVM_PERMIT2\",\"signed_messages\":[{\"message\":\"0x881d5deb9c350746322ca03403876a964cab56bdfdf2663c7c9c66aba6200356\",\"message_prehash\":\"{\\\"types\\\":{\\\"PermitWitnessTransferFrom\\\":[{\\\"name\\\":\\\"permitted\\\",\\\"type\\\":\\\"TokenPermissions\\\"},{\\\"name\\\":\\\"spender\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"nonce\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"deadline\\\",\\\"type\\\":\\\"uint256\\\"},{\\\"name\\\":\\\"witness\\\",\\\"type\\\":\\\"DepositWitness\\\"}],\\\"TokenPermissions\\\":[{\\\"name\\\":\\\"token\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"amount\\\",\\\"type\\\":\\\"uint256\\\"}],\\\"DepositWitness\\\":[{\\\"name\\\":\\\"depositRequestHash\\\",\\\"type\\\":\\\"bytes32\\\"},{\\\"name\\\":\\\"destination\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"reserver\\\",\\\"type\\\":\\\"address\\\"},{\\\"name\\\":\\\"releaser\\\",\\\"type\\\":\\\"address\\\"}]},\\\"primaryType\\\":\\\"PermitWitnessTransferFrom\\\",\\\"domain\\\":{\\\"name\\\":\\\"Permit2\\\",\\\"chainId\\\":\\\"0xc845df2f\\\",\\\"verifyingContract\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\"},\\\"message\\\":{\\\"permitted\\\":{\\\"token\\\":\\\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\\\",\\\"amount\\\":\\\"10000000\\\"},\\\"spender\\\":\\\"0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d\\\",\\\"nonce\\\":\\\"456\\\",\\\"deadline\\\":\\\"1924991999\\\",\\\"witness\\\":{\\\"depositRequestHash\\\":\\\"0x390c52bbce7ff3a5e2d6221865b4724e1a7904eb48785efe3b7d6f9cc8128a84\\\",\\\"destination\\\":\\\"tron:0x2b6653dc/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t@TQ5NMqJjW8sTHhcNJ6VhVnQ2gPTBqLPRLB\\\",\\\"reserver\\\":\\\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\\\",\\\"releaser\\\":\\\"0xb4a428ab7092c2f1395f376ce297033b3bb446c1\\\"}}}\",\"signature\":\"0x89dfeb075fe766284a822d9a0a34bc621183af23a6da21feeef3e76d16c687ba670ab85a12acd61b2c4544c9885bf7196cade30e107a5d8c4b1f6013e6e3ac601b\"}]}}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"tron:localnet\" is not a supported tron network",
+        "namespace": "tron",
+        "scheme": "EVM_PERMIT2",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-unsigned-tron-chain-ids-not-read",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "tronChainIds": {
+        "mainnet": 1,
+        "localnet": 0
+      },
+      "want": {
+        "namespace": "eip155",
+        "destination": "eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0xc0ffee254729296a45a3885639ac7e10f9d54979",
+        "depositRequestHash": "0xa3ad893670a8451fadd71be4b8a0d40dc1c7fbc5aecf458cb2b9bef129d0e764"
+      }
+    },
+    {
+      "name": "eip155-chain-id-over-max",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:9007199254740992/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"eip155:9007199254740992\" is not a supported eip155 network",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-chain-id-past-int64",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:99999999999999999999/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"eip155:99999999999999999999\" is not a supported eip155 network",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "eip155-chain-id-non-canonical",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:01/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain \"eip155:01\" is not a supported eip155 network",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "source-asset-not-caip19",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"eip155:1\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source asset_identifier \"eip155:1\" is not a valid CAIP-19 asset",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "order-source-before-destination",
+      "request": "{\"request_id\":\"req_commit_evm\",\"source\":{\"asset_identifier\":\"cosmos:cosmoshub-4/slip44:118\",\"account\":\"cosmos1x\"},\"destination\":[]}",
+      "result": {
+        "outcome": "scheme_mismatch",
+        "detail": "source chain namespace \"cosmos\" has no destination commitment rule",
+        "namespace": "cosmos",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "order-destination-before-request-id",
+      "request": "{\"request_id\":\"\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0x5555555555555555555555555555555555555555\",\"account\":\"0x19E7E376E7C213B7E7e7e46cc70A5dD086DAff2A\"},\"destination\":[]}",
+      "result": {
+        "outcome": "destination_mismatch",
+        "detail": "the payment names 0 destinations; exactly one can be committed to",
+        "namespace": "eip155",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    },
+    {
+      "name": "order-reading-before-source",
+      "request": "{\"request_id\":7,\"source\":{\"asset_identifier\":\"cosmos:cosmoshub-4/slip44:118\",\"account\":\"cosmos1x\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0xC0FFEE254729296a45a3885639AC7E10F9d54979\"}]}",
+      "result": {
+        "outcome": "request_malformed",
+        "detail": "the payment request is not readable: request_id is not a string",
+        "namespace": "",
+        "scheme": "",
+        "signedDestination": "",
+        "expectedDestination": "",
+        "signedDepositRequestHash": "",
+        "expectedDepositRequestHash": ""
+      }
+    }
+  ]
+}

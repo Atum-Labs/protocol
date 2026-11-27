@@ -1,0 +1,570 @@
+[
+  {
+    "type": "function",
+    "name": "allowToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "decimals",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allowTokenAndSetFeeConfig",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "decimals",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "feePercentage",
+        "type": "uint88",
+        "internalType": "uint88"
+      },
+      {
+        "name": "minFee",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "maxFee",
+        "type": "uint80",
+        "internalType": "uint80"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "clearTokenFeeConfig",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "determineFee",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenConfig",
+        "type": "tuple",
+        "internalType": "struct ITokenConfig.TokenConfig",
+        "components": [
+          {
+            "name": "feePercentage6Decimals",
+            "type": "uint88",
+            "internalType": "uint88"
+          },
+          {
+            "name": "maxFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "minFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "tokenDecimals",
+            "type": "uint8",
+            "internalType": "uint8"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "feeAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "disallowToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAllowedTokens",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "allowedTokens",
+        "type": "address[]",
+        "internalType": "contract IERC20[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDirectDepositFeeConfig",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tokenConfig",
+        "type": "tuple",
+        "internalType": "struct ITokenConfig.TokenConfig",
+        "components": [
+          {
+            "name": "feePercentage6Decimals",
+            "type": "uint88",
+            "internalType": "uint88"
+          },
+          {
+            "name": "maxFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "minFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "tokenDecimals",
+            "type": "uint8",
+            "internalType": "uint8"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getFeeRevenue",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "revenue",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTokenConfig",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tokenConfig",
+        "type": "tuple",
+        "internalType": "struct ITokenConfig.TokenConfig",
+        "components": [
+          {
+            "name": "feePercentage6Decimals",
+            "type": "uint88",
+            "internalType": "uint88"
+          },
+          {
+            "name": "maxFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "minFee6Decimals",
+            "type": "uint80",
+            "internalType": "uint80"
+          },
+          {
+            "name": "tokenDecimals",
+            "type": "uint8",
+            "internalType": "uint8"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isTokenAllowed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "isAllowed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setTokenFeeConfig",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "feePercentage",
+        "type": "uint88",
+        "internalType": "uint88"
+      },
+      {
+        "name": "minFee",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "maxFee",
+        "type": "uint80",
+        "internalType": "uint80"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "withdrawFeeRevenue",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "FeeRevenueWithdrawn",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenAllowed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "decimals",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenDisallowed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "contract IERC20"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenFeesCleared",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "contract IERC20"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenFeesUpdated",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "contract IERC20"
+      },
+      {
+        "name": "feePercentage",
+        "type": "uint88",
+        "indexed": false,
+        "internalType": "uint88"
+      },
+      {
+        "name": "minFee",
+        "type": "uint80",
+        "indexed": false,
+        "internalType": "uint80"
+      },
+      {
+        "name": "maxFee",
+        "type": "uint80",
+        "indexed": false,
+        "internalType": "uint80"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "CouldNotDisallowToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FeeExceedsDepositAmount",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "feeAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FeePercentageCannotBeZeroWhenMaxFeeIsSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "FeePercentageExceedsMaximum",
+    "inputs": [
+      {
+        "name": "feePercentage6Decimals",
+        "type": "uint88",
+        "internalType": "uint88"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MaxFeeNotRepresentable",
+    "inputs": [
+      {
+        "name": "maxFee6Decimals",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "tokenDecimals",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MinFeeCannotBeGreaterThanMaxFee",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinFeeNotRepresentable",
+    "inputs": [
+      {
+        "name": "minFee6Decimals",
+        "type": "uint80",
+        "internalType": "uint80"
+      },
+      {
+        "name": "tokenDecimals",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoFeesToWithdraw",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "RecipientCannotBeSelf",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RecipientCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenAlreadyAllowed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TokenCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenDecimalsCannotBeZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenDecimalsExceedMaximum",
+    "inputs": [
+      {
+        "name": "decimals",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "maximum",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TokenDecimalsMismatch",
+    "inputs": [
+      {
+        "name": "provided",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "actual",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TokenNotAllowed",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ]
+  }
+]

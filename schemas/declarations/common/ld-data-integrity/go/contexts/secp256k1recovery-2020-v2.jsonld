@@ -1,0 +1,27 @@
+{
+  "@context": {
+    "sec": "https://w3id.org/security#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "EcdsaSecp256k1RecoverySignature2020": "sec:EcdsaSecp256k1RecoverySignature2020",
+    "type": "@type",
+    "created": {
+      "@id": "http://purl.org/dc/terms/created",
+      "@type": "xsd:dateTime"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    },
+    "jws": {
+      "@id": "sec:jws"
+    }
+  }
+}

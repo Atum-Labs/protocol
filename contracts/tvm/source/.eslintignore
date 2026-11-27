@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+contracts/build/
+
+# Dependencies
+node_modules/
+
+# TronBox artifacts
+migrations/compiled/
+
+# Coverage
+coverage/
+.coverage_artifacts/
+.coverage_contracts/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db 

@@ -1,0 +1,163 @@
+{
+  "_comment": "Cross-language vectors for the atum-escrow request_id. queryParams is the parsed query (req.query). query = \"\" when it has no keys, else \"?\" + stable JSON of it: object keys sorted by UTF-16 code unit at every level, array order kept, no whitespace, strings escaped exactly as ECMAScript JSON.stringify does: only the quote, the backslash and U+0000-U+001F are escaped, so < > &, U+2028, U+2029 and other non-ASCII are written as-is (Go encoding/json always escapes U+2028 and U+2029, and escapes < > & unless SetEscapeHTML(false), so a Go implementation needs its own string encoder). resource = upper-cased method, a space, the routed request path exactly as received (req.path, mount-relative), then query, with no URL parsing. resource is at most 2048 UTF-8 bytes. request_id = deterministicFullRequestId(anchor = identifier + \":\" + lowercase hex keccak256(UTF-8 resource) without 0x, account, prefix \"req_x402_\"): the prefix then all 64 hex characters of the digest. Every implementation of the scheme asserts against this file; an expectation may only change when all of them change with it.",
+  "cases": [
+    {
+      "name": "plain GET, no query, EVM account",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/report",
+      "queryParams": {},
+      "query": "",
+      "resource": "GET /report",
+      "request_id": "req_x402_1a51c8be62139cb86ec92e22c5e9a4839bb4ebacccd24b465a59912677b0c007"
+    },
+    {
+      "name": "flat query, keys sorted",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/reports/42",
+      "queryParams": {
+        "lang": "en",
+        "format": "pdf"
+      },
+      "query": "?{\"format\":\"pdf\",\"lang\":\"en\"}",
+      "resource": "GET /reports/42?{\"format\":\"pdf\",\"lang\":\"en\"}",
+      "request_id": "req_x402_6de1900c700b2b33ed537de75b4181f2400e7287beced3d70080c4e186dc724a"
+    },
+    {
+      "name": "repeated parameter keeps its order",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/search",
+      "queryParams": {
+        "tag": ["b", "a"]
+      },
+      "query": "?{\"tag\":[\"b\",\"a\"]}",
+      "resource": "GET /search?{\"tag\":[\"b\",\"a\"]}",
+      "request_id": "req_x402_216a0cf403b87a2fbf696554f0dfd91c6749c2ccec0f7d94f32a24074c2b7306"
+    },
+    {
+      "name": "nested object and array, keys sorted recursively",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/items",
+      "queryParams": {
+        "filter": {
+          "size": ["m", "l"],
+          "color": "red"
+        },
+        "page": "2"
+      },
+      "query": "?{\"filter\":{\"color\":\"red\",\"size\":[\"m\",\"l\"]},\"page\":\"2\"}",
+      "resource": "GET /items?{\"filter\":{\"color\":\"red\",\"size\":[\"m\",\"l\"]},\"page\":\"2\"}",
+      "request_id": "req_x402_2309349fc9f3c2ea5eb293b82d5b3b0cba3cc4e4c92ff657a659f56aa1d73912"
+    },
+    {
+      "name": "percent-encoded path as received, non-ASCII query value",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/caf%C3%A9/men%C3%BC",
+      "queryParams": {
+        "q": "é \"x\""
+      },
+      "query": "?{\"q\":\"é \\\"x\\\"\"}",
+      "resource": "GET /caf%C3%A9/men%C3%BC?{\"q\":\"é \\\"x\\\"\"}",
+      "request_id": "req_x402_494f4d962bb0d1d1d3d8c18e5a690436a75baf520a3af71ddab018566d16fc18"
+    },
+    {
+      "name": "HTML-significant and control characters are not escaped beyond JSON.stringify",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/q",
+      "queryParams": {
+        "s": "a<b>&c \n"
+      },
+      "query": "?{\"s\":\"a<b>&c \\n\"}",
+      "resource": "GET /q?{\"s\":\"a<b>&c \\n\"}",
+      "request_id": "req_x402_93a2d68c8038bca6cd18bd7a70f6b5d0855b06b22515d493cd50400a86ef24c4"
+    },
+    {
+      "name": "lower-case POST is upper-cased, Solana account",
+      "identifier": "pay_order_4712_a1b2c3d4",
+      "account": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+      "method": "post",
+      "path": "/orders",
+      "queryParams": {
+        "x": "1"
+      },
+      "query": "?{\"x\":\"1\"}",
+      "resource": "POST /orders?{\"x\":\"1\"}",
+      "request_id": "req_x402_ae927056c434f683023de31ed6b18dcb106804824fd9bae163aa1de4a6cf33d4"
+    },
+    {
+      "name": "same page, Solana account",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "GgBaCs3NCBuZN12kCJgAW63ydqohFkHEdfdEXBPzLHq",
+      "method": "GET",
+      "path": "/report",
+      "queryParams": {},
+      "query": "",
+      "resource": "GET /report",
+      "request_id": "req_x402_22675c4e3feefe079e8ac27a1d55f5fb836a57fd4e8785bbabd67cf3e1ca90b3"
+    },
+    {
+      "name": "U+2028 and U+2029 written as-is",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/search",
+      "queryParams": {
+        "s": "a b c"
+      },
+      "query": "?{\"s\":\"a b c\"}",
+      "resource": "GET /search?{\"s\":\"a b c\"}",
+      "request_id": "req_x402_79536484bc299936d60dacd979183fe8a1c0eb4a329f92567faf04fdd56dcc4f"
+    },
+    {
+      "name": "keys sorted by UTF-16 code unit, not code point",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/search",
+      "queryParams": {
+        "｡": "1",
+        "😀": "2"
+      },
+      "query": "?{\"😀\":\"2\",\"｡\":\"1\"}",
+      "resource": "GET /search?{\"😀\":\"2\",\"｡\":\"1\"}",
+      "request_id": "req_x402_e78646bff611dd3f8239d2d1510e1eb6cd8e72db450f45969fd6b69340c6c4da"
+    },
+    {
+      "name": "empty query value",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/search",
+      "queryParams": {
+        "s": ""
+      },
+      "query": "?{\"s\":\"\"}",
+      "resource": "GET /search?{\"s\":\"\"}",
+      "request_id": "req_x402_ec19fe8faabb0bf48462bf57a93c20395da761ce207376a3e40e89ca1ee36163"
+    },
+    {
+      "name": "page of exactly 2048 UTF-8 bytes",
+      "identifier": "pay_order_4711_a1b2c3d4",
+      "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "method": "GET",
+      "path": "/p",
+      "queryParams": {
+        "s": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééa"
+      },
+      "query": "?{\"s\":\"ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééa\"}",
+      "resource": "GET /p?{\"s\":\"ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééa\"}",
+      "request_id": "req_x402_be8fd5f321ff85d74b5f8f0037fe2789bc1f9e2382e5f2dff3435adbfb740c95"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+# Dependencies (regenerated via `npm install`; lockfiles are committed)
+node_modules/
+
+# Build output (regenerated via `npm run build` / tsc)
+dist/
+dist-cjs/
+*.tsbuildinfo
+
+# Turbo local cache
+.turbo/
+
+# npm pack output. The publish guard packs a tarball on every run and only
+# removes it on the happy path, so a failed run leaves one behind — ready to be
+# committed by accident. Regenerate with `npm pack --ignore-scripts`.
+*.tgz
+
+# Go build/test artifacts
+*.test
+# Stray binary a bare `go build` drops in schemas/ (a main package) when run without -o
+/schemas/schemas
+
+# OS / editor
+.DS_Store
+
+# Secrets (never commit local keys or env files)
+.env
+.env.*
+# but keep the imported sample env files (placeholders only, no secrets)
+!**/.env.example
+# The EVM deploy drivers read $NETWORK.env, which has no leading dot and so escapes the two rules
+# above. The templates beside it are tracked; the copy an operator edits is not.
+contracts/evm/deploy/*.env
+!contracts/evm/deploy/*.env.example
+*.pem
+*.key
+*.secret
+# Provisioning script output. The scripts default --out to a cwd-relative path, so these land
+# wherever the script was run from, not only under the package that also ignores them.
+*.apikey.json
+*.suborg.json
+
+# AI tooling (local-only; not shared with the team)
+.claude/
+.wolf/
+.cursor/
+CLAUDE.md
+# Local contract deploy output (runtime)
+contracts/*/source/deployment-addresses.json
+
+# Python bytecode from the deploy helpers
+__pycache__/
+
+# Backups from the documented sed -i.bak / derive.py propagation in
+# contracts/svm/deploy/README.md Step 2c. That workflow deliberately leaves .bak files for review
+# and tells you to delete them afterwards, but until you do they show as untracked -- and a
+# `git add -A` in that window commits the PRE-propagation source, which looks like a revert.
+*.bak

@@ -1,0 +1,34 @@
+{
+  "name": "@atum-labs/payment-request-token-approval",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Permit2 source-token approval for PaymentRequest payers (EVM / Tron; not applicable on Solana).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atum-labs/evm-escrow-encoding": "workspace:*",
+    "@atum-labs/payment-request-sender-auth": "workspace:*",
+    "ethers": "^6.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.11"
+  }
+}

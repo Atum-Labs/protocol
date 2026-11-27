@@ -1,0 +1,43 @@
+{
+  "$comment": "Example BidAwardEnvelope. The holder is the Atum award AUTHORITY did:pkh (the service identity that selected the winning quote), NOT the awarded quote's signer — unlike FulfillmentQuoteEnvelope / PaymentRequestEnvelope. The embedded VC is the quoteAwarder KnownToAtum credential (issuer did:web:atumlabs.xyz, credentialSubject.role `quoteAwarder`) asserting the holder is authorized to award bids. type[] carries the BidAwardEnvelope declaration term (bound into the signature). proof.challenge is award_hash(payment_id, quote_hash, settler_id); proof.domain is the NETWORK-WIDE did:web:<env>.atum.network. The proof jws / VC proofValue below are PLACEHOLDERs (not real signatures) — re-sign with the canonical signer to produce a verifying example.",
+  "version": "1.0",
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://schemas.atum.network/declarations/BidAwardEnvelope/v1/context.jsonld"
+  ],
+  "type": ["VerifiablePresentation", "BidAwardEnvelope"],
+  "holder": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://schemas.atum.xyz/credentials/known-to-atum/v1"
+      ],
+      "id": "urn:uuid:9c2b3f5e-1d4a-4f8a-9e7c-7a3e9c012b5d",
+      "type": ["VerifiableCredential", "KnownToAtumVerifiableCredential"],
+      "issuer": "did:web:atumlabs.xyz",
+      "issuanceDate": "2026-05-20T00:00:00.000Z",
+      "expirationDate": "2027-05-20T00:00:00.000Z",
+      "credentialSubject": {
+        "id": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "role": "quoteAwarder"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2026-05-20T00:00:00.000Z",
+        "verificationMethod": "did:web:atumlabs.xyz#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z4oXLMi8Xk76ueKDZU8DxFD3iqWM9cGP8RUqtBKQBQJFRCFRxenaWnz3wFdxtznawUnKp3TaU3AsrbawEYn6tWF7M"
+      }
+    }
+  ],
+  "proof": {
+    "type": "EcdsaSecp256k1RecoverySignature2020",
+    "created": "2026-05-20T00:00:30.000Z",
+    "verificationMethod": "did:pkh:eip155:1:0x70997970c51812dc3a010c7d01b50e0d17dc79c8#blockchainAccountId",
+    "proofPurpose": "authentication",
+    "challenge": "0x4a1f2c9e8b7d6a5c4f3e2d1c0b9a8f7e6d5c4b3a29180706f5e4d3c2b1a09f8e7",
+    "domain": "did:web:atum.network",
+    "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..PLACEHOLDER_JWS_NOT_VALID_BY_DESIGN"
+  }
+}

@@ -1,0 +1,67 @@
+{
+    "domainSeparators": {
+        "permit2": "0x16cb920a9b6613ea0303b7eedd35196f71570c1ed2c08de7539877e27140f3f9",
+        "escrow": "0x43cd45f97265fa0fc229571347a828eb18224cf3c1020e12017f491e9a50e3a0"
+    },
+    "depositId": [
+        {
+            "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "signature": "0x164f0f9c1cd6a10420502792d408b54e81c73652f51db08b0da0884b3179c52877fd386c009a1b6fc242a5afcf03ab583c1a407bacbf1626c0ca30c7851d81ce1c",
+            "nonce": 1776340107514,
+            "expectedDepositId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc"
+        }
+    ],
+    "deposit": [
+        {
+            "chainID": "see escrowDomainSeparator",
+            "permit2": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp",
+            "token": "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs",
+            "amount": "100000000",
+            "nonce": 1776340107514,
+            "deadline": 1776343707,
+            "spender": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4py",
+            "reserver": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "releaser": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "expectedDigest": "0x6f82c825f19bb27159168f053d026c72043ca51699943db0778639310c99e111"
+        }
+    ],
+    "reserve": [
+        {
+            "chainID": "see escrowDomainSeparator",
+            "escrow": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4py",
+            "depositId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+            "settler": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "expectedDigest": "0xb0245d1de88ea677343ff99c9f83434c60a3f6438475d28731231d9be64bcca7"
+        }
+    ],
+    "release": [
+        {
+            "chainID": "see escrowDomainSeparator",
+            "escrow": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4py",
+            "depositId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+            "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "token": "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs",
+            "amount": "100000000",
+            "feeAmount": "20000",
+            "reserver": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "releaser": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "settler": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "expectedDigest": "0x66d5cef8353064168adc4fc3ae1b902fddc16c6084275d11aff71d85f564e12c"
+        }
+    ],
+    "refund": [
+        {
+            "chainID": "see escrowDomainSeparator",
+            "escrow": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4py",
+            "depositId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+            "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "token": "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs",
+            "amount": "100000000",
+            "feeAmount": "20000",
+            "reserver": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "releaser": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "settler": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+            "expectedDigest": "0xd5052181ecf31ec5cbf8f59ddeda833c56371cdfc04a53fe564dc67f757b420a"
+        }
+    ]
+}

@@ -1,0 +1,100 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "atum": "https://schemas.atum.network/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "sec": "https://w3id.org/security#",
+    "dc": "http://purl.org/dc/terms/",
+    "cred": "https://www.w3.org/2018/credentials#",
+
+    "FulfillmentAuthorization": {
+      "@id": "atum:FulfillmentAuthorization",
+      "@type": "@id"
+    },
+
+    "version": {
+      "@id": "atum:version",
+      "@type": "xsd:string"
+    },
+
+    "scheme": {
+      "@id": "atum:scheme",
+      "@type": "xsd:string"
+    },
+
+    "authorization": {
+      "@id": "atum:authorization",
+      "@type": "@id"
+    },
+
+    "fulfillment_quote_json": {
+      "@id": "atum:fulfillmentQuoteJson",
+      "@type": "xsd:string"
+    },
+
+    "evidence": {
+      "@id": "atum:evidence",
+      "@type": "@json"
+    },
+
+    "SignedMessage": {
+      "@id": "atum:SignedMessage",
+      "@type": "@id"
+    },
+
+    "message": {
+      "@id": "atum:message",
+      "@type": "xsd:string"
+    },
+
+    "message_prehash": {
+      "@id": "atum:messagePrehash",
+      "@type": "xsd:string"
+    },
+
+    "signature": {
+      "@id": "sec:signature",
+      "@type": "xsd:string"
+    },
+
+    "payload": {
+      "@id": "atum:payload",
+      "@type": "@id"
+    },
+
+    "VerifiableCredential": {
+      "@id": "https://www.w3.org/2018/credentials#VerifiableCredential",
+      "@type": "@id"
+    },
+
+    "proof": {
+      "@id": "sec:proof",
+      "@type": "@id",
+      "@container": "@graph"
+    },
+    "jws": {
+      "@id": "sec:jws"
+    },
+    "proofValue": {
+      "@id": "sec:proofValue"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "created": {
+      "@id": "dc:created",
+      "@type": "xsd:dateTime"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    }
+  }
+}

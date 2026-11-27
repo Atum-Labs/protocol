@@ -1,0 +1,27 @@
+{
+  "name": "@atum-labs/evm-escrow-encoding",
+  "version": "0.1.0",
+  "description": "TypeScript bindings for EVM escrow encoding (Permit2, payment IDs, EIP-712 types)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "generate:abi": "node scripts/generate-abi.mjs",
+    "prepare": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@atum-labs/tvm-escrow-encoding",
+  "version": "0.1.0",
+  "description": "TypeScript bindings for TVM (Tron) escrow encoding",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "bs58": "^5.0.0",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "license": "Apache-2.0"
+}

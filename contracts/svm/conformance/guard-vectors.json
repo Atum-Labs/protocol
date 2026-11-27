@@ -1,0 +1,145 @@
+{
+  "//": "Shared rejection cases for both encoder bindings. The parity-golden tests compare hash BYTES; these assert WHICH guard fires, so a guard added on one side fails the other until it is mirrored. `error` is the TypeScript class name, `goError` the Go sentinel. A case Go cannot express (a fixed-size array makes the check structural) sets goError to a string starting 'n/a' and says why. Adding a case here is what makes both languages go red.",
+  "cases": [
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "clusterId",
+      "input": "wrongLength",
+      "error": "InvalidEscrowDomainError",
+      "goError": "n/a: [32]byte is structural in Go"
+    },
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "signatureDomainVersion",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "escrowDomainPrefixBytes",
+      "field": "programId",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "clusterName",
+      "input": "empty",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "clusterName",
+      "input": "tooLong",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "signatureDomainVersion",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "newEscrowDomain",
+      "field": "programId",
+      "input": "zero",
+      "error": "InvalidEscrowDomainError",
+      "goError": "ErrInvalidEscrowDomain"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "depositRequestHash",
+      "input": "zero",
+      "error": "ZeroDepositRequestHashError",
+      "goError": "ErrZeroDepositRequestHash"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "depositor",
+      "input": "zero",
+      "error": "ZeroDepositorError",
+      "goError": "ErrZeroDepositor"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "mint",
+      "input": "zero",
+      "error": "ZeroMintError",
+      "goError": "ErrZeroMint"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "amount",
+      "input": "zero",
+      "error": "ZeroAmountError",
+      "goError": "ErrZeroAmount"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "reserver",
+      "input": "zero",
+      "error": "ZeroReserverError",
+      "goError": "ErrZeroReserver"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "releaser",
+      "input": "zero",
+      "error": "ZeroReleaserError",
+      "goError": "ErrZeroReleaser"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "empty",
+      "error": "EmptyDestinationError",
+      "goError": "ErrEmptyDestination"
+    },
+    {
+      "fn": "computeDepositHash",
+      "field": "destination",
+      "input": "tooLong",
+      "error": "DestinationTooLongError",
+      "goError": "ErrDestinationTooLong"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "depositHash",
+      "input": "zero",
+      "error": "ZeroDepositHashError",
+      "goError": "ErrZeroDepositHash"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "recipient",
+      "input": "zero",
+      "error": "ZeroRecipientError",
+      "goError": "ErrZeroRecipient"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "quoteHash",
+      "input": "zero",
+      "error": "ZeroQuoteHashError",
+      "goError": "ErrZeroQuoteHash"
+    },
+    {
+      "fn": "computeReserveHash",
+      "field": "sourceAmount",
+      "input": "zero",
+      "error": "ZeroSourceAmountError",
+      "goError": "ErrZeroSourceAmount"
+    },
+    {
+      "fn": "pubkeyFromHex",
+      "field": "hex",
+      "input": "oddLength",
+      "error": "InvalidPubkeyLengthError",
+      "goError": "ErrInvalidHex"
+    }
+  ]
+}

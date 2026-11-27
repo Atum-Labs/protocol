@@ -1,0 +1,35 @@
+[profile.default]
+# Read-only: foundry_tests/Escrow.declarationOrder.t.sol rebuilds each canonical EIP-712 type string
+# from the struct DECLARATION in the interface, so a reordered member fails rather than silently
+# changing the ABI that other repositories generate their clients from.
+fs_permissions = [
+    { access = "read", path = "contracts/interfaces/IEscrow.sol" },
+    # Permit2's runtime bytecode, etched by foundry_tests/helpers/LocalPermit2.sol so the Escrow
+    # suites need no RPC. Read-only, and scoped to the one artifact rather than the package.
+    { access = "read", path = "node_modules/@alexroan/permit2-tron/out/Permit2.sol/Permit2.json" },
+    # Escrow.destinationCommitment.t.sol ties FULL_DEPOSIT_WITNESS_TYPE_STRING to the contract source
+    # by READING it, so a drifted type string fails by name instead of as an opaque InvalidSigner.
+    { access = "read", path = "contracts/Escrow.sol" },
+]
+
+src = "contracts"
+test = "foundry_tests"
+script = "foundry_scripts"
+out = "out"
+libs = ["node_modules", "lib"]
+solc = "0.8.23"
+bytecode_hash = "none"
+cbor_metadata = false
+optimizer = true
+via_ir = true
+optimizer_runs = 4294967295
+
+[fuzz]
+runs = 50000
+
+[invariant]
+fail_on_revert = true
+runs = 1
+depth = 100
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

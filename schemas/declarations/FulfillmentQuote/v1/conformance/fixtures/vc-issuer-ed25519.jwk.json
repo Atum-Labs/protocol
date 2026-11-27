@@ -1,0 +1,14 @@
+{
+  "$comment": "Conformance fixture — issuer JWK for the ed25519-{go,ts}-vc-proof.json fixtures. Pinned to the RFC 8032 zero-seed pubkey (deterministic across languages).",
+  "vmSet": [
+    {
+      "id": "did:web:atumlabs.xyz#key-1",
+      "publicKeyJwk": {
+        "crv": "Ed25519",
+        "kty": "OKP",
+        "x": "O2onvM62pC1io6jQKm8Nc2UyFXcd4kOmOsBIoYtZ2ik"
+      },
+      "type": "JsonWebKey2020"
+    }
+  ]
+}

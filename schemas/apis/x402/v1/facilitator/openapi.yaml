@@ -1,0 +1,338 @@
+openapi: 3.1.0
+info:
+  title: x402 Facilitator API (atum-escrow)
+  version: 1.0.0
+  description: >
+    The standard x402 v2 facilitator API as served for the atum-escrow scheme.
+    A resource server calls /verify then /settle to validate and settle a payment
+    credential, and /supported to discover which scheme/network/token combinations
+    the facilitator can handle. The atum-escrow request/response shapes are defined
+    by referenced JSON Schemas; this document specifies the endpoints and the
+    atum-escrow-specific behavior. Any facilitator that serves this contract is
+    interchangeable behind it.
+
+servers:
+  - url: "{basePath}"
+    description: >-
+      Facilitator base URL. The host is the caller's; only the prefix below it is
+      described here, because that is the part a deployment changes. A facilitator
+      sharing a host with another API serves the operations under a prefix — Atum's
+      payment gateway serves them under /x402/v1, alongside its own REST API — while
+      a facilitator that is a whole service on its own host serves them at the root.
+      Substitute whatever prefix the deployment you are calling serves.
+    variables:
+      basePath:
+        default: /x402/v1
+
+paths:
+  /verify:
+    post:
+      operationId: verify
+      summary: Validate a payment credential against a requirement.
+      description: >
+        Checks the credential against the selected requirement: the
+        PaymentRequestEnvelope identity binding (a holder-signed verifiable
+        presentation whose proofPurpose is 'authentication', whose proof.challenge
+        equals the request's request_hash, whose proof.domain is the network-wide
+        verifier id, and whose holder equals source.account), the Permit2 sender
+        authorization, escrow terms, that destination and fulfillment amount equal
+        the requirement's, and that the signed source cap does not exceed the
+        advertised amount. Does not move funds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacilitatorRequest"
+      responses:
+        "200":
+          description: Verification result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+
+  /settle:
+    post:
+      operationId: settle
+      summary: Submit a validated payment for settlement.
+      description: >
+        Submits the request to the Atum network for settlement and resolves
+        synchronously within the requirement's maxTimeoutSeconds: once the payout
+        to the recipient is on chain, or once it is final when the facilitator is
+        configured to wait for that. Returns the settlement transaction and
+        network; extensions.atum.state says whether the payment is finalizing (on
+        chain, not yet final) or completed. Asynchronous settlement beyond the
+        synchronous window is a deferred extension.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacilitatorRequest"
+      responses:
+        "200":
+          description: The synchronous settlement result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettleResponse"
+
+  /supported:
+    get:
+      operationId: supported
+      summary: List the scheme/network/token combinations the facilitator handles.
+      parameters:
+        - name: chain
+          in: query
+          required: false
+          description: Filter to a single CAIP-2 chain.
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          description: Filter to a token by symbol or CAIP-19 asset id.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Supported kinds, settlement signers, and extensions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportedResponse"
+
+components:
+  schemas:
+    FacilitatorRequest:
+      type: object
+      description: The shared request body for /verify and /settle.
+      required:
+        - x402Version
+        - paymentPayload
+        - paymentRequirements
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        paymentPayload:
+          description: >
+            The payer's signed credential. Its payload.paymentRequest conforms to
+            the canonical PaymentRequest declaration and carries the
+            PaymentRequestEnvelope (PRE) identity binding.
+          $ref: "#/components/schemas/AtumEscrowPayload"
+        paymentRequirements:
+          description: The single requirement the payer selected from the 402.
+          $ref: "#/components/schemas/PaymentRequirements"
+
+    PaymentRequirements:
+      type: object
+      description: >
+        One atum-escrow payment requirement (a 402 accepts[] entry). payTo is the
+        source-chain escrow contract, not the payee; the payee is
+        extra.atum.destination.address.
+      required:
+        - scheme
+        - network
+        - asset
+        - payTo
+        - amount
+        - maxTimeoutSeconds
+        - extra
+      properties:
+        scheme:
+          type: string
+          const: atum-escrow
+        network:
+          type: string
+          description: CAIP-2 source chain id.
+        asset:
+          type: string
+          description: Source token contract address.
+        payTo:
+          type: string
+          description: Source-chain escrow contract address.
+        amount:
+          type: string
+          description: Advisory source spend cap in atomic units.
+        maxTimeoutSeconds:
+          type: integer
+          minimum: 1
+          description: Relative bound on the synchronous settlement hold.
+        extra:
+          type: object
+          required:
+            - atum
+            - atumResource
+          properties:
+            atum:
+              $ref: "#/components/schemas/AtumEscrowExtra"
+            atumResource:
+              type: string
+              minLength: 1
+              maxLength: 2048
+              description: The page the payment is bound to (method, path and canonical parsed query); part of the request_id derivation. At most 2048 UTF-8 bytes, which every implementation enforces; maxLength counts characters, so it is looser.
+
+    AtumEscrowExtra:
+      $ref: "../extra/schema.json"
+
+    AtumEscrowPayload:
+      $ref: "../payload/schema.json"
+
+    VerifyResponse:
+      type: object
+      required:
+        - isValid
+      properties:
+        isValid:
+          type: boolean
+        payer:
+          type: string
+          description: Depositor address recovered from the credential.
+        invalidReason:
+          type: string
+          description: Present when isValid is false.
+        extensions:
+          type: object
+          description: Facilitator-specific members. See AtumExtension for the atum one.
+          properties:
+            atum:
+              $ref: "#/components/schemas/AtumExtension"
+
+    SettleResponse:
+      type: object
+      description: >
+        The synchronous settlement result — the standard x402 SettleResponse fields
+        plus the Atum settlement receipt.
+      required:
+        - success
+        - transaction
+        - network
+      properties:
+        success:
+          type: boolean
+        transaction:
+          type: string
+          description: Destination settlement transaction hash.
+        network:
+          type: string
+          description: CAIP-2 destination chain id.
+        payer:
+          type: string
+        errorReason:
+          type: string
+          description: Present when success is false.
+        extensions:
+          type: object
+          description: Facilitator-specific members. See AtumExtension for the atum one.
+          properties:
+            atum:
+              $ref: "#/components/schemas/AtumExtension"
+        fulfillmentConfirmation:
+          type: object
+          additionalProperties: true
+          description: Full settlement receipt, which may be present once the payment is completed; also returned to the payer in PAYMENT-RESPONSE.
+
+    AtumExtension:
+      type: object
+      description: >
+        What this facilitator has to say beyond the standard members. It rides under
+        `extensions.atum` rather than beside `errorReason` because the x402 response
+        shape is fixed by the specification and `extensions` is what it provides for a
+        facilitator with something of its own to add. A client that does not know the
+        member ignores it.
+      properties:
+        paymentId:
+          type: string
+          description: >
+            The Atum payment this answer is about. Present only once the network has
+            named one, because a merchant correlates its fulfilment against it and an
+            id-shaped blank correlates against nothing.
+        state:
+          type: string
+          description: The payment's state as the network last reported it.
+        statusUrl:
+          type: string
+          description: Where to poll the payment, when a public origin is configured.
+        retryClassification:
+          $ref: "#/components/schemas/RetryClassification"
+
+    RetryClassification:
+      type: string
+      description: >
+        What the merchant should do about the reason alongside it, drawn from the same
+        closed set Atum's own error responses use. Without it a merchant reading
+        `errorReason` or `invalidReason` has a label and no instruction.
+
+
+        Present on every answer that is not a success, including the refusals that name
+        no payment. Absent on a success: there is nothing to retry.
+
+
+        A pattern-constrained string rather than an enum, so a client whose generated
+        model closes the set does not reject the whole response on a value added later.
+      pattern: "^[A-Z][A-Z0-9_]*$"
+      example: "NOT_RETRYABLE_FIX_REQUEST"
+
+    SupportedResponse:
+      type: object
+      required:
+        - kinds
+        - signers
+        - extensions
+      properties:
+        kinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/SupportedKind"
+        signers:
+          type: object
+          description: >
+            Map of CAIP-2 chain id to the facilitator's settlement signer addresses.
+            Empty for atum-escrow: the facilitator holds no settlement key, since
+            settlement is executed permissionlessly by settlers.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        extensions:
+          type: array
+          items:
+            type: string
+
+    SupportedKind:
+      type: object
+      required:
+        - x402Version
+        - scheme
+        - network
+      properties:
+        x402Version:
+          type: integer
+          const: 2
+        scheme:
+          type: string
+        network:
+          type: string
+          description: CAIP-2 chain id.
+        extra:
+          type: object
+          description: Per-kind detail; supported tokens for the network are listed here.
+          properties:
+            tokens:
+              type: array
+              items:
+                type: string

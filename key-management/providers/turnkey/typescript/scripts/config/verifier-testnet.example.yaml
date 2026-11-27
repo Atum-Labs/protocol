@@ -1,0 +1,58 @@
+# Example VERIFIER sub-org policy config for `apply-policies`.
+#
+# The verifier signs escrow witnesses and nothing else. Its secp256k1 accounts (EVM and Tron) sign
+# the V3 ReleaseWitness and RefundWitness as typed data, and its Solana account signs one raw
+# ed25519 digest per release or refund. buildVerifierPolicies emits the whole bounded set from this
+# file: a release ALLOW and a refund ALLOW per EVM/Tron chain binding the primary type, the Escrow
+# v3 domain, the escrow contract and the releaser, the ed25519 raw allow when Solana is listed, and
+# the denies for digest signing (NO_OP/SHA256/KECCAK256), 7702 delegation, batch payloads and
+# every transaction signature.
+type: verifier
+
+chains:
+  Ethereum: { kind: evm, chainId: 'eip155:11155111' }
+  Tron: { kind: tron, chainId: 'tron:shasta' }
+  Solana: { kind: solana, chainId: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1' }
+
+verifierExtras:
+  # The escrow contracts the verifier signs for, bound as the witness domain's verifyingContract.
+  # REQUIRED for every EVM/Tron chain. List every escrow a live deposit can still sit on, since a
+  # release or refund for a deposit on an escrow missing here is denied. Read them from the
+  # gateway's GET /v1/defaults?chain_id=<caip2> (escrow_contract) and the deployment records.
+  # Tron is given in base58; the emitter converts it to the hex the TIP-712 domain carries.
+  # The EIP-712 domain version is "3" whatever the contract deployment version.
+  # Before a new escrow takes deposits, add it here and re-apply, or its witnesses are denied.
+  # The placeholders are zero addresses, which apply-policies refuses.
+  escrows:
+    Ethereum:
+      - '0x0000000000000000000000000000000000000000' # PLACEHOLDER, the escrow on this chain
+    Tron:
+      - 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' # PLACEHOLDER, the escrow on this chain
+
+  # The verifier's own address per chain, bound as the witness `releaser`. REQUIRED for every
+  # EVM/Tron chain. These are the addresses of the verifier sub-org's accounts, which is also what
+  # the gateway publishes as fulfillment_verifier.account. The Tron entry is the Tron account's
+  # address; base58 or its 0x hex are both accepted.
+  #
+  # The entries below are PLACEHOLDERS (the zero address), which apply-policies refuses. Replace
+  # them with the sub-org's account addresses create-sub-org printed.
+  releasers:
+    Ethereum:
+      - '0x0000000000000000000000000000000000000000' # PLACEHOLDER, the sub-org's EVM account
+    Tron:
+      - 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' # PLACEHOLDER, the sub-org's Tron account
+
+  # The verifier's Solana account per Solana chain, base58. The ed25519 raw allow is scoped to it.
+  # PLACEHOLDER (the all-zero key), which apply-policies refuses.
+  solanaSigners:
+    Solana:
+      - '11111111111111111111111111111111' # PLACEHOLDER, the sub-org's Solana account
+
+  # Optional. Stellar (CORE-3095): add `Stellar: { kind: stellar, chainId: 'stellar:testnet' }` under
+  # `chains:` and uncomment this. The verifier's Stellar account per Stellar chain, a G... strkey; the
+  # raw ed25519 allow (HEXADECIMAL only, NOT_APPLICABLE) is scoped to it. Turnkey documents no Stellar
+  # transaction parsing, so the digest is opaque to policy, exactly as on Solana.
+  # PLACEHOLDER (the all-zero key), which apply-policies refuses.
+  # stellarSigners:
+  #   Stellar:
+  #     - 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF' # PLACEHOLDER, the sub-org's Stellar account

@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/BidDeclineEnvelope/v1/schema.json",
+  "title": "BidDeclineEnvelope",
+  "description": "W3C VerifiablePresentation envelope a settler sends in BidDeclined.presentation to attest the BidDecline declaration carried in BidDeclined.bid_decline_json. The holder is the did:pkh of the settler's chain signing key; the verifier asserts it is whitelisted for the organization of the session that sent the decline. proof.challenge is the content hash of the declared BidDecline, so the presentation cannot be lifted onto any other decline.",
+  "type": "object",
+  "required": [
+    "@context",
+    "type",
+    "holder",
+    "verifiableCredential",
+    "proof"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver-shaped declaration version (MAJOR.MINOR). The major component is locked to this schema's parent directory (v1 → major must be 1). Producers MUST emit the canonical value exported by the bindings' Version constant; the canonical bumps on each additive minor evolution.",
+      "pattern": "^1\\.[0-9]+$",
+      "examples": [
+        "1.0"
+      ]
+    },
+    "@context": {
+      "type": "array",
+      "description": "JSON-LD context array. MUST include BOTH the W3C VC v1 context (https://www.w3.org/2018/credentials/v1) and the BidDeclineEnvelope v1 context (https://schemas.atum.network/declarations/BidDeclineEnvelope/v1/context.jsonld). Without the envelope context, JSON-LD expansion drops envelope-specific terms (challenge, domain, holder) during URDNA2015 canonicalization, so the replay-binding fields end up outside the signed n-quad graph.",
+      "allOf": [
+        {
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          }
+        },
+        {
+          "contains": {
+            "const": "https://schemas.atum.network/declarations/BidDeclineEnvelope/v1/context.jsonld"
+          }
+        }
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "type": {
+      "type": "array",
+      "description": "MUST contain 'VerifiablePresentation' per W3C VC Data Model v1.1, and 'BidDeclineEnvelope', the declaration type the verifier asserts so a presentation made for another declaration is rejected.",
+      "contains": {
+        "const": "VerifiablePresentation"
+      },
+      "items": {
+        "type": "string"
+      }
+    },
+    "holder": {
+      "type": "string",
+      "description": "did:pkh URI of the settler's chain signing key, the same key it signs bids with. The verifier asserts the key is whitelisted for the organization of the session that sent the decline.",
+      "pattern": "^did:pkh:[a-z][a-z0-9]*:[a-zA-Z0-9._:%-]+$"
+    },
+    "verifiableCredential": {
+      "type": "array",
+      "description": "Array of issuer-signed credentials about the settler (e.g., KnownToAtumVerifiableCredential), with credentialSubject.id equal to holder. The verifier's policy decides which types are required and which issuers are trusted. maxItems matches the verifier's defaultMaxVerifiableCredentials.",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/VerifiableCredential"
+      }
+    },
+    "proof": {
+      "$ref": "#/$defs/VPDataIntegrityProof",
+      "description": "Holder-signed W3C Data Integrity proof. proofPurpose MUST be 'authentication'; challenge MUST equal the content hash of the declared BidDecline (ComputeBidDeclineHash), recomputed by the verifier from bid_decline_json; domain MUST equal the verifier's configured service identifier, the same `did:web:settler.<env>.atum.network` value a FulfillmentQuoteEnvelope carries."
+    }
+  },
+  "$defs": {
+    "VPDataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof for a VerifiablePresentation. Extends the base DataIntegrityProof with challenge and domain per W3C VC Data Model 5.6. proofPurpose is constrained to 'authentication': the holder is authenticating themselves as the presenter of the enclosed credentials.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose",
+        "challenge",
+        "domain"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "jws"
+          ],
+          "not": {
+            "required": [
+              "proofValue"
+            ]
+          }
+        },
+        {
+          "required": [
+            "proofValue"
+          ],
+          "not": {
+            "required": [
+              "jws"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. MUST be one of EcdsaSecp256k1RecoverySignature2020 (secp256k1) or Ed25519Signature2020 (ed25519), and MUST equal the inner declaration's proof.type so the holder-binding consistency check anchors both signatures to the same cryptosuite."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies. The verifier also checks freshness against its configured maximum proof age and future-skew window."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar. The recovered identity from this MUST match the holder field."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "const": "authentication",
+          "description": "Always 'authentication' for VerifiablePresentation proofs per W3C VC Data Model §5.6 — the holder is authenticating themselves as the presenter of the enclosed credentials."
+        },
+        "challenge": {
+          "type": "string",
+          "description": "Replay-binding challenge. MUST equal the content hash of the declared BidDecline carried in bid_decline_json (ComputeBidDeclineHash, built on lddataintegrity.ComputeContentHash), formatted \"0x\"+64 lowercase hex. The verifier recomputes it from the declared JSON and asserts equality, so the envelope cannot be lifted onto another report. Replay across payments is prevented because payment_id is part of the declared content.",
+          "minLength": 1,
+          "pattern": "^0x[0-9a-f]{64}$"
+        },
+        "domain": {
+          "type": "string",
+          "description": "Replay-binding domain. The verifier requires this to equal its configured service identifier, the same did:web:settler.<env>.atum.network value a FulfillmentQuoteEnvelope carries. Without this, a captured envelope from one environment could be replayed against another by the same settler.",
+          "minLength": 1
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Used by the EcdsaSecp256k1RecoverySignature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase z-base58btc-encoded 64-byte signature. Used by the Ed25519Signature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        }
+      }
+    },
+    "VerifiableCredential": {
+      "type": "object",
+      "description": "W3C Verifiable Credential structure conforming to the W3C Verifiable Credentials Data Model v1.1",
+      "required": [
+        "@context",
+        "id",
+        "type",
+        "issuer",
+        "issuanceDate",
+        "credentialSubject",
+        "proof"
+      ],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array, must include 'https://www.w3.org/2018/credentials/v1'",
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this credential"
+        },
+        "type": {
+          "type": "array",
+          "description": "Credential types, must include 'VerifiableCredential'",
+          "contains": {
+            "const": "VerifiableCredential"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "description": "DID or issuer object of the credential issuer"
+        },
+        "issuanceDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential was issued"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential expires"
+        },
+        "credentialSubject": {
+          "type": "object",
+          "description": "Claims about the credential subject (structure varies by issuer)"
+        },
+        "credentialStatus": {
+          "type": "object",
+          "description": "Information for credential revocation checking. Not consulted by the verifier today."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Cryptographic proof of credential integrity"
+        }
+      }
+    }
+  }
+}

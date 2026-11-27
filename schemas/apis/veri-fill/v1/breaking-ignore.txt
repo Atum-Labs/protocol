@@ -1,0 +1,101 @@
+# Breaks in this spec that were agreed and announced. oasdiff matches each line
+# against its own output; see schemas/Makefile (breaking-openapi).
+#
+# CORE-2059 (Veri-fill refund gate) (2026-09-11) — POST /v1/refund no longer takes
+# the escrow tuple from its caller. veri-fill reads the deposit from the chain and
+# rebuilds those members itself, so a caller can no longer name the amount, escrow
+# or recipient it wants signed. What remains is the payment id, which anchors the
+# read, and the awarded fulfillment quote, which must hash to the quote the escrow
+# recorded at deposit.
+#
+# fulfillment_quote is the signed document rather than a string holding it, and it
+# is required because there is nothing left to anchor the quote against without it.
+# The pattern on payment_id documents the form the endpoint already required.
+POST /v1/refund the request property `fulfillment_quote` became required
+POST /v1/refund the `fulfillment_quote` request property `type` changed from `string` to `object`
+POST /v1/refund added the pattern `^0x[a-fA-F0-9]{64}$` to the request property `payment_id`
+POST /v1/refund removed the request property `amount`
+POST /v1/refund removed the request property `chain_id`
+POST /v1/refund removed the request property `deadline`
+POST /v1/refund removed the request property `deposit_request_hash`
+POST /v1/refund removed the request property `depositor`
+POST /v1/refund removed the request property `destination_hash`
+POST /v1/refund removed the request property `escrow_address`
+POST /v1/refund removed the request property `quote_hash`
+POST /v1/refund removed the request property `releaser`
+POST /v1/refund removed the request property `reserver`
+POST /v1/refund removed the request property `settler`
+POST /v1/refund removed the request property `token`
+#
+# CORE-2059 (Veri-fill refund gate) (2026-09-14) — three terminal refusal codes added
+# to the POST /v1/refund response. FULFILLMENT_EXISTS says the payment was delivered on
+# its destination chain, and DEPOSIT_ALREADY_REFUNDED / DEPOSIT_ALREADY_RELEASED split
+# the history behind an escrow that holds nothing. All three were previously reported as
+# DEPOSIT_NOT_HELD, which could not say whether the recipient had already been paid.
+#
+# The break is real rather than nominal: a consumer whose generated client validates this
+# field against a closed set will reject the whole response on an unknown value. Consumers
+# take the new contract BEFORE veri-fill is switched on. The field's description now states
+# that the set grows and that an unknown code is terminal.
+POST /v1/refund added the new `DEPOSIT_ALREADY_REFUNDED` enum value to the `error` response property for the response status `200`
+POST /v1/refund added the new `DEPOSIT_ALREADY_RELEASED` enum value to the `error` response property for the response status `200`
+POST /v1/refund added the new `FULFILLMENT_EXISTS` enum value to the `error` response property for the response status `200`
+#
+# Veri-fill release gate (2026-09-25) — POST /v1/fulfillment takes every delivery term
+# from the awarded fulfillment quote. veri-fill verifies the quote against the quoteHash
+# the escrow recorded at deposit and reads the delivery terms, the fulfillment deadline,
+# the source and destination chains, the settler, the depositor, the source token and the
+# source amount from it and its embedded payment request. The escrow and fulfillment
+# contracts come from its own per-chain configuration, so a caller cannot name any of them.
+#
+# The quote arrives as fulfillment_quote, a string holding the signed document, or inside
+# fulfillment_authorization as fulfillment_quote_json. Exactly one of the two is sent.
+POST /v1/fulfillment removed the request property `chain_id`
+POST /v1/fulfillment removed the request property `deadline`
+POST /v1/fulfillment removed the request property `deposit_request_hash`
+POST /v1/fulfillment removed the request property `depositor`
+POST /v1/fulfillment removed the request property `destination_hash`
+POST /v1/fulfillment removed the request property `escrow_address`
+POST /v1/fulfillment removed the request property `expected_fulfillment`
+POST /v1/fulfillment removed the request property `fulfillment_proxy`
+POST /v1/fulfillment removed the request property `quote_hash`
+POST /v1/fulfillment removed the request property `settler`
+POST /v1/fulfillment removed the request property `source_amount`
+POST /v1/fulfillment removed the request property `source_chain_id`
+POST /v1/fulfillment removed the request property `source_token`
+#
+# CORE-2720 (Veri-fill quote-only release) (2026-09-29) — POST /v1/fulfillment no longer
+# takes `releaser` from its caller. veri-fill sets the release witness releaser to its own
+# signing address for the source chain, so a caller cannot name it. A body that still sends
+# the key is accepted and the value is ignored.
+POST /v1/fulfillment removed the request property `releaser`
+#
+# CORE-2720 (Veri-fill quote-only release) (2026-10-01) — POST /v1/fulfillment no longer
+# takes `payment_id` or `reserver` from its caller. veri-fill derives both from the
+# sender_auth the quote's embedded payment request carries, or from the new optional
+# `sender_auth` request property when it carries none, and the escrow's stored deposit
+# decides. The response `payment_id` is the derived id.
+POST /v1/fulfillment removed the request property `payment_id`
+POST /v1/fulfillment removed the request property `reserver`
+#
+# CORE-2521 (Refund fulfillment verdict) (2026-10-06) — eip155 verdicts are signed as
+# EIP-712 typed data under the `eip712-secp256k1` scheme, because the escrow key's signing
+# policy admits typed data by primary type and domain and refuses raw digests.
+# `eip191-secp256k1` is removed from the enum, since no chain admits it. No producer emits
+# verdicts yet, and consumers take this contract BEFORE any producer emits one.
+POST /v1/fulfillment added the new `eip712-secp256k1` enum value to the `verdict/signature_scheme` response property for the response status `200`
+POST /v1/refund added the new `eip712-secp256k1` enum value to the `deposit_verdict/signature_scheme` response property for the response status `200`
+#
+# CORE-2993 (Veri-fill verdict finality) (2026-10-20) — `RELEASE_ALREADY_SIGNED` added
+# to the refund error codes. Once veri-fill has signed a payment's release, it never
+# signs that payment's refund. When the delivery that release was granted on can no
+# longer be confirmed on its destination chain, the refusal says so rather than calling
+# the payment delivered (`FULFILLMENT_EXISTS`). The enum's own description already
+# requires consumers to treat an unrecognised code as terminal, which this one is.
+POST /v1/refund added the new `RELEASE_ALREADY_SIGNED` enum value to the `error` response property for the response status `200`
+#
+# Finality config without `finality_model` (2026-10-28): the chain-level label is removed.
+# `finality` (with `min_confirmations` or `commitment`) is the check a release is signed
+# against, and `time_to_final_ms` sizes the wait; the label decided nothing beside them.
+# A reader that required it must stop requiring it.
+GET /v1/finality-config removed the required property `chains/items/finality_model` from the response with the `200` status

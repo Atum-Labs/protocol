@@ -1,0 +1,222 @@
+# Breaks in this spec that were agreed and announced. oasdiff matches each line
+# against its own output; see schemas/Makefile (breaking-openapi).
+#
+# CORE-2128 (2026-09-15) — `finalizing` added to the payment status. A payment whose
+# transaction is on chain but has not yet reached the confirmation depth that chain
+# requires now says so, rather than being called `completed` before that is true. The
+# three payment responses share one status vocabulary, so the value is declared on all
+# three.
+#
+# oasdiff reports an added response enum value as a break because a caller written
+# against the previous set may not handle the new one, and that is the intended signal:
+# a caller branching exhaustively on status should see it and add a branch. `finalizing`
+# is not terminal and replaces no terminal value, so a caller that tests only for
+# `completed` or `failed` behaves exactly as before.
+#
+# `settling` and `cancelled` were removed from the status in the same change: neither
+# described a state a payment could be in. oasdiff does not report a removed response
+# enum value, so they have no lines here.
+POST /v1/payments added the new `finalizing` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/status added the new `finalizing` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `finalizing` enum value to the `status` response property for the response status `200`
+#
+# CORE-2055 (2026-09-15) — one failure shape across the three payment responses. The
+# timeline reported a failure with `chain_id`, `tx_hash` and `revert_reason` flat on the
+# error, while the other two nested the same facts under `blockchain_context` and carried
+# four more, including the block number the settler reports. The three now share one
+# shape, so the timeline gains the nested form and the fields it was dropping.
+#
+# The lines below are that shape's `domain`. On the timeline it was an unconstrained
+# string; it is now the same closed set the other two responses already published. This
+# narrows what a caller can receive rather than widening it — every value a caller could
+# previously be sent that is still possible is still listed — but oasdiff compares enum
+# sets, and the previous set was empty, so it reads each value as newly addable.
+GET /v1/payments/{paymentId}/timeline added the new `BLOCKCHAIN` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `EXTERNAL_SERVICE` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `PAYMENT_GATEWAY` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `SETTLER_AGENT` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `SETTLER_GATEWAY` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `VERIFICATION_SERVICE` enum value to the `error/domain` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `WALLET_ORCHESTRATION` enum value to the `error/domain` response property for the response status `200`
+#
+# CORE-2055 (2026-09-16) — `tx_hash` renamed to `transaction_hash`, in three places:
+#
+#     POST /v1/payments                     error.blockchain_context.tx_hash
+#     GET  /v1/payments/{paymentId}/status  error.blockchain_context.tx_hash
+#     GET  /v1/payments/{paymentId}/timeline  steps[].tx_hash
+#
+# These have no oasdiff lines beneath them, and that is the point of writing them here.
+# oasdiff does not report a removed OPTIONAL response property, so all three of these pass
+# the gate in silence — a caller reading `error.blockchain_context.tx_hash` on the status
+# endpoint simply starts getting nothing, with no failure anywhere to say why. They are the
+# breaks in this change most likely to reach someone, because /status is the endpoint
+# integrators poll, so they are recorded by hand rather than left to the tool.
+#
+# The rename is not cosmetic. `transaction_hash` is what the shared error shape, the settler's
+# own report and two other published specs already call this field; the payment API was the
+# one surface spelling it differently, and it is the spelling that has to move for the three
+# payment endpoints to share one definition of the block instead of maintaining a copy.
+#
+# `revert_reason` and `chain_id` also moved on the timeline, from the top of the error object
+# down into `blockchain_context` alongside the four fields that endpoint used to discard. Same
+# silence from oasdiff, same reason, recorded here for the same reason.
+#
+# CORE error contract (2026-09-21) — six internal codes now project onto a different
+# PUBLIC code, and two public codes are no longer emittable.
+#
+#     internal                            public was        public is
+#     CONFLICT_ALREADY_SETTLED            CONFLICT          ALREADY_SETTLED
+#     CONFLICT_DUPLICATE_INTENT           CONFLICT          DUPLICATE_INTENT
+#     CONFLICT_DUPLICATE_INTENT_RECOVERY  CONFLICT          DUPLICATE_INTENT
+#     CONFLICT_IN_PROGRESS                CONFLICT          PAYMENT_IN_PROGRESS
+#     CONFLICT_REQUEST_ID_OWNED           CONFLICT          REQUEST_ID_TAKEN
+#     SETTLER_GATEWAY_INTERNAL_ERROR      INTERNAL_ERROR    SETTLEMENT_OUTCOME_UNKNOWN
+#
+#     no longer emittable: RATE_LIMITED, REQUEST_TIMEOUT
+#
+# These have no oasdiff lines beneath them, and that is the point of writing them here.
+# `ErrorResponse.code` is declared `type: string` with a pattern rather than an enum, so
+# a changed public code is not a schema change and the gate passes in silence. This is
+# the same class as the CORE-2055 `tx_hash` rename recorded above, and it is recorded by
+# hand for the same reason.
+#
+# Every one of the six keeps its HTTP status and its retry_classification, so the code
+# string is the only thing that moved. A caller branching on the old value keeps
+# compiling and keeps receiving 409, then falls through to whatever its default arm
+# does. For CONFLICT_ALREADY_SETTLED that default is the dangerous one: re-submitting a
+# payment that has already been paid. Anyone matching on `CONFLICT` or `INTERNAL_ERROR`
+# needs the new values before these services deploy, not after.
+#
+# The split itself is not in question. One code that meant four different required
+# actions could not be acted on, which is why it was split.
+#
+# CORE error contract (2026-09-21) — `fulfillment_timestamp` became optional on the three
+# responses that carry a fulfillment confirmation.
+#
+# The field has not been sent since 2026-08-28. CORE-2130 (atum-core#1472) moved settlement
+# onto the settler's own report, and CORE-2135 (atum-core#1528) deleted the monitor path that
+# read the fulfilled event's block time on 2026-09-07. `SettlementResult` carries no time at
+# all, so the settler gateway omits the field rather than invent one. Neither of those PRs
+# recorded the loss: both describe the confirmation as unchanged.
+#
+# So this withdraws a promise the service already stopped keeping. It is the direction that
+# matters for a caller: a generated client that enforces `required` fails to deserialize a
+# COMPLETED payment, after the money has moved, and that is the whole reason for making it
+# optional rather than leaving the spec describing a field nobody sends.
+#
+# Announced together with the public code remappings recorded above, which the same release
+# requires telling integrators about. Both go in one message rather than two.
+#
+# Restoring it needs the settler to report the destination block time, which is a new field on
+# SettlementResult plus a per-chain read, since an EVM receipt carries no timestamp. Making the
+# field required again at that point is not a break, so nothing further is owed for putting it
+# back.
+
+POST /v1/payments the response property `fulfillment_confirmation/fulfillment_timestamp` became optional for the status `200`
+POST /v1/payments/awards the response property `fulfillment_confirmation/fulfillment_timestamp` became optional for the status `200`
+GET /v1/payments/{paymentId}/status the response property `fulfillment_confirmation/fulfillment_timestamp` became optional for the status `200`
+
+# CORE-2657 (2026-10-05) — `fulfillment_verifier` and `escrow_contract_address` became
+# required on the three request bodies that carry a payment request.
+#
+# The gateway has refused a request missing either field since 2026-09-29. The spec
+# described both as optional with a default the gateway never filled in, so this corrects
+# the published contract to what the service already enforces. `/v1/defaults` serves both
+# values for each chain, and the client's request builders already send them.
+#
+# The gateway validates request bodies against the PaymentRequest declaration, which now
+# also requires `message_prehash` on every `sender_auth.signed_messages` entry. The shared
+# `SignedMessage` component keeps it optional because BidAward and FulfillmentAuthorization
+# reuse that component, so oasdiff reports no line for it.
+#
+# The gateway checks the three fields before schema validation, so a body missing one still
+# gets INVALID_FULFILLMENT_VERIFIER, INVALID_ESCROW_CONTRACT_ADDRESS or
+# MISSING_MESSAGE_PREHASH, not MALFORMED_REQUEST_BODY. The status stays 400.
+
+POST /v1/payments the request property `escrow_contract_address` became required
+POST /v1/payments the request property `fulfillment_verifier` became required
+POST /v1/payments/authorizations the request property `escrow_contract_address` became required
+POST /v1/payments/authorizations the request property `fulfillment_verifier` became required
+POST /v1/payments/quote-requests the request property `escrow_contract_address` became required
+POST /v1/payments/quote-requests the request property `fulfillment_verifier` became required
+
+# CORE-3045 (2026-10-15) — `refunding`, `refund_available` and `refunded` added to the payment
+# status. A payment the settler will not deliver is refunded from escrow instead of ending as
+# `failed`, and the originator can now see that, take the refund signature from GET status and
+# submit the refund itself, or read the refund transaction once it happened. The three payment
+# responses share one status vocabulary, so the values are declared on all three.
+#
+# `refunded` is terminal and `refund_available` is not: its funds are still in escrow until the
+# refund lands or a late delivery is paid. A caller that tests only for `completed` or `failed`
+# keeps polling a refunded payment until its own budget runs out, so callers need the new values
+# before the gateway serves them.
+POST /v1/payments added the new `refund_available` enum value to the `status` response property for the response status `200`
+POST /v1/payments added the new `refunded` enum value to the `status` response property for the response status `200`
+POST /v1/payments added the new `refunding` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/status added the new `refund_available` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/status added the new `refunded` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/status added the new `refunding` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `refund_available` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `refunded` enum value to the `status` response property for the response status `200`
+GET /v1/payments/{paymentId}/timeline added the new `refunding` enum value to the `status` response property for the response status `200`
+#
+# CORE-3093 (2026-10-22) — Stellar. `STELLAR` added to the `message_scheme` of a payment
+# request, and a Stellar `G...` account or `C...` contract strkey accepted wherever the spec
+# accepted a base58 or 0x-hex contract address (`blockchain_context.contract_address`). Both
+# only widen what the gateway can say or accept; no existing value changes meaning. oasdiff
+# reports the added enum value as a break because a caller branching exhaustively on the
+# scheme should see it, and the pattern change as a warning because it cannot prove the new
+# pattern is a superset of the old one: it is, by one more alternative.
+GET /v1/payments/{paymentId}/status the `error/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+GET /v1/payments/{paymentId}/status the `refund_reason/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+GET /v1/payments/{paymentId}/timeline the `error/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+GET /v1/payments/{paymentId}/timeline the `refund_reason/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+POST /v1/payments the `error/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+POST /v1/payments the `refund_reason/blockchain_context/contract_address` response's property pattern was changed from `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$` to `^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$` for the status `200`
+POST /v1/payments/prepare added the new `STELLAR` enum value to the `payment_request/sender_auth/message_scheme` response property for the response status `200`
+#
+# 2026-11-05 — the award request and its responses redefined. No client could complete an
+# award against the previous shapes, so none depends on them.
+#
+# The request names the quote request and the chosen quote (`quote_request_id`, `quote_id`)
+# and carries the client's own signatures (`sender_auth`, `reserve_auth`).
+# The client-built `bid_award` is gone, and the settler-signed quote is no longer sent back.
+#
+# The 200 and the 202 both answer with PaymentResponse, so an award reads like a payment
+# submitted to POST /v1/payments, in one status vocabulary. oasdiff reports each payment
+# status as newly added. It does not report what left with the old bodies, so that is
+# recorded here: the `awarding` and `cancelled` statuses (an award in flight reads
+# `pending`), and the separate AwardResponse and AwardAccepted bodies.
+POST /v1/payments/awards added the new required request property `quote_id`
+POST /v1/payments/awards added the new required request property `quote_request_id`
+POST /v1/payments/awards removed the request property `bid_award`
+POST /v1/payments/awards added the new `completed` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `failed` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `finalizing` enum value to the `status` response property for the response status `200`
+POST /v1/payments/awards added the new `finalizing` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `pending` enum value to the `status` response property for the response status `200`
+POST /v1/payments/awards added the new `pending` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `refund_available` enum value to the `status` response property for the response status `200`
+POST /v1/payments/awards added the new `refund_available` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `refunded` enum value to the `status` response property for the response status `200`
+POST /v1/payments/awards added the new `refunded` enum value to the `status` response property for the response status `202`
+POST /v1/payments/awards added the new `refunding` enum value to the `status` response property for the response status `200`
+POST /v1/payments/awards added the new `refunding` enum value to the `status` response property for the response status `202`
+#
+# payment-gateway-client 6.0.0 (2026-11-11): `max_source_amount` and `fulfillment_amount`
+# must be whole digits. Both count a token's smallest units, and the PaymentRequest
+# declaration gives both `minLength: 1` and `^[0-9]+$`. The gateway already refused a
+# `fulfillment_amount` that is not whole digits; only the spec is new for it. A client that
+# sends smallest units is unaffected; the break is announced with the 6.0.0 major.
+POST /v1/payments the `fulfillment_amount` request property's minLength was set to `1`
+POST /v1/payments added the pattern `^[0-9]+$` to the request property `fulfillment_amount`
+POST /v1/payments the `max_source_amount` request property's minLength was set to `1`
+POST /v1/payments added the pattern `^[0-9]+$` to the request property `max_source_amount`
+POST /v1/payments/authorizations the `fulfillment_amount` request property's minLength was set to `1`
+POST /v1/payments/authorizations added the pattern `^[0-9]+$` to the request property `fulfillment_amount`
+POST /v1/payments/authorizations the `max_source_amount` request property's minLength was set to `1`
+POST /v1/payments/authorizations added the pattern `^[0-9]+$` to the request property `max_source_amount`
+POST /v1/payments/quote-requests the `fulfillment_amount` request property's minLength was set to `1`
+POST /v1/payments/quote-requests added the pattern `^[0-9]+$` to the request property `fulfillment_amount`
+POST /v1/payments/quote-requests the `max_source_amount` request property's minLength was set to `1`
+POST /v1/payments/quote-requests added the pattern `^[0-9]+$` to the request property `max_source_amount`

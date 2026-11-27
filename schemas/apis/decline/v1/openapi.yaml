@@ -1,0 +1,83 @@
+# Shared OpenAPI components for the bid-decline contract.
+# The authoritative reason set is apis/decline/v1/catalog.json, not this file. Per the
+# repo convention each API keeps its own copy of the components it serves, so these are
+# the shapes to copy rather than a cross-file $ref target.
+openapi: 3.0.3
+info:
+  title: Atum Bid Decline
+  description: Shared schemas for a settler's report that it will not bid
+  version: 1.0.0
+
+components:
+  schemas:
+    DeclineReason:
+      type: string
+      description: >-
+        Public, machine-readable reason a settler did not bid, in SCREAMING_SNAKE_CASE.
+        Derived from the settler's internal reason code through the decline catalog, so
+        several internal codes may map to one public reason.
+
+
+        Deliberately a pattern-constrained string rather than a closed enum. The reason
+        set grows whenever a settler gains a cause worth naming, and a consumer whose
+        generated client closes the set rejects the whole response on a value it has not
+        seen yet. Treat an unrecognised value as OTHER.
+      pattern: "^[A-Z][A-Z0-9_]*$"
+      examples:
+        - INSUFFICIENT_LIQUIDITY
+        - UNTRUSTED_VERIFIER
+        - UNSUPPORTED_DESTINATION_ASSET
+        - AWARD_WINDOW_TOO_SHORT
+        - OTHER
+      example: "INSUFFICIENT_LIQUIDITY"
+
+    DeclineSummaryEntry:
+      type: object
+      description: >-
+        One reason and the number of settlers whose most recent decline gave it. The
+        entries sum to the number of settlers that declined, so a caller can derive the
+        rest of the auction arithmetic from the response alone.
+      required:
+        - reason
+        - count
+      properties:
+        reason:
+          $ref: '#/components/schemas/DeclineReason'
+        count:
+          type: integer
+          description: >-
+            Settlers whose most recent decline reason was this one. Counts settlers,
+            never rows, and a settler appears under one reason only.
+          example: 4
+        retry_classification:
+          $ref: '#/components/schemas/RetryClassification'
+        docs_url:
+          type: string
+          format: uri
+          description: >-
+            Link to the documentation for this reason. Absent rather than empty when no
+            page is published, so a reader never follows a link to the site root.
+          example: "https://docs.atum.xyz/decline-reasons#insufficient-liquidity"
+
+    RetryClassification:
+      type: string
+      description: >-
+        What would have to change for a settler giving this reason to submit a price quote.
+        Drawn from the error catalog's closed set so a caller reads one vocabulary across both
+        catalogs.
+
+
+        It describes the decline only. The authoritative instruction for the payment is
+        the retry_classification on its own error response: a payment can fail for a
+        reason no settler named, and it can succeed while some settlers declined.
+
+
+        Optional and a pattern-constrained string for the same reason DeclineReason is:
+        a consumer whose generated client closes the set must not reject a response
+        carrying a value it has not seen.
+      pattern: "^[A-Z][A-Z0-9_]*$"
+      examples:
+        - NOT_RETRYABLE_FIX_REQUEST
+        - RETRY_AFTER_DELAY
+        - CONTACT_SUPPORT
+      example: "RETRY_AFTER_DELAY"

@@ -1,0 +1,34 @@
+{
+  "name": "@atum-labs/chain-address",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Decides whether an account string is usable on the chain it names: present, unpadded, parseable under the chain's address rules, and not the zero address. Sibling of the Go chain-address module; both halves MUST agree case-for-case against vectors.json.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "pnpm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atum-labs/stellar-escrow-encoding": "workspace:*",
+    "@atum-labs/tvm-escrow-encoding": "workspace:*",
+    "bs58": "^5.0.0",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  }
+}

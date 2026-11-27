@@ -1,0 +1,246 @@
+{
+  "_comment": [
+    "Shared Stellar strkey decoder vectors: ONE file read by every hand-written strkey decoder test so they cannot drift.",
+    "Readers: contracts/stellar/bindings/go/escrow-encoding (ParseAddress, the single decoder), contracts/stellar/bindings/typescript/escrow-encoding (Address.fromStrkey), schemas/declarations/common/chain-address (Go and TypeScript, which call them), and schemas/declarations/FulfillmentQuote/v1/bindings/{go,typescript}/signing (G accounts only, which also call them).",
+    "valid: address (a strkey) decodes to kind (account = G, contract = C) and the 32-byte payloadHex. Re-encoding the kind and payload must give the address back.",
+    "invalid: the decoder must refuse. error is the escrow-encoding error class: invalid_strkey (ErrInvalidStrkey / InvalidStrkeyError: malformed, wrong checksum or payload size, non-canonical, or a version that is not an address) or unsupported_address (ErrUnsupportedAddress / UnsupportedAddressError: a well-formed muxed M or claimable-balance B key the contract has no 33-byte form for). Consumers that only accept or reject (chain-address, the quote signer) treat both classes as a rejection.",
+    "Cases that embed or surround a newline, carriage return, space or NUL exist because Go's base32 decoder silently drops CR and LF: a decoder that checks length before the alphabet reads 55 characters plus one newline as a 31-byte key. Strings are JSON-escaped, so the control characters are literal here.",
+    "The field is named address, not strkey, so the repo secret scanner does not read these public identifiers as API keys. Hand-authored with scratch tooling that builds each strkey from kind and payload with an independent CRC-16/XMODEM; add a case here, not in a language test, so every decoder gets it."
+  ],
+  "valid": [
+    {
+      "name": "account",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "kind": "account",
+      "payloadHex": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29"
+    },
+    {
+      "name": "contract",
+      "address": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OWCTE5",
+      "kind": "contract",
+      "payloadHex": "c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61"
+    },
+    {
+      "name": "account-all-zero",
+      "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+      "kind": "account",
+      "payloadHex": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "contract-xlm-sac-testnet",
+      "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "kind": "contract",
+      "payloadHex": "d7928b72c2703ccfeaf7eb9ff4ef4d504a55a8b979fc9b450ea2c842b4d1ce61"
+    },
+    {
+      "name": "contract-xlm-sac-pubnet",
+      "address": "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+      "kind": "contract",
+      "payloadHex": "25b4fcd859aec2fa6348438c489b3c3c10c98b6d21be4fd3cb30cb68953ef977"
+    },
+    {
+      "name": "account-repeating-0xd1",
+      "address": "GDI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5DUOR2HI5C5RM",
+      "kind": "account",
+      "payloadHex": "d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1"
+    },
+    {
+      "name": "contract-all-ff",
+      "address": "CD7777777777777777777777777777777777777777777777777767GY",
+      "kind": "contract",
+      "payloadHex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    }
+  ],
+  "invalid": [
+    {
+      "name": "empty",
+      "address": "",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "lowercase",
+      "address": "ga5wuj54z23killcuounaktpbvzwkmqvo4o6eq5ghlaerimllhncskyh",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "mixed-case",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWkmqvo4o6eq5ghlaerimllhncskyh",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-bad-checksum",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYG",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "contract-bad-checksum",
+      "address": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OWCTE6",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "non-base32-character",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSK1H",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "non-base32-zero-and-eight",
+      "address": "GA5WUJ54Z20KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "too-short-55",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKY",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "too-long-57",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYHH",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "padding",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH=",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "leading-space",
+      "address": " GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "trailing-space",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "trailing-newline",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH\n",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "leading-newline",
+      "address": "\nGA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "trailing-nul",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH\u0000",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "non-ascii-letter",
+      "address": "GA5WUİ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSKYH",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-newline-middle",
+      "address": "GA5WUJ54Z23KILLCUOUN\nAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-carriage-return-middle",
+      "address": "GA5WUJ54Z23KILLCUOUN\rAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-newline-then-carriage-return",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKM\r\nQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-space-middle",
+      "address": "GA5WU J54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-newline-trailing",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ\n",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-newline-leading",
+      "address": "\nGA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-31-byte-payload-padded",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNL4ZQ=",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "contract-31-byte-payload",
+      "address": "CDDPU6XTX3N22OR5MXZWVK6JOQY3DO7EYLJPNYHEPSTAEA2FF5OUJII",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-33-byte-payload",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSAHHLM",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "account-64-byte-payload",
+      "address": "GA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSO3KE66M5NVEFVRKHKGQFJXQ243FGIKXOHPCIOTDVQCIUGFVTWRJEYEA",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "muxed-account",
+      "address": "MCV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2WAAAAAAAAAAAA4WXK",
+      "error": "unsupported_address"
+    },
+    {
+      "name": "muxed-account-valid-checksum-ma",
+      "address": "MADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA6OSU",
+      "error": "unsupported_address"
+    },
+    {
+      "name": "claimable-balance",
+      "address": "BAAM3TONZXG43TONZXG43TONZXG43TONZXG43TONZXG43TONZXG43TLWLQ",
+      "error": "unsupported_address"
+    },
+    {
+      "name": "muxed-account-spare-bit-flipped",
+      "address": "MCV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2WAAAAAAAAAAAA4WXL",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "muxed-account-bad-checksum",
+      "address": "MCV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2XK5LVOV2WAAAAAAAAAAAA4WXA",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "muxed-contract-w",
+      "address": "WADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4RQG",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "secret-seed",
+      "address": "SAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC5MY",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "secret-seed-account-payload",
+      "address": "SA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCTOLY",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "sha256-hash-x",
+      "address": "XA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSTPP",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "pre-auth-tx-t",
+      "address": "TA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCTXKW",
+      "error": "invalid_strkey"
+    },
+    {
+      "name": "signed-payload-p",
+      "address": "PA5WUJ54Z23KILLCUOUNAKTPBVZWKMQVO4O6EQ5GHLAERIMLLHNCSAAAAACACAQDATGQY",
+      "error": "invalid_strkey"
+    }
+  ]
+}

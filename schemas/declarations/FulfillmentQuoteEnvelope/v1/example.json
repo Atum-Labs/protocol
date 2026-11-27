@@ -1,0 +1,43 @@
+{
+  "$comment": "Example FulfillmentQuoteEnvelope as it can be signed by the v1 signer today. The embedded VC uses the production-realistic shape `type: [\"VerifiableCredential\", \"KnownToAtumVerifiableCredential\"]` with the `known-to-atum/v1` context (the type alias is bound to a stable IRI in both Go's json-gold and TS's jsonld.js so canonicalization is cross-language byte-identical). The proof JWS / proofValue below are PLACEHOLDERs (not real signatures) — re-sign with the canonical signer to produce a verifying example.",
+  "version": "1.0",
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1",
+    "https://schemas.atum.network/declarations/FulfillmentQuoteEnvelope/v1/context.jsonld"
+  ],
+  "type": ["VerifiablePresentation"],
+  "holder": "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+  "verifiableCredential": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://schemas.atum.xyz/credentials/known-to-atum/v1"
+      ],
+      "id": "urn:uuid:5b5d7e0e-9d27-4f1f-a5db-3a52cfb24d2f",
+      "type": ["VerifiableCredential", "KnownToAtumVerifiableCredential"],
+      "issuer": "did:web:atumlabs.xyz",
+      "issuanceDate": "2026-05-20T00:00:00.000Z",
+      "expirationDate": "2026-05-20T01:00:00.000Z",
+      "credentialSubject": {
+        "id": "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "role": "settler"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2026-05-20T00:00:00.000Z",
+        "verificationMethod": "did:web:atumlabs.xyz#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z4oXLMi8Xk76ueKDZU8DxFD3iqWM9cGP8RUqtBKQBQJFRCFRxenaWnz3wFdxtznawUnKp3TaU3AsrbawEYn6tWF7M"
+      }
+    }
+  ],
+  "proof": {
+    "type": "EcdsaSecp256k1RecoverySignature2020",
+    "created": "2026-05-20T00:00:30.000Z",
+    "verificationMethod": "did:pkh:eip155:1:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266#blockchainAccountId",
+    "proofPurpose": "authentication",
+    "challenge": "pmt-gw-9d27-4f1f-a5db-3a52cfb24d2f",
+    "domain": "did:web:settler.atum.network",
+    "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..PLACEHOLDER_JWS_NOT_VALID_BY_DESIGN"
+  }
+}

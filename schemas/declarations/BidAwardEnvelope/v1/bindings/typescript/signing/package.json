@@ -1,0 +1,35 @@
+{
+  "name": "@atum-labs/award-hash",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Single cross-language source of the BidAwardEnvelope award_hash binding (the proof.challenge of an award-authority VP): keccak256 over a domain-separated (payment_id, quote_hash, settler_id) preimage. Pinned byte-for-byte to the Go binding by conformance/award-hash-golden.json.",
+  "type": "module",
+  "main": "dist-cjs/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist-cjs/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "dist-cjs"
+  ],
+  "scripts": {
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && node scripts/cjs-marker.mjs",
+    "build": "npm run build:esm && npm run build:cjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ethers": "^6.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.11"
+  }
+}

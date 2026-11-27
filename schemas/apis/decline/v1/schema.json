@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "file://apis/decline/v1/schema.json",
+  "title": "BidDecline",
+  "description": "A settler's report that it will not bid on a request. The internal shape, carrying the reason code the settler chose plus its own free-text detail. Projected to the caller-facing shape through the decline catalog, which is the single source of truth for the reason set.",
+  "type": "object",
+  "required": ["reason_code"],
+  "properties": {
+    "reason_code": {
+      "type": "string",
+      "description": "Machine-readable decline reason in SCREAMING_SNAKE_CASE, from apis/decline/v1/catalog.json. A code absent from the catalog projects to OTHER rather than being rejected, so a settler on a newer catalog is never a parse failure.",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "examples": [
+        "INSUFFICIENT_LIQUIDITY",
+        "UNTRUSTED_VERIFIER",
+        "UNSUPPORTED_DESTINATION_ASSET",
+        "AWARD_WINDOW_TOO_SHORT"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "description": "Settler-authored detail naming the specific cause. Never relayed to the caller, because it is text this gateway neither authors nor validates.",
+      "maxLength": 500
+    },
+    "payment_id": {
+      "type": "string",
+      "description": "The payment this decline answers. Absent on the quote flow, which carries quote_request_id instead."
+    },
+    "quote_request_id": {
+      "type": "string",
+      "description": "The quote request this decline answers. Absent on the payment flow, which carries payment_id instead."
+    }
+  }
+}

@@ -1,0 +1,1352 @@
+[
+  {
+    "type": "function",
+    "name": "deposit",
+    "inputs": [
+      {
+        "name": "depositInput",
+        "type": "tuple",
+        "internalType": "struct IEscrow.DepositInput",
+        "components": [
+          {
+            "name": "permit",
+            "type": "tuple",
+            "internalType": "struct ISignatureTransfer.PermitTransferFrom",
+            "components": [
+              {
+                "name": "permitted",
+                "type": "tuple",
+                "internalType": "struct ISignatureTransfer.TokenPermissions",
+                "components": [
+                  {
+                    "name": "token",
+                    "type": "address",
+                    "internalType": "address"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                  }
+                ]
+              },
+              {
+                "name": "nonce",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "deadline",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.DepositWitness",
+            "components": [
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destination",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "depositSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "reserveWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.ReserveWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "sourceAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "reserveSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "depositMany",
+    "inputs": [
+      {
+        "name": "depositInputs",
+        "type": "tuple[]",
+        "internalType": "struct IEscrow.DepositInput[]",
+        "components": [
+          {
+            "name": "permit",
+            "type": "tuple",
+            "internalType": "struct ISignatureTransfer.PermitTransferFrom",
+            "components": [
+              {
+                "name": "permitted",
+                "type": "tuple",
+                "internalType": "struct ISignatureTransfer.TokenPermissions",
+                "components": [
+                  {
+                    "name": "token",
+                    "type": "address",
+                    "internalType": "address"
+                  },
+                  {
+                    "name": "amount",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                  }
+                ]
+              },
+              {
+                "name": "nonce",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "deadline",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.DepositWitness",
+            "components": [
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destination",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "depositSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "reserveWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.ReserveWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "sourceAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "reserveSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "depositIds",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "directDeposit",
+    "inputs": [
+      {
+        "name": "input",
+        "type": "tuple",
+        "internalType": "struct IEscrow.DirectDepositInput",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nonce",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "depositWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.DepositWitness",
+            "components": [
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destination",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getDepositHash",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refund",
+    "inputs": [
+      {
+        "name": "refundInput",
+        "type": "tuple",
+        "internalType": "struct IEscrow.RefundInput",
+        "components": [
+          {
+            "name": "refundWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.RefundWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destinationHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositor",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "feeAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "refundSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundMany",
+    "inputs": [
+      {
+        "name": "refundInputs",
+        "type": "tuple[]",
+        "internalType": "struct IEscrow.RefundInput[]",
+        "components": [
+          {
+            "name": "refundWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.RefundWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destinationHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositor",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "feeAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "refundSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refundUnreserved",
+    "inputs": [
+      {
+        "name": "input",
+        "type": "tuple",
+        "internalType": "struct IEscrow.RefundUnreservedInput",
+        "components": [
+          {
+            "name": "depositId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "depositRequestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "destinationHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reserver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "releaser",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "release",
+    "inputs": [
+      {
+        "name": "releaseInput",
+        "type": "tuple",
+        "internalType": "struct IEscrow.ReleaseInput",
+        "components": [
+          {
+            "name": "releaseWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.ReleaseWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destinationHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositor",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "feeAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "releaseSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "releaseMany",
+    "inputs": [
+      {
+        "name": "releaseInputs",
+        "type": "tuple[]",
+        "internalType": "struct IEscrow.ReleaseInput[]",
+        "components": [
+          {
+            "name": "releaseWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.ReleaseWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destinationHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "depositor",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "feeAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "releaseSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "reserve",
+    "inputs": [
+      {
+        "name": "input",
+        "type": "tuple",
+        "internalType": "struct IEscrow.ReserveInput",
+        "components": [
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "depositWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.DepositWitness",
+            "components": [
+              {
+                "name": "depositRequestHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "destination",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "reserver",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "releaser",
+                "type": "address",
+                "internalType": "address"
+              }
+            ]
+          },
+          {
+            "name": "reserveWitness",
+            "type": "tuple",
+            "internalType": "struct IEscrow.ReserveWitness",
+            "components": [
+              {
+                "name": "depositId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "quoteHash",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "settler",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "sourceAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "reserveSignature",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "DepositCommitments",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "depositRequestHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "destinationHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DepositReserved",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "quoteHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "settler",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "feeAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Deposited",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "quoteHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "depositor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "settler",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "feeAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "reserver",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "releaser",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DepositedMany",
+    "inputs": [
+      {
+        "name": "depositIds",
+        "type": "bytes32[]",
+        "indexed": false,
+        "internalType": "bytes32[]"
+      },
+      {
+        "name": "depositWitnesses",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IEscrow.DepositWitness[]",
+        "components": [
+          {
+            "name": "depositRequestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "destination",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "reserver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "releaser",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      },
+      {
+        "name": "reserveWitnesses",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IEscrow.ReserveWitness[]",
+        "components": [
+          {
+            "name": "depositId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "quoteHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "settler",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "sourceAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "feeAmounts",
+        "type": "uint256[]",
+        "indexed": false,
+        "internalType": "uint256[]"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Refunded",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "depositor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RefundedMany",
+    "inputs": [
+      {
+        "name": "refundWitnesses",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IEscrow.RefundWitness[]",
+        "components": [
+          {
+            "name": "depositId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "quoteHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "depositRequestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "destinationHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "feeAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reserver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "releaser",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "settler",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Released",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "settler",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "feeAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ReleasedMany",
+    "inputs": [
+      {
+        "name": "releaseWitnesses",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IEscrow.ReleaseWitness[]",
+        "components": [
+          {
+            "name": "depositId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "quoteHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "depositRequestHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "destinationHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "feeAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "reserver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "releaser",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "settler",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "DepositAlreadyExists",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DepositAmountCannotBeZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DepositCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DepositNotFound",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DepositRequestHashCannotBeEmpty",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DestinationCannotBeEmpty",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DestinationTooLong",
+    "inputs": [
+      {
+        "name": "length",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSignature",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidSourceAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidWitnessValues",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "expectedHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "passedHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NonExactTransfer",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NonceAlreadyUsed",
+    "inputs": [
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotReserved",
+    "inputs": [
+      {
+        "name": "depositId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "Permit2CannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "QuoteHashCannotBeEmpty",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReleaserCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReserverCannotBeZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SettlerCannotBeZeroAddress",
+    "inputs": []
+  }
+]

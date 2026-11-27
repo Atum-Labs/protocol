@@ -1,0 +1,35 @@
+# Shapes this declaration shares with the others are generated from
+# declarations/common/shapes/v1/schema.json rather than written here, so a producer and a
+# verifier reading different declarations cannot end up with different ideas of what a
+# credential, a proof or a signed message looks like.
+#
+# Where this declaration restricts a shared shape further, or names the specific value a
+# field binds to, that is listed under `overlay` with the reason. Everything else comes
+# from the shared definition unchanged.
+#
+# To change one of these, edit the shared source and run:
+#
+#     make -C schemas generate-canonical-shapes
+
+target: schema.json
+source: ../../common/shapes/v1/schema.json
+
+shapes:
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+  - name: DataIntegrityProof
+    from: $defs/DataIntegrityProof
+  - name: SignedMessage
+    from: $defs/SignedMessage
+    reason: |
+      An award authorization is not a transfer by the wallet owner, so the shared wording about
+      controlling the sending wallet does not describe it.
+
+      It also carries no chain-specific payload. The JSON-LD context for this
+      declaration defines no term for one, so the field could not take part in the
+      canonicalization the signature is computed over even if it were sent. A flow that needs
+      to carry signing context alongside an award has to add the term here first.
+    remove:
+      - properties.payload
+    overlay:
+      description: A message signed by the party authorizing the award, proving they control the key the award is attributed to.

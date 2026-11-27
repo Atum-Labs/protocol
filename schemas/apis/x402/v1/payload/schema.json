@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "file://apis/x402/v1/payload/schema.json",
+  "title": "AtumEscrowPayload",
+  "description": "The PAYMENT-SIGNATURE credential body for the atum-escrow x402 scheme — a v2 PaymentPayload whose `accepted` echoes the selected requirement and whose `payload.paymentRequest` is the signed payment request. The inner paymentRequest conforms to the canonical PaymentRequest declaration (declarations/PaymentRequest/v1); only the scheme-critical fields the facilitator checks are constrained here and the rest is permitted, so a full PaymentRequest validates without being restated. The identity-binding `presentation` (PaymentRequestEnvelope) is REQUIRED for atum-escrow conformance but is optional at the schema level so a request may be validated before the envelope is attached; the facilitator enforces its presence and re-verifies it. Addresses are chain-general: an EVM `0x`-hex address (20 bytes) a base58-encoded address (Solana/Tron), or a Stellar strkey (a `G...` account or `C...` contract), per the field's CAIP-2 chain.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["x402Version", "accepted", "payload"],
+  "properties": {
+    "x402Version": {
+      "const": 2,
+      "description": "x402 protocol version; always 2."
+    },
+    "accepted": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Echo of the selected 402 requirement, checked for equality against the separately-supplied requirement at verify time.",
+      "required": ["scheme", "network", "asset", "payTo", "amount", "maxTimeoutSeconds", "extra"],
+      "properties": {
+        "scheme": { "const": "atum-escrow" },
+        "network": { "type": "string", "pattern": "^[-a-z0-9]+:.+$" },
+        "asset": { "type": "string", "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$" },
+        "payTo": { "type": "string", "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$" },
+        "amount": { "type": "string", "pattern": "^[0-9]+$" },
+        "maxTimeoutSeconds": { "type": "integer", "minimum": 1 },
+        "extra": {
+          "type": "object",
+          "required": ["atum", "atumResource"],
+          "properties": {
+            "atum": { "type": "object" },
+            "atumResource": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2048,
+              "description": "The page the payment is bound to (method, path and canonical parsed query); part of the request_id derivation. At most 2048 UTF-8 bytes, which every implementation enforces; maxLength counts characters, so it is looser."
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "x402 extension data, echoed from the `extensions` map the resource server advertised in its 402 response with the payer's own values added. Per the x402 specification a client must include at least the information it received and may append to it, but may not remove or overwrite it. Kept open so that extensions unrelated to this scheme pass through untouched.\n\nThe `atum-escrow` scheme uses the standard `payment-identifier` extension as the payment's idempotency key. It is REQUIRED for atum-escrow conformance but optional at the schema level, so that a payload can be validated before its extensions are attached; the facilitator enforces its presence and re-derives `request_id` from it.",
+      "properties": {
+        "payment-identifier": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "The payment's idempotency key, as defined by the x402 payment-identifier extension.",
+          "properties": {
+            "info": {
+              "type": "object",
+              "$comment": "additionalProperties is deliberately left IMPLICIT here rather than stated as `true`, even though the surrounding objects state it. Both mean the same thing to a validator, but go-jsonschema emits an UnmarshalJSON for an open object that also carries a constrained property which references an undeclared `raw` variable, so the generated Go package does not compile. It only declares `raw` for an object with required properties, and this one has none. `id`'s length and pattern constraints are worth more than the generated AdditionalProperties convenience field, so the constraints stay and the keyword goes.",
+              "description": "The extension's data. The resource server advertises `required`; the payer adds `id`.",
+              "properties": {
+                "required": {
+                  "type": "boolean",
+                  "description": "Whether the resource server requires payers to supply an identifier. Always true for atum-escrow, which cannot make a payment retry-safe without one."
+                },
+                "id": {
+                  "type": "string",
+                  "minLength": 16,
+                  "maxLength": 128,
+                  "pattern": "^[a-zA-Z0-9_-]+$",
+                  "description": "The payer's identifier for the purchase being paid for: one value per purchase, the same value on every re-attempt of that purchase, and never shared between two purchases. `request_id` is derived from this value together with the source account, and the network de-duplicates on `request_id` — so reusing it on a re-attempt resolves to the original payment instead of taking a second one, while a fresh value starts a new payment."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paymentRequest"],
+      "properties": {
+        "paymentRequest": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "The signed payment request; conforms to the canonical PaymentRequest declaration (declarations/PaymentRequest/v1). Only the scheme-critical fields the facilitator checks are required here, the rest is permitted.",
+          "required": [
+            "version",
+            "request_id",
+            "source",
+            "destination",
+            "fulfillment_amount",
+            "max_source_amount",
+            "quote_deadline",
+            "fulfillment_deadline",
+            "sender_auth"
+          ],
+          "properties": {
+            "version": { "type": "string" },
+            "request_id": { "type": "string" },
+            "source": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["asset_identifier", "account"],
+              "properties": {
+                "asset_identifier": { "type": "string" },
+                "account": { "type": "string", "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$" }
+              }
+            },
+            "destination": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "required": ["asset_identifier", "account"],
+                "properties": {
+                  "asset_identifier": { "type": "string" },
+                  "account": { "type": "string", "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$" }
+                }
+              }
+            },
+            "fulfillment_amount": { "type": "string", "pattern": "^[0-9]+$" },
+            "max_source_amount": { "type": "string", "pattern": "^[0-9]+$" },
+            "quote_deadline": { "type": "string", "format": "date-time" },
+            "fulfillment_deadline": { "type": "string", "format": "date-time" },
+            "sender_auth": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["message_scheme", "signed_messages"],
+              "properties": {
+                "message_scheme": {
+                  "enum": ["EVM_PERMIT2", "EVM_PERMIT2_ESCROW", "SOLANA", "TRON", "STELLAR"],
+                  "description": "Sender-auth signature scheme. Wire-valid values mirror the canonical PaymentRequest SenderAuthMessageScheme; which of them a given facilitator actually verifies is a capability the facilitator enforces, not a schema constraint."
+                },
+                "signed_messages": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": ["message", "signature"],
+                    "properties": {
+                      "message": { "type": "string" },
+                      "message_prehash": {},
+                      "signature": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            },
+            "presentation": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Identity binding — a holder-signed W3C VerifiablePresentation (PaymentRequestEnvelope; conforms to declarations/PaymentRequestEnvelope/v1) that binds this request to the payer. REQUIRED for atum-escrow conformance; optional at the schema level so a request may be validated before the envelope is attached. Only the binding-critical fields are constrained here; the full envelope validates against the canonical declaration. The facilitator re-verifies it: proofPurpose 'authentication', proof.challenge equals the request's request_hash (content hash of the request), proof.domain the network-wide verifier id, and holder equal to source.account.",
+              "required": ["type", "holder", "verifiableCredential", "proof"],
+              "properties": {
+                "type": {
+                  "type": "array",
+                  "description": "MUST contain 'VerifiablePresentation' per W3C VC Data Model v1.1.",
+                  "contains": { "const": "VerifiablePresentation" },
+                  "items": { "type": "string" }
+                },
+                "holder": {
+                  "type": "string",
+                  "pattern": "^did:pkh:[a-z][a-z0-9]*:[a-zA-Z0-9._:%-]+$",
+                  "description": "did:pkh of the payer; MUST equal source.account."
+                },
+                "verifiableCredential": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "type": "object", "additionalProperties": true }
+                },
+                "proof": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "required": ["proofPurpose", "challenge", "domain"],
+                  "properties": {
+                    "proofPurpose": {
+                      "const": "authentication",
+                      "description": "Always 'authentication' for a VerifiablePresentation proof."
+                    },
+                    "challenge": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Equals the request's request_hash (content hash of the request)."
+                    },
+                    "domain": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Network-wide verifier identifier, did:web:<env>.atum.network."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

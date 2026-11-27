@@ -1,0 +1,9 @@
+[submodule "contracts/evm/source/lib/forge-std"]
+	path = contracts/evm/source/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "contracts/evm/source/lib/permit2"]
+	path = contracts/evm/source/lib/permit2
+	url = https://github.com/Uniswap/permit2
+[submodule "contracts/tvm/source/lib/forge-std"]
+	path = contracts/tvm/source/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

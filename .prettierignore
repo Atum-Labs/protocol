@@ -1,0 +1,31 @@
+**/node_modules/
+**/dist/
+
+# Generated from schemas/apis/payment-gateway/v1/openapi.yaml and committed to git.
+# Formatting it would fight the drift guard that regenerates it
+# (schemas/Makefile: check-openapi-ts-clients) — any reformat would be erased by
+# the next `pnpm --filter @atum-labs/payment-gateway-client run generate`.
+schemas/apis/payment-gateway/v1/bindings/typescript/client/src/generated/
+
+# Same reason, different generator: written by scripts/gen-pre-context.mjs from the canonical
+# PaymentRequestEnvelope context, and check:pre-context compares the file byte-for-byte against
+# what that script renders. A reformat here would fail that guard and be erased by the next
+# `pnpm run prebuild`.
+schemas/apis/payment-gateway/v1/bindings/typescript/client/src/pre-context.generated.ts
+
+# Same reason, hosts.yaml generator: written by schemas/scripts/gen-hosts.mjs, and
+# `make -C schemas check-hosts` compares the file byte-for-byte against what that
+# script renders. A reformat here would fail that guard and be erased by the next
+# `make -C schemas generate-hosts`.
+schemas/apis/payment-gateway/v1/bindings/typescript/client/src/hosts.generated.ts
+schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow/src/hosts.generated.ts
+schemas/apis/x402/v1/bindings/x402-atum-escrow/src/hosts.generated.ts
+
+# Markdown is excluded on purpose, and stated here rather than only in the
+# `format` glob so the decision holds however Prettier is invoked. The READMEs,
+# CONTRIBUTING and AGENTS files are hand-wrapped prose; reformatting docs is a
+# separate question from formatting code.
+**/*.md
+
+# Generated from Go's Unicode tables and pinned by a Go drift test.
+schemas/declarations/PaymentRequest/v1/bindings/typescript/sender-auth/src/simple-fold.gen.ts

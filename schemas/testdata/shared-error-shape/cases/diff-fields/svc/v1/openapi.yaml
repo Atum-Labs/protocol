@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info: {title: svc, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error_code, error_message]
+      properties:
+        error_code: {type: string}
+        error_message: {type: string}

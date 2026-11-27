@@ -1,0 +1,16 @@
+{
+  "name": "@atum-labs/common-decline",
+  "version": "1.0.0",
+  "description": "TypeScript bindings for the Atum bid-decline schema",
+  "license": "Apache-2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "tsc && node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

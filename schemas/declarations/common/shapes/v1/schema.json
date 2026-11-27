@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/common/shapes/v1/schema.json",
+  "title": "Shared declaration shapes",
+  "description": "Shapes that more than one declaration carries. Each declaration keeps its own copy of the ones it uses, generated from here, so a producer and a verifier reading different declarations agree on what a credential, a proof or a signed message looks like.",
+  "$defs": {
+    "VerifiableCredential": {
+      "type": "object",
+      "description": "W3C Verifiable Credential structure conforming to the W3C Verifiable Credentials Data Model v1.1",
+      "required": [
+        "@context",
+        "id",
+        "type",
+        "issuer",
+        "issuanceDate",
+        "credentialSubject",
+        "proof"
+      ],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array, must include 'https://www.w3.org/2018/credentials/v1'",
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this credential"
+        },
+        "type": {
+          "type": "array",
+          "description": "Credential types, must include 'VerifiableCredential'",
+          "contains": {
+            "const": "VerifiableCredential"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "description": "DID or issuer object of the credential issuer"
+        },
+        "issuanceDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential was issued"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential expires"
+        },
+        "credentialSubject": {
+          "type": "object",
+          "description": "Claims about the credential subject (structure varies by issuer)"
+        },
+        "credentialStatus": {
+          "type": "object",
+          "description": "Information for credential revocation checking. Not consulted by the verifier today."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Cryptographic proof of credential integrity"
+        }
+      }
+    },
+    "DataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof conforming to the Data Integrity 1.0 specification. Which of jws or proofValue is required depends on the cryptosuite named in type, and that pairing is checked where the proof is verified rather than by this schema, so a document can satisfy the schema and still be refused at verification.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. ECDSA-secp256k1 (recoverable, EVM-compatible) for did:pkh:eip155:* signers; Ed25519 for did:pkh:solana:* and did:pkh:stellar:* signers."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "description": "Purpose of the proof (e.g., assertionMethod, authentication)."
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Required at runtime for EcdsaSecp256k1RecoverySignature2020."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase-encoded raw signature bytes. Required at runtime for Ed25519Signature2020; mutually exclusive with jws in practice."
+        }
+      }
+    },
+    "VPDataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof for a VerifiablePresentation. Extends the base DataIntegrityProof with challenge and domain per W3C VC Data Model 5.6. proofPurpose is constrained to 'authentication': the holder is authenticating themselves as the presenter of the enclosed credentials.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose",
+        "challenge",
+        "domain"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "jws"
+          ],
+          "not": {
+            "required": [
+              "proofValue"
+            ]
+          }
+        },
+        {
+          "required": [
+            "proofValue"
+          ],
+          "not": {
+            "required": [
+              "jws"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. MUST be one of EcdsaSecp256k1RecoverySignature2020 (secp256k1) or Ed25519Signature2020 (ed25519), and MUST equal the inner declaration's proof.type so the holder-binding consistency check anchors both signatures to the same cryptosuite."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies. The verifier also checks freshness against its configured maximum proof age and future-skew window."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar. The recovered identity from this MUST match the holder field."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "const": "authentication",
+          "description": "Always 'authentication' for VerifiablePresentation proofs per W3C VC Data Model \u00a75.6 \u2014 the holder is authenticating themselves as the presenter of the enclosed credentials."
+        },
+        "challenge": {
+          "type": "string",
+          "description": "Replay-binding challenge. Equal to the content-addressed identifier of what this proof covers, recomputed by the verifier from what it received, so a proof cannot be lifted onto different content. Each declaration names the value it binds to.",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "description": "Replay-binding domain. The verifier requires this to equal its configured service identifier, so a presentation captured in one environment cannot be replayed against another. Each declaration names the identifier it binds to.",
+          "minLength": 1
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Used by the EcdsaSecp256k1RecoverySignature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase z-base58btc-encoded 64-byte signature. Used by the Ed25519Signature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        }
+      }
+    },
+    "SignedMessage": {
+      "type": "object",
+      "description": "A message that has been cryptographically signed to prove authorization. The signature proves you control the wallet that's sending funds.",
+      "required": [
+        "message",
+        "signature"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The data that was signed. Format depends on the blockchain:\n- EVM: Hex-encoded message hash (with 0x prefix)\n- Solana: Hex-encoded message hash (with 0x prefix)\n- Tron: Hex-encoded message hash (possibly without 0x prefix)"
+        },
+        "message_prehash": {
+          "type": "string",
+          "description": "Optional: If 'message' contains a hash, this field contains the original data before it was hashed. Useful for verification and debugging."
+        },
+        "signature": {
+          "type": "string",
+          "description": "The cryptographic signature proving you authorized this message. Hex-encoded with a 0x prefix on every supported chain. The signer's own public key is base58 on Solana, but the signature itself is not."
+        },
+        "payload": {
+          "type": "object",
+          "description": "Optional chain-specific payload containing additional signing context (e.g., delegate_signer for Solana). Preserved through the pipeline for downstream consumers.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

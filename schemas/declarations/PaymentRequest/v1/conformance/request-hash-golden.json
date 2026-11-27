@@ -1,0 +1,7 @@
+{
+  "_comment": "Cross-language golden for the content-addressed request_hash = \"0x\"+hex(keccak256(DocHash)) of each inner PaymentRequest fixture. The Go conformance_test.go (ComputeRequestHash) and the TS conformance.test.ts (computeRequestHash) both assert their output equals these values; if both match this file, they match each other. request_hash is PURE CONTENT: it strips the inner PR's own proof entirely (consumes DocHash, not SigningInput) and every sender_auth.signed_messages[*].signature, under a FIXED secp256k1 suite — so it is independent of signature material AND of how the PR was signed. The -go-signed and -ts-signed fixtures of a given cryptosuite share content and therefore the SAME request_hash; the secp and ed25519 fixtures differ in content (request_id) and therefore differ. Regenerate per conformance/README.md.",
+  "secp256k1-go-signed.json": "0x2b3df38526a80c0d5924a12bdfd53003dd243d1066dcfae4dc9a722205a009cf",
+  "secp256k1-ts-signed.json": "0x2b3df38526a80c0d5924a12bdfd53003dd243d1066dcfae4dc9a722205a009cf",
+  "ed25519-go-signed.json": "0xbf46102f1da4c6c912931c3def992fa9192e895e59e2c46249f02862208de52d",
+  "ed25519-ts-signed.json": "0xbf46102f1da4c6c912931c3def992fa9192e895e59e2c46249f02862208de52d"
+}

@@ -1,0 +1,75 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "atum": "https://schemas.atum.network/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "sec": "https://w3id.org/security#",
+    "dc": "http://purl.org/dc/terms/",
+    "cred": "https://www.w3.org/2018/credentials#",
+
+    "AuthorizationResponse": {
+      "@id": "atum:AuthorizationResponse",
+      "@type": "@id"
+    },
+
+    "payment_id": {
+      "@id": "atum:paymentId",
+      "@type": "xsd:string"
+    },
+
+    "counterparty_did": {
+      "@id": "atum:counterpartyDid",
+      "@type": "@id"
+    },
+
+    "status": {
+      "@id": "atum:authorizationStatus",
+      "@type": "xsd:string"
+    },
+
+    "reason": {
+      "@id": "atum:declineReason",
+      "@type": "xsd:string"
+    },
+
+    "VerifiableCredential": {
+      "@id": "https://www.w3.org/2018/credentials#VerifiableCredential",
+      "@type": "@id"
+    },
+
+    "proof": {
+      "@id": "sec:proof",
+      "@type": "@id",
+      "@container": "@graph"
+    },
+    "verifiableCredential": {
+      "@id": "cred:verifiableCredential",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "jws": {
+      "@id": "sec:jws"
+    },
+    "proofValue": {
+      "@id": "sec:proofValue"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "created": {
+      "@id": "dc:created",
+      "@type": "xsd:dateTime"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    }
+  }
+}

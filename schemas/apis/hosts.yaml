@@ -1,0 +1,31 @@
+# Writable source of truth for public API base URLs.
+# OpenAPI `servers`, the npm client's defaultGateway, and atum-docs
+# variables are generated from this file. Edit here; do not hand-copy hosts.
+# How to change a host or add an API: schemas/README.md "Public API hosts".
+#
+# x402 is not a host: it is payment-gateway + x402_base_path.
+# wallet-orch is omitted: no public REST host.
+# Staging is internal-only and stays out of this file.
+
+x402_base_path: /x402/v1
+
+payment-gateway:
+  spec: payment-gateway/v1/openapi.yaml
+  embed:
+    - payment-gateway/v1/embed/go/openapi.yaml
+  default_env: testnet
+  mainnet: https://payment-gw.production-mainnet.atum.xyz
+  testnet: https://payment-gw.production-testnet.atum.xyz
+  local: http://localhost:8080
+
+veri-fill:
+  spec: veri-fill/v1/openapi.yaml
+  mainnet: https://veri-fill.production-mainnet.atum.xyz
+  testnet: https://veri-fill.production-testnet.atum.xyz
+  local: http://localhost:8088
+
+auth:
+  spec: auth/v1/openapi.yaml
+  mainnet: https://auth.production-mainnet.atum.xyz
+  testnet: https://auth.production-testnet.atum.xyz
+  local: http://localhost:8080

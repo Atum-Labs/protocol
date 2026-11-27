@@ -1,0 +1,16 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "kyc": "https://schemas.atum.xyz/credentials/kyc/v1#",
+    "KYCCredential": "kyc:KYCCredential",
+    "kycStatus": {
+      "@id": "kyc:kycStatus",
+      "@type": "@vocab"
+    },
+    "approved": "kyc:approved",
+    "rejected": "kyc:rejected",
+    "pending": "kyc:pending",
+    "expired": "kyc:expired"
+  }
+}

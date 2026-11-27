@@ -1,0 +1,9 @@
+version: v2
+plugins:
+  # Go bindings only. The message-bus envelopes are consumed over Kafka by the
+  # atum-core gateways (Go); there is no TypeScript consumer today (the former
+  # pubsub-proto TS package had no importers). Add a ts-proto plugin here if one
+  # ever appears.
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: bindings/go
+    opt: paths=source_relative

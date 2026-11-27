@@ -1,0 +1,70 @@
+# An award's reserve_auth is sent on to the awarded settler as the BidAward declaration's
+# authorization, unchanged, so its shape is generated from that declaration rather than
+# written here. The object you sign and send is the object the settler and the escrow verify.
+#
+# To change this shape, edit the declaration named in `source` and regenerate:
+#
+#     make -C schemas generate-canonical-shapes
+#
+# The generated block is committed, and the build verifies it still matches.
+
+target: openapi.yaml
+source: ../../../declarations/BidAward/v1/schema.json
+
+shapes:
+  - name: ReserveAuth
+    from: $defs/SignedMessage
+    reason: |
+      The declaration describes a signed award authorization in general; on the award endpoint
+      it is always the escrow's reserve message, whose encoding differs per chain, so the
+      description says what to put in each member. `message_prehash` is required here because
+      the settler builds the reserve from it on every chain.
+    overlay:
+      description: |-
+        The reserve message naming the chosen quote's settler, signed by the quote request's
+        `quote_selector`. The escrow verifies it on chain against the `reserver` that
+        `sender_auth` names. It binds the deposit, the chosen quote's `quote_id`, the quote's
+        `settler_address` and its `source_amount`.
+
+        - EVM and Tron: the message is the escrow's reserve witness, `{depositId, quoteHash,
+          settler, sourceAmount}`. The deposit id is derived from the signed `sender_auth`,
+          `keccak256(abi.encode(depositor, signature, nonce))` over the Permit2 signature and
+          nonce, so sign `reserve_auth` after `sender_auth`. `message_prehash` is the witness as
+          typed data (EIP-712, TIP-712 on Tron), a JSON string `{domain, types, primaryType,
+          message}` with `primaryType` `ReserveWitness`. The domain is `name` `Escrow`, `version`
+          `3`, `chainId` as 0x-prefixed hex without leading zeros (its lower 32 bits on Tron) and
+          `verifyingContract` the escrow, with no other member except an empty `salt`. Addresses
+          are 0x-prefixed hex, on Tron too, and `sourceAmount` is a decimal string. `message` is
+          the typed data's digest, and `signature` the `quote_selector`'s signature over it. A
+          contract wallet signs as it does for ERC-1271.
+        - Solana: `message` is the escrow's reserve message hash, which binds the settler, the
+          deposit hash that `sender_auth` signs, the quote hash and the source amount. None of
+          these depends on the deposit signature, so the two can be signed in either order.
+          `message_prehash` is the reserve record as a JSON string, `{deposit_hash, recipient,
+          quote_hash, source_amount}`: the hashes as 0x-prefixed hex, `recipient` the settler's
+          base58 address and `source_amount` a decimal string. `signature` is the
+          `quote_selector`'s Ed25519 signature over `message`, so `quote_selector` must be a key
+          that can sign.
+        - Stellar: `message` is the escrow's reserve digest, which binds the settler, the deposit
+          id (the deposit digest that `sender_auth` signs), the quote hash and the source amount.
+          None of these depends on the delegate's signature, so the two can be signed in either
+          order. `message_prehash` is the reserve record as a JSON string, `{deposit_id,
+          quote_hash, settler, source_amount}`: the hashes as 0x-prefixed hex, `settler` a `G...`
+          or `C...` address and `source_amount` a decimal string. `signature` is the
+          `quote_selector`'s Ed25519 signature over `message`, so `quote_selector` must be a
+          `G...` account whose key can sign.
+      required:
+        - message
+        - message_prehash
+        - signature
+      properties:
+        message_prehash:
+          description: |-
+            The signed reserve, as a JSON string: the typed data on EVM and Tron, the reserve
+            record on Solana and Stellar, as described above.
+        message:
+          description: The 0x-prefixed 32-byte digest that `signature` signs, on every chain.
+          example: "0x5c0b4c7a3c5f5e1f8d3b0e2a9c7d6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c"
+        signature:
+          description: The `quote_selector`'s signature over `message`, 0x-prefixed hex on every chain.
+          example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab1c"

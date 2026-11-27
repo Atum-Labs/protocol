@@ -1,0 +1,39 @@
+// Typecheck for scripts/, which tsconfig.json did NOT cover: its include was
+// ["tests/**/*"], so `pnpm run typecheck` never looked at a single script. That was
+// provable rather than suspected -- a deliberate type error inserted into
+// scripts/deploy.ts still exited 0, which makes every past "typecheck clean" claim
+// about a script hollow, including one I made earlier about deploy.ts.
+//
+// scripts/ cannot share tsconfig.json: it is ESM (import.meta, .ts import
+// specifiers under `ts-node --esm`) while tests/ is commonjs, and merging the two
+// produces 26 errors from the module mode alone.
+//
+// The include list is explicit rather than "scripts/**/*" because turning this on
+// revealed 22 PRE-EXISTING strict-null errors in eight scripts that had never been
+// checked: configure-token, deploy, deploy-local, escrow-rotate-all-roles,
+// fp-accept-admin-transfer, fp-begin-admin-transfer, fp-rotate-all-roles,
+// fp-set-pauser. Mostly `Cannot invoke an object which is possibly undefined` on
+// `program.methods` and two missing ESM import extensions in deploy-local.ts.
+//
+// Listing the clean files gives a gate that is green and load-bearing NOW; a
+// wildcard would give one that is red and therefore ignored. Move a file into this
+// list as it is fixed. Do not add a file by loosening `strict`.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "scripts/solana-admin-utils.ts",
+    "scripts/read-state.ts",
+    "scripts/transfer-sol.ts",
+    "scripts/create-address-lookup-table.ts",
+    "scripts/fp-settler-allowlist.ts",
+    "scripts/refresh-real-mint-fixtures.ts"
+  ]
+}

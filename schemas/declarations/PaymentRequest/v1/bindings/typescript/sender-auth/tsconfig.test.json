@@ -1,0 +1,7 @@
+// The program ESLint's type-aware rules read: the same sources as tsconfig.json, check-only.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  }
+}

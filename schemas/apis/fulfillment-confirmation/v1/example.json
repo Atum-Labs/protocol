@@ -1,0 +1,11 @@
+{
+  "payment_id": "0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f",
+  "request_id": "req_123456789",
+  "fulfillment_timestamp": "2024-01-15T10:35:22Z",
+  "source_chain_id": "eip155:1",
+  "destination_chain_id": "eip155:42161",
+  "source_tx_hash": "0xa1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+  "destination_tx_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "source_block_number": 18950123,
+  "destination_block_number": 156789012
+}

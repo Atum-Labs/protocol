@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/SettlementResult/v1/schema.json",
+  "title": "SettlementResult",
+  "description": "A settler's declared outcome of one settlement step, sent as SettlementResult.settlement_result_json on the settler session stream. The settler attests it with a holder-signed SettlementResultEnvelope whose proof.challenge is this object's content hash. Every field is a required string and an absent value is the empty string, so the declared JSON and the protobuf scalars it accompanies compare as plain strings. Consumers read every field they act on from this object.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "@context",
+    "payment_id",
+    "quote_request_id",
+    "quote_hash",
+    "phase",
+    "outcome",
+    "transaction_hash",
+    "chain_id",
+    "block_number",
+    "error_json",
+    "issued_at"
+  ],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "description": "JSON-LD context array. MUST include the SettlementResult v1 context URL. The content hash replaces it with the canonical [SettlementResult context, secp256k1recovery-2020/v2] pair, so its exact spelling does not change the hash.",
+      "contains": {
+        "const": "https://schemas.atum.network/declarations/SettlementResult/v1/context.jsonld"
+      },
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The payment this report is about. Part of the content hash, so a signed report cannot be replayed onto another payment."
+    },
+    "quote_request_id": {
+      "type": "string",
+      "description": "The quote_request_id the award carried, or the empty string when the award carried none."
+    },
+    "quote_hash": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{64}$",
+      "description": "The quote_hash of the awarded FulfillmentQuote, as ComputeQuoteHash / computeQuoteHash return it. Binds the report to the awarded terms."
+    },
+    "phase": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "not": {
+        "const": "UNSPECIFIED"
+      },
+      "description": "The SettlementPhase proto value name with its SETTLEMENT_PHASE_ prefix removed, e.g. DEPOSIT. A pattern rather than a closed list, so a new proto value needs no new declaration version. UNSPECIFIED is never valid."
+    },
+    "outcome": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "not": {
+        "const": "UNSPECIFIED"
+      },
+      "description": "The SettlementStepOutcome proto value name with its SETTLEMENT_STEP_OUTCOME_ prefix removed, e.g. SUCCESS or FINALIZING. Every outcome is declared, FINALIZING included. UNSPECIFIED is never valid."
+    },
+    "transaction_hash": {
+      "type": "string",
+      "description": "EVM or Tron transaction hash, or Solana signature, exactly as sent in the transaction_hash scalar. The empty string when no transaction was broadcast."
+    },
+    "chain_id": {
+      "type": "string",
+      "pattern": "^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$",
+      "description": "CAIP-2 chain identifier the step ran on, exactly as sent in the chain_id scalar."
+    },
+    "block_number": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)?$",
+      "description": "The block the transaction mined in, as a canonical decimal string with no leading zeros. The empty string when the settler has no receipt."
+    },
+    "error_json": {
+      "type": "string",
+      "description": "On an ERROR outcome, the canonical AtumError JSON (SETTLER_AGENT domain) exactly as sent in the error_json scalar. Carried as an opaque string, so its bytes are hashed as written. The empty string otherwise."
+    },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "When the settler declared this report, RFC 3339 in UTC with a Z suffix. Hashed as the literal string, so a producer must not reformat it after signing."
+    }
+  }
+}

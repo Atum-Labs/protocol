@@ -1,0 +1,14 @@
+# Breaks in the frozen session contract that were agreed and announced. oasdiff matches
+# each line against its own output; see schemas/Makefile (breaking-auth-session).
+#
+# CORE-3548 (2026-11-02) — DPoP-bound session tokens. A token can now be bound to a key
+# the client holds (RFC 9449): an exchange that carries a `DPoP` proof gets a token with
+# `cnf.jkt` and `token_type` `DPoP`, which the API gateway accepts only with a fresh proof
+# by that key. Without the binding, whoever held a token could use it for its lifetime.
+#
+# oasdiff reports the added `token_type` value because a client written against `Bearer`
+# alone may not handle it. That client cannot see it: the server answers `DPoP` only to an
+# exchange that sent a `DPoP` header, which such a client never sends, and it still gets
+# `Bearer`. No integrator ran against the contract when this landed: sessions served only
+# staging-testnet, and no published client carried session code.
+POST /v1/auth/token added the new `DPoP` enum value to the `token_type` response property for the response status `200`

@@ -1,0 +1,576 @@
+syntax = "proto3";
+
+package atum.settler.v1;
+
+option go_package = "github.com/atum-labs/protocol/schemas/apis/settler-gateway/v1/session-stream/bindings/go;settlerv1";
+
+import "google/protobuf/timestamp.proto";
+
+service SettlerGatewayService {
+  // Single bidirectional stream for all agent-gateway communication.
+  // Authentication, subscription, bidding, and events all flow through this stream.
+  // First message must be SessionInit containing wallet proofs for authentication.
+  rpc SessionStream(stream SessionRequest) returns (stream SessionResponse);
+}
+
+// ============== AUTHENTICATION ==============
+
+// Proof of wallet ownership for authentication.
+// The signature is over SHA-256(canonicalize({address, agent_domain, chain_id, timestamp})).
+// The agent_domain is provided at the SessionInit level and included in every proof's signature.
+message WalletProof {
+  string chain_id = 1;    // CAIP-2 chain ID (e.g., "eip155:1", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp")
+  string address = 2;     // Public wallet address
+  int64 timestamp = 3;    // Unix timestamp in milliseconds used in signed payload
+  string signature = 4;   // Hex-encoded signature
+}
+
+// ==================== SUBSCRIPTION MANAGEMENT ====================
+
+// The complete subscription configuration for an agent, defining all assets and corridors they support.
+message SubscriptionConfiguration {
+  // Key: Asset Identifier (e.g., USDC, USDT).
+  // Value: The corridors supported for that asset.
+  map<string, AssetCorridors> asset_filters = 1;
+  // Verifier accounts the agent is willing to accept.
+  // Gateway should only send AuctionOpened events with verifiers in this list
+  // (or events with no verifier). Empty list = all verifier overrides accepted.
+  repeated string allowed_fulfillment_verifiers = 2;
+}
+
+// Defines the pathways (corridors) for a specific asset.
+message AssetCorridors {
+  // Key: Source CAIP-19 Asset ID (e.g., "eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").
+  // Value: List of destination CAIP-19 Asset IDs supported from this source.
+  // Example: { "eip155:1/erc20:0x...": { destinations: ["solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/spl:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] } }
+  map<string, DestinationChains> corridors = 1;
+}
+
+// Helper message required because Protobuf maps cannot have repeated fields directly as values.
+message DestinationChains {
+  repeated string destinations = 1;
+}
+
+// ==================== BIDIRECTIONAL SESSION STREAM ====================
+
+// Agent-to-Gateway messages
+message SessionRequest {
+  oneof message {
+    SessionInit init = 1;       // First message: auth + subscription
+    Heartbeat heartbeat = 2;    // Periodic keepalive
+    SubmitBid bid = 3;          // Fire-and-forget bid submission
+    SettlementResult settlement_result = 4;  // Per-tx settlement outcome (success/error/indeterminate)
+    BidDeclined bid_declined = 5;            // Declined-to-bid, with reason + free-form detail
+    FulfillmentAuthorized fulfillment_authorized = 6;  // Originator may fulfill; settlement not done
+  }
+}
+
+// Initial handshake message sent by agent when opening the session stream.
+// Contains authentication (wallet proofs) and subscription configuration.
+// Must be the first message sent on the stream.
+message SessionInit {
+  // Agent domain uniquely identifies this agent instance.
+  // Format: <organization>:<role>:<version> (e.g., "atum:main:1.0")
+  // - organization: The organization operating the agent
+  // - role: The agent's role within the organization (e.g., "main", "backup")
+  // - version: MAJOR.MINOR version for queue/data partitioning
+  // This domain is included in every wallet proof signature for authentication binding.
+  string agent_domain = 1;
+
+  // Wallet ownership proofs - each signed with the agent_domain
+  repeated WalletProof wallet_proofs = 2;
+
+  // Subscription configuration for this session.
+  SubscriptionConfiguration subscription = 3;
+
+  // Event replay point - the agent-scoped sequence ID from which to resume the stream.
+  //
+  // Semantics:
+  //   -1: Skip replay entirely (start fresh, receive only new events)
+  //    0: Replay ALL events from the very beginning (sequence 1)
+  //   >0: Replay events starting from this sequence ID (inclusive)
+  //   <-1: Invalid (will be rejected by the gateway)
+  //
+  // Note: Agent-scoped sequences are 1-indexed. The first event an agent receives has sequence 1.
+  int64 from_sequence_id = 4;
+}
+
+// Bid message. An accepted bid gets no answer: it is simply awarded or not. A bid the gateway
+// refuses for its quote once the quote has passed verification, for the terms the quote commits,
+// for failing the FulfillmentQuote schema, or for carrying a credential inside the quote, is
+// answered with a BidRefused; other refusals, including a quote that fails verification, get no
+// answer.
+message SubmitBid {
+  // The payment_id carried by the request you are answering; empty when the request carried
+  // a quote_request_id.
+  string payment_id = 1;
+  // Contains the full FulfillmentQuote JSON schema as a raw json string
+  string metadata = 2;
+  // W3C VerifiablePresentation envelope (FulfillmentQuoteEnvelope) wrapping the signed
+  // FulfillmentQuote in `metadata`, carrying the holder's issuer-signed credentials.
+  // The gateway verifies that the holder equals the recovered signer of the inner
+  // quote, that proof.challenge equals the canonical quote_hash of that signed quote,
+  // and that proof.domain equals the service identifier for the target environment.
+  // See the session-stream README for the full signing contract.
+  string presentation = 3;
+  // The quote_request_id carried by the request you are answering; empty when the request
+  // carried a payment_id.
+  string quote_request_id = 4;
+}
+
+// Periodic heartbeat message sent by agent to maintain session.
+message Heartbeat {
+  // Empty - presence indicates liveness. Agent ID is implicit from the authenticated stream.
+}
+
+// Gateway-to-Agent messages
+message SessionResponse {
+  oneof message {
+    SessionEvent event = 1;         // Auction/settlement lifecycle event
+    HeartbeatAck heartbeat_ack = 2; // Heartbeat acknowledgment
+    InitAck init_ack = 3;           // Sent once, in response to SessionInit
+    SettlementResultAck settlement_result_ack = 4;  // Verdict on one SettlementResult
+    BidRefused bid_refused = 5;                     // A SubmitBid the gateway refused
+  }
+}
+
+// Response to SessionInit - sent after authentication and subscription setup
+message InitAck {
+  bool success = 1;
+  string agent_id = 2;              // Assigned agent ID
+  int64 registration_timestamp = 3;
+  string server_version = 4;
+  // The latest agent-scoped sequence ID for resumption tracking.
+  int64 latest_sequence_id = 5;
+
+  // If success=false, error details are provided
+  string error_code = 6;            // e.g., "AUTHENTICATION_FAILED", "HANDSHAKE_FAILED", "SUBSCRIPTION_FAILED"
+  string error_message = 7;
+
+  // True when this gateway answers each SettlementResult with a SettlementResultAck. When false,
+  // no ack will come on this stream, and the only signal is that the send succeeded.
+  bool settlement_result_acks = 8;
+}
+
+// Acknowledgment of heartbeat from gateway.
+message HeartbeatAck {
+  int64 timestamp = 1;
+}
+
+// The verdict a SettlementResultAck carries.
+enum SettlementResultAckStatus {
+  // Not a verdict. Treat this, and any status you do not recognize, as no ack and keep resending.
+  SETTLEMENT_RESULT_ACK_STATUS_UNSPECIFIED = 0;
+  // Stored (or already stored by an earlier copy) and acted on. Stop resending. An ACCEPTED for a
+  // (payment_id, phase, outcome) stands even if a later copy of it is REJECTED.
+  SETTLEMENT_RESULT_ACK_STATUS_ACCEPTED = 1;
+  // The verdict on the report as sent: it will not be accepted. Stop resending and alert.
+  SETTLEMENT_RESULT_ACK_STATUS_REJECTED = 2;
+}
+
+// The gateway's verdict on one SettlementResult, sent once the gateway reaches a final verdict.
+// It names the report by (payment_id, phase, outcome), the identity reports are deduplicated on,
+// so set all three on every SettlementResult: a report missing any of them is never accepted, and
+// any ack it gets cannot be matched to it.
+//
+// Only a final verdict is sent. No ack is not a verdict: the gateway may not have processed the
+// report yet, or the ack was lost with the stream, so resend it. Acks are not replayed: a settler
+// that misses one resends the report and is answered again.
+message SettlementResultAck {
+  string payment_id = 1;
+  SettlementPhase phase = 2;
+  SettlementStepOutcome outcome = 3;
+  SettlementResultAckStatus status = 4;
+  // REJECTED only: why, as a short machine-readable code ("no_auction", "not_awarded",
+  // "unauthorized", "invalid_vp:<vp reason code>" or "too_large"). Empty on ACCEPTED.
+  string reason_code = 5;
+}
+
+// A SubmitBid the gateway refused: it was not published, so it cannot be awarded. Sent once, when
+// the gateway refuses the bid, on the stream the bid came in on; it is not replayed. It names the
+// bid by the payment_id or quote_request_id the bid carried, exactly one of which is set, and by
+// the quote_hash of the quote it carried.
+//
+// A refusal is the verdict on the bid as sent. Resending the same quote is refused again; bid again
+// only with a quote that fixes what reason_code names.
+message BidRefused {
+  // The payment_id the bid carried; empty when it carried a quote_request_id.
+  string payment_id = 1;
+  // The quote_request_id the bid carried; empty when it carried a payment_id.
+  string quote_request_id = 2;
+  // Why, as a short machine-readable code:
+  //   "quote_request_mismatch"   the quote's payment_request_json commits other terms
+  //                              (depositRequestHash v2) than the request the auction was opened
+  //                              with: quote that request, verbatim or re-encoded;
+  //   "request_malformed"        the strict request reader refuses the quote's payment_request_json;
+  //   "stored_request_malformed" it refuses the auction's own request: no quote can win it;
+  //   "quote_schema_invalid"     the quote passed verification but fails the FulfillmentQuote v1
+  //                              JSON Schema, such as a null settler_address, or carries a
+  //                              non-empty verifiableCredential of its own (credentials go in the
+  //                              envelope): fix the quote so it passes, with its
+  //                              verifiableCredential set to [].
+  // New codes may be added. Treat one you do not recognize as a refusal.
+  string reason_code = 3;
+  // Human-readable detail, for logs: at most 256 bytes, cut by the gateway. Never parse it.
+  string message = 4;
+  // The canonical quote_hash (ComputeQuoteHash) of the refused bid's quote, 0x-prefixed hex: the
+  // value its presentation's proof.challenge binds. A settler that sent more than one bid for the
+  // same auction tells by it which one was refused.
+  string quote_hash = 5;
+}
+
+// Event envelope containing auction lifecycle events.
+message SessionEvent {
+  // 1. Agent-scoped, monotonically increasing ID. Used for replay/resumption.
+  // Sequences are 1-indexed (first event has sequence_id = 1).
+  int64 sequence_id = 1;
+  // 2. Global system sequence ID. Useful for debugging and cross-referencing.
+  uint64 global_sequence_id = 2;
+  // 3. Timestamp of the event generation on the server.
+  google.protobuf.Timestamp timestamp = 3;
+
+  oneof event {
+    // An auction is open and this settler may bid. Delivered to every settler whose
+    // subscription matches the request.
+    AuctionOpened opened = 4;
+
+    // This settler's bid won. Delivered only to the winner, with everything needed to settle.
+    // Settlement then runs deposit -> fulfill -> release (the reserve accompanies the deposit;
+    // how it is applied is chain-specific, see BidAwarded.reserve_msg).
+    BidAwarded bid_awarded = 5;
+
+    // Signals that a new subscription configuration is now active from this point forward.
+    SubscriptionUpdated subscription_updated = 12;
+  }
+
+  // Retired from the oneof above; reserved so the numbers and names are never reused.
+  reserved 6, 7, 8, 9, 10, 11, 13, 14;
+  reserved "bid_deposited", "bid_fulfilled", "bid_released", "bid_refunded", "fulfilled",
+           "closed";
+  reserved "quote_requested", "quote_awarded";
+
+  // 15. W3C trace context (traceparent/tracestate/baggage) of the originating
+  // /v1/payments trace at dispatch time, so the settler's apply_event span
+  // nests into the payment trace. Empty for replayed events.
+  map<string, string> trace_headers = 15;
+}
+
+// ==================== EVENT PAYLOADS ====================
+
+// --- Lifecycle Payloads ---
+
+// An auction is open and this settler may bid.
+//
+// Exactly one identifier is set, and which one tells you how far the payer has committed:
+//   - payment_id: the payer's deposit authorization is already attached to the embedded
+//     PaymentRequest (sender_auth), so the funds are authorized to move and a settlement key
+//     exists from the start.
+//   - quote_request_id: the payer is collecting quotes for a batch and has authorized nothing
+//     yet. The embedded PaymentRequest carries no sender_auth; an award, if one comes, brings
+//     the payment_id and the authorization.
+// Echo the one you received in SubmitBid or BidDeclined. An event carrying neither, or both, is
+// malformed: do not bid on it, and do not send BidDeclined either — a decline correlates on the
+// same identifier, so there is nothing to attribute it to. Log it and move on.
+//
+// A quote is an option the payer may choose not to exercise: your quote's award_deadline is the
+// window within which it may still be awarded, and silence after it is the normal outcome.
+message AuctionOpened {
+  string payment_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  // Contains the full payment request JSON schema as a raw json string (see schemas/declarations/PaymentRequest/v1/schema.json)
+  string metadata = 3;
+  string quote_request_id = 4;
+}
+
+// Common container for a signed message used for on-chain signature verification.
+message SignedMessage {
+  string message_hash = 1;             // Hex-encoded hash of the message to be verified.
+  string signature = 2;                // Hex-encoded signature.
+  // Pre-image of message_hash, when message_hash is the hash of structured data.
+  // For EIP-712, this is the JSON-encoded TypedData (domain, primaryType, types,
+  // message). Optional but typically populated so the receiver can extract the
+  // witness fields (paymentId, settler, reserver/releaser, amounts, etc.)
+  // without needing to re-derive them from elsewhere.
+  optional string message_prehash = 3;
+}
+
+// This settler's bid won the auction. Delivered only to the winner, and carries everything the
+// settler needs to deposit and fulfill:
+//   - sender_auth_json: the payer's deposit authorization
+//   - reserve_msg:      the reserve authorization naming this settler (see the field for how it applies)
+// The release and refund authorizations are not delivered over the wire: the settler requests
+// each from the verification service when it becomes due (the release after fulfillment, the
+// refund after the fulfillment deadline has passed).
+message BidAwarded {
+  string payment_id = 1;
+  // Contains the full bid award JSON schema as a raw json string (see schemas/declarations/BidAward/v1/schema.json)
+  string metadata = 2;
+  // Reserve authorization. Apply it when you deposit - whether it rides inside the deposit call
+  // or is a separate instruction depends on the source chain's escrow. It always names the
+  // awarded settler as the reserver.
+  SignedMessage reserve_msg = 3;
+  // Reserved for a pre-signed refund authorization; currently always empty. Request the refund
+  // authorization from the verification service once the fulfillment deadline has passed.
+  SignedMessage refund_msg = 4;
+  // The award-authority VP, forwarded VERBATIM by the gateway. A W3C
+  // VerifiablePresentation, holder = the award authority's did:pkh, carrying a
+  // `quoteAwarder` KnownToAtum VC, bound to this award via proof.challenge =
+  // award_hash(payment_id, quote_hash, settler_id). Lets the settler verify the
+  // awarder's authority (off-chain) and reject a forged / unauthorized award
+  // before committing settlement effort. Forward this document as received and do
+  // NOT rebuild it: verification canonicalizes it, so any field or @context entry
+  // lost in a round-trip through a partial type changes the canonical form and
+  // breaks the proof. Empty on awards that do not carry an authority signature.
+  string presentation = 5;
+  // The canonical quote_hash of the awarded quote. The settler recomputes
+  // award_hash(payment_id, quote_hash, settler_id) from this + settler_id (below) +
+  // payment_id and asserts it equals presentation's proof.challenge — so it binds
+  // the identical value the gateway signed WITHOUT re-deriving quote_hash from the
+  // lossy re-marshaled metadata quote. Empty when no authority signature accompanies the award.
+  //
+  // WIRE CONTRACT: award_hash proves an authorized awarder
+  // signed THIS (payment_id, quote_hash, settler_id) tuple; it does NOT prove the
+  // settled BidAward metadata is the quote whose hash is quote_hash. The settler
+  // MUST additionally assert this quote_hash == the canonical ComputeQuoteHash of
+  // the quote it actually settles, or the signature authorizes a different quote
+  // than the one executed (a swapped-metadata quote would otherwise pass the
+  // challenge check).
+  string quote_hash = 6;
+  // The awarded settler id — the third award_hash input, shipped explicitly so
+  // the settler binds the exact value the gateway used rather than assuming its
+  // self-identity matches. Empty when no authority signature accompanies the award.
+  string settler_id = 7;
+  // The payer's deposit authorization: the sender_auth object of the PaymentRequest, as a JSON
+  // string, forwarded by the gateway. Build the deposit from this field.
+  //
+  // It is not covered by your own quote signature, so verify that its signer is the request's
+  // source account before depositing.
+  //
+  // Populated on every award the gateway emits today, and the only carrier of the authorization
+  // for an award answering a quote batch, where the request you bid on had none.
+  //
+  // It may be empty on an award produced by a gateway build that predates this field. Until those
+  // are out of service, fall back to the copy inside the PaymentRequest embedded in metadata,
+  // which is present on an award answering a payment request. That fallback is TRANSITIONAL and
+  // will be removed from this contract; do not build on it as a permanent second source. An award
+  // with the authorization in neither place cannot be settled.
+  string sender_auth_json = 8;
+  // Set when the request was a quote batch: the quote_request_id the settler bid against.
+  // Correlation only; the settlement key is payment_id.
+  string quote_request_id = 9;
+  // Award emission time, for observability (e.g. award-to-broadcast latency). Settlement
+  // deadlines are NOT derived from this: they come from the absolute fulfillment_deadline
+  // embedded in the signed BidAward / PaymentRequest in metadata.
+  google.protobuf.Timestamp created_at = 10;
+}
+
+message SubscriptionUpdated {
+  // The configuration that is active starting at this sequence_id.
+  SubscriptionConfiguration configuration = 1;
+}
+
+// ==================== SETTLER REPORTING (settler -> gateway) ====================
+// Messages a settler sends to report settlement progress and declined bids.
+
+// Which settlement step a SettlementResult refers to.
+enum SettlementPhase {
+  SETTLEMENT_PHASE_UNSPECIFIED = 0;
+  SETTLEMENT_PHASE_DEPOSIT = 1;      // source-chain deposit, with the reserve that lands in the same transaction
+  SETTLEMENT_PHASE_FULFILLMENT = 2;  // destination-chain transfer to the recipient
+  SETTLEMENT_PHASE_RELEASE = 3;      // source-chain release of the reserved funds to the settler
+  SETTLEMENT_PHASE_REFUND = 4;       // post-failure remediation returning funds to the depositor
+}
+
+// Outcome of a single settlement step, from the settler's own on-chain inspection. This is the
+// result of one step, not the final result of the payment: a payment is only resolved once every
+// step it needs has been reported.
+enum SettlementStepOutcome {
+  SETTLEMENT_STEP_OUTCOME_UNSPECIFIED = 0;
+  // The step's transaction is on chain, did not fail, and is final by its chain's finality
+  // rule. For FULFILLMENT that is when the verification service has issued the release
+  // authorization: it judges finality, the settler does not. Report each step as soon as
+  // that holds rather than waiting for the payment to finish.
+  SETTLEMENT_STEP_OUTCOME_SUCCESS = 1;
+  // Definite non-execution, and the transaction cannot still land: either it was confirmed as
+  // reverted, or it was rejected before broadcast. This is the only outcome that can end a
+  // payment early.
+  //
+  // A third cause: an authorization that expired unused. On an originator fulfill the settler
+  // pays by signing a transfer authorization inside its FulfillmentAuthorization rather than
+  // broadcasting the transfer itself, so there is no transaction to confirm or reject. The
+  // non-execution is definite only once authorizationState(settler, nonce) on the destination
+  // token reads false at a FINALIZED destination block whose timestamp is at or after the
+  // authorization's validBefore. Both halves carry weight: the timestamp is what rules out a
+  // future use, and finality is what rules out a use a reorg puts back. A read at latest can be
+  // undone, and this outcome ends the payment early and cannot be corrected afterwards, so a
+  // false "unused" reports a delivered payment as failed. It is the same bar the refund service
+  // applies before it signs the refund for this case.
+  //
+  // The settler reports it as ERROR at the RELEASE phase with a specific error_json code
+  // (FULFILLMENT_DEADLINE_EXPIRED, naming the authorization in details) rather than as its own
+  // outcome, because nothing downstream distinguishes "the settler failed" from "the originator
+  // declined to deliver". No transaction ever ran, so transaction_hash and block_number are
+  // empty and chain_id is the DESTINATION chain the authorization was for, not this phase's
+  // source chain. If something ever must distinguish the two (settler reputation,
+  // originator-facing reporting, alerting that pages on one and not the other), add a dedicated
+  // outcome here and have the gateway read it BEFORE any settler emits it: a value the gateway's
+  // build does not know is inert there, and leaves the payment pending with no error.
+  SETTLEMENT_STEP_OUTCOME_ERROR = 2;
+  // Unresolved: either the transaction was broadcast and no receipt is available, so it may
+  // still land, or it was mined and the settler stopped watching before it was final. Set
+  // transaction_hash whenever the transaction was broadcast, and block_number when you had a
+  // receipt, so the gateway can resolve it from the chain. This is NOT treated as a failure -
+  // report it as INDETERMINATE rather than guessing at ERROR.
+  SETTLEMENT_STEP_OUTCOME_INDETERMINATE = 3;
+  // The step's transaction is mined with a receipt that did not fail, but its chain has not
+  // yet judged it final. Not final, and never a failure: it precedes a SUCCESS for the same
+  // phase rather than replacing it. Send it as soon as you have the receipt, with
+  // transaction_hash and block_number set. Without it the originator is shown nothing until
+  // finality: a payment that reads as pending, with no transaction to look at, for a window
+  // that on some chains is minutes long.
+  SETTLEMENT_STEP_OUTCOME_FINALIZING = 4;
+}
+
+// Coarse decline-reason bucket for BidDeclined. Deliberately lossy: `message` MUST always carry
+// the specific reason as free text, so new decline reasons can be introduced without a proto change.
+// Mirrors the reason codes in apis/decline/v1/catalog.json, which is where a reason is
+// added first. Prefer BidDeclined.reason_code, which carries the catalog code directly.
+enum DeclineReason {
+  DECLINE_REASON_UNSPECIFIED = 0;
+  DECLINE_REASON_DEADLINE_TOO_SHORT = 1;     // remaining window below the corridor's minimum fulfillment time
+  DECLINE_REASON_NO_SETTLEMENT_HORIZON = 2;  // no usable fulfillment_deadline (absent -> no refund path)
+  DECLINE_REASON_AUCTION_CLOSED = 3;         // the award or collection window had already closed when the bid was evaluated
+  DECLINE_REASON_QUOTE_INVALID = 4;          // the request the settler was asked to bid on failed schema or integrity validation
+  DECLINE_REASON_DRAINING = 5;               // settler is draining in-flight work (e.g. shutting down)
+  DECLINE_REASON_HOOK_DECLINED = 7;          // a pre-bid customization step in the settler explicitly declined (reason in `message`)
+  DECLINE_REASON_INTERNAL = 8;               // unexpected internal error in the settler while evaluating the bid
+  DECLINE_REASON_INSUFFICIENT_LIQUIDITY = 9; // settler cannot fund the payout: destination asset balance or native gas too low
+
+  // The request named a fulfillment_verifier this settler does not trust, or named none at all.
+  // The requester's fix is to reissue with the verifier the payment gateway serves from /defaults.
+  DECLINE_REASON_UNTRUSTED_VERIFIER = 10;
+
+  // The settler had not finished registering with the gateway when the bid arrived. Transient and
+  // ours: the same request offered moments later is evaluated normally.
+  DECLINE_REASON_AGENT_NOT_READY = 11;
+
+  // The settler has no inventory configured for the request's destination asset, so it does not
+  // serve this corridor at all. The fix is operator config, never funding a wallet.
+  DECLINE_REASON_UNSUPPORTED_DESTINATION_ASSET = 12;
+
+  // The settler could not produce a valid quote of its own for a well-formed request: its pricing
+  // output, its canonicalization or its pre-bid hook failed validation. Ours to fix, not the
+  // requester's, which is what separates it from QUOTE_INVALID.
+  DECLINE_REASON_QUOTE_GENERATION_FAILED = 13;
+
+  // The auction was still open, but the window left before award_deadline was below the minimum the
+  // settler needs to price a bid. Distinct from DEADLINE_TOO_SHORT, which is about the fulfillment
+  // window, and from AUCTION_CLOSED, which means the settler was simply too late.
+  DECLINE_REASON_AWARD_WINDOW_TOO_SHORT = 14;
+
+  // The auction's collection window closes later than the settler's quote can stay priced, so the
+  // quote would already be expired at the moment the originator selects. The requester shortens
+  // `quote_deadline`. The mirror image of QUOTE_WINDOW_TOO_SHORT, which is too little time before
+  // quote_deadline to price, not too much time to hold a price.
+  DECLINE_REASON_QUOTE_WINDOW_TOO_LONG = 15;
+
+  // The request names an escrow this settler does not deposit into. Its signing policy only
+  // admits its configured escrow, so a bid would win an award it cannot fund. The requester's
+  // fix is to reissue with an escrow a settler serves, such as the one /v1/defaults returns.
+  DECLINE_REASON_SETTLER_UNSUPPORTED_ESCROW = 17;
+
+  // The payment's verifier does not sign refunds for the request's escrow, or does not serve its
+  // source chain, so a deposit there could be released but never refunded. The requester's fix
+  // is the same: reissue with the escrow /v1/defaults returns.
+  DECLINE_REASON_VERIFIER_UNSUPPORTED_ESCROW = 18;
+
+  // The settler's price for the request is above its max_source_amount, so it cannot quote within
+  // the cap. The requester raises max_source_amount; this settler never quotes the same request.
+  DECLINE_REASON_MAX_SOURCE_AMOUNT_TOO_LOW = 19;
+
+  // A pre-bid step ran out of time, and quote_deadline was the limit that set its time: a later
+  // quote_deadline would have given it more. The requester reissues with a longer
+  // `quote_deadline`. Not for a step bounded by the settler's own cutoff or award_deadline, nor
+  // for one that fails at any budget. A step waiting on an upstream cannot tell slow from down, so
+  // an outage can surface here; a reissue with a longer quote_deadline then gets a different
+  // reason. The mirror image of QUOTE_WINDOW_TOO_LONG; distinct from AWARD_WINDOW_TOO_SHORT,
+  // which is about award_deadline.
+  DECLINE_REASON_QUOTE_WINDOW_TOO_SHORT = 20;
+
+  reserved 6, 16;
+  reserved "DECLINE_REASON_NOT_CONFIGURED", "DECLINE_REASON_UNSUPPORTED_ESCROW";
+}
+
+// Settler-reported outcome of one settlement step. Send one per step carried out, on success as
+// well as on failure: these reports are what let the originator see a real transaction hash and a
+// decoded reason instead of waiting for a deadline to expire on a generic error. `error_json` is
+// ERROR-only (empty otherwise): the full canonical AtumError (SETTLER_AGENT domain), produced from
+// the settler's own inspection of the chain and forwarded by the gateway without modification.
+//
+// Report only what was actually observed on-chain: an outcome reported here can end a payment
+// early, so report ERROR only for a definite non-execution and use INDETERMINATE when the
+// transaction may still land or when you stopped watching it before it was final.
+message SettlementResult {
+  string payment_id = 1;
+  string quote_request_id = 2;       // batch correlation: the quote_request_id the award carried, if any
+  SettlementPhase phase = 3;
+  SettlementStepOutcome outcome = 4;
+  // EVM/Tron tx hash or Solana signature. Send it whenever a transaction was broadcast, which is
+  // what lets the originator follow the payment on-chain. Always set on a FINALIZING outcome,
+  // which exists to carry it. Empty only when nothing was broadcast, such as a rejection before
+  // broadcast.
+  //
+  // REQUIRED on a SUCCESS for DEPOSIT and FULFILLMENT: the gateway builds the payment's receipt
+  // from those two hashes. A step whose transaction carries several payments reports that
+  // transaction's hash for each of them. A SUCCESS without one is not REJECTED for the missing
+  // hash, because the step really ran, but the payment then waits on `pending` for a manual repair.
+  string transaction_hash = 5;
+  string chain_id = 6;               // CAIP-2 (e.g. "eip155:1", "solana:...")
+  // ERROR-only: the canonical AtumError as a JSON string (SETTLER_AGENT domain); empty otherwise.
+  string error_json = 7;
+  // SettlementResultEnvelope VP over settlement_result_json: holder is the key that signed the awarded
+  // FulfillmentQuote, proof.challenge is ComputeSettlementResultHash(settlement_result_json). Empty when unsigned.
+  string presentation = 8;
+  // The block transaction_hash mined in, read off the same receipt the outcome is decided from.
+  // Send it whenever you have that receipt. Absent when you do not, and absent from a settler
+  // that predates this field.
+  optional uint64 block_number = 9;
+  // SettlementResult/v1 declaration JSON that `presentation` attests; empty when unsigned. When set, consumers
+  // MUST read acted-on fields from it and every declared scalar above MUST equal its declared value.
+  string settlement_result_json = 10;
+}
+
+// Settler authorized the originator to fulfill. Settlement has not occurred.
+// Fire-and-forget, same posture as SubmitBid. Carry the signed
+// FulfillmentAuthorization JSON verbatim.
+message FulfillmentAuthorized {
+  string payment_id = 1;
+  // Signed FulfillmentAuthorization JSON
+  // (schemas/declarations/FulfillmentAuthorization/v1/schema.json).
+  string fulfillment_authorization_json = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// Settler declined to bid on a request. Send this at EVERY branch where the settler chooses not
+// to bid, rather than staying silent: it is what lets the originator see why no quote came back,
+// and how many settlers a request actually reached.
+//
+// `message` ALWAYS carries the specific reason as free text (the enum is a coarse, lossy bucket).
+// Set the identifier the request carried, as for SubmitBid.
+message BidDeclined {
+  string payment_id = 1;
+  string quote_request_id = 2;
+  // Mirrors reason_code as the wire enum. A settler populates both.
+  DeclineReason reason = 3;
+  string message = 4;
+  // BidDeclineEnvelope VP over bid_decline_json: holder is the settler's chain signing key,
+  // proof.challenge is ComputeBidDeclineHash(bid_decline_json). Empty when unsigned.
+  string presentation = 5;
+  // The reason as a catalog code from apis/decline/v1/catalog.json, which is the single
+  // source of truth for the reason set. Readers prefer this: a reason the reader has not
+  // heard of arrives as a legible string rather than an unmapped enum number.
+  string reason_code = 6;
+  // BidDecline/v1 declaration JSON that `presentation` attests; empty when unsigned. When set, consumers MUST
+  // read acted-on fields from it and every declared scalar above except the reason enum MUST equal it; reason_code carries the declared reason.
+  string bid_decline_json = 7;
+}

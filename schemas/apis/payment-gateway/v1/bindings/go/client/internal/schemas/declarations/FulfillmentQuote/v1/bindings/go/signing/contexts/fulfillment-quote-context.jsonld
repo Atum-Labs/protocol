@@ -1,0 +1,106 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "atum": "https://schemas.atum.network/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "caip": "https://github.com/ChainAgnostic/CAIPs/",
+    "sec": "https://w3id.org/security#",
+    "dc": "http://purl.org/dc/terms/",
+    "cred": "https://www.w3.org/2018/credentials#",
+    
+    "FulfillmentQuote": {
+      "@id": "atum:FulfillmentQuote",
+      "@type": "@id"
+    },
+    
+    "fulfillment_quote": {
+      "@id": "atum:fulfillmentQuote",
+      "@type": "@id"
+    },
+
+    "version": {
+      "@id": "atum:version",
+      "@type": "xsd:string"
+    },
+
+    "source_amount": {
+      "@id": "atum:sourceAmount",
+      "@type": "xsd:string"
+    },
+    
+    "award_deadline": {
+      "@id": "atum:awardDeadline",
+      "@type": "xsd:dateTime"
+    },
+    
+    "source": {
+      "@id": "atum:source",
+      "@type": "@id"
+    },
+    
+    "destination": {
+      "@id": "atum:destination",
+      "@type": "@id"
+    },
+
+    "payment_request_json": {
+      "@id": "atum:paymentRequestJson",
+      "@type": "xsd:string"
+    },
+
+    "settler_address": {
+      "@id": "atum:settlerAddress",
+      "@type": "xsd:string"
+    },
+
+    "Asset": {
+      "@id": "atum:Asset",
+      "@type": "@id"
+    },
+
+    "account": {
+      "@id": "atum:account",
+      "@type": "xsd:string"
+    },
+
+    "VerifiableCredential": {
+      "@id": "https://www.w3.org/2018/credentials#VerifiableCredential",
+      "@type": "@id"
+    },
+
+    "proof": {
+      "@id": "sec:proof",
+      "@type": "@id",
+      "@container": "@graph"
+    },
+    "verifiableCredential": {
+      "@id": "cred:verifiableCredential",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "jws": {
+      "@id": "sec:jws"
+    },
+    "proofValue": {
+      "@id": "sec:proofValue"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "created": {
+      "@id": "dc:created",
+      "@type": "xsd:dateTime"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    }
+  }
+}

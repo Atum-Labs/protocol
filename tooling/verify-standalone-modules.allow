@@ -1,0 +1,26 @@
+# Modules that do not yet survive tooling/verify-standalone-modules.sh -- a debt register, not
+# an exemption. Matching is strict both ways: an unlisted failure fails the lane, and so does a
+# listed module that passes.
+#
+# Format: "<stage> <module-dir>". `resolve`: a consumer cannot fetch or build it. `test`: fine
+# for a consumer, but its own tests read files from outside the module directory.
+
+test contracts/evm/bindings/go/escrow-encoding
+test contracts/stellar/bindings/go/escrow-encoding
+test contracts/svm/bindings/go/escrow-encoding
+test contracts/tvm/bindings/go/escrow-encoding
+test schemas/apis/error/v1/bindings/go
+test schemas/apis/payment-gateway/v1/bindings/go/client
+test schemas/apis/veri-fill/v1/bindings/go
+test schemas/apis/x402/v1/bindings/go
+test schemas/declarations/BidAwardEnvelope/v1/bindings/go/signing
+test schemas/declarations/BidDecline/v1/bindings/go/signing
+test schemas/declarations/common/chain-address/go
+test schemas/declarations/common/ld-data-integrity/go
+test schemas/declarations/FulfillmentAuthorization/v1/bindings/go
+test schemas/declarations/FulfillmentQuote/v1/bindings/go/signing
+test schemas/declarations/PaymentRequest/v1/bindings/go
+test schemas/declarations/PaymentRequest/v1/bindings/go/sender-auth
+test schemas/declarations/PaymentRequest/v1/bindings/go/signing
+test schemas/declarations/PaymentRequestEnvelope/v1/bindings/go
+test schemas/declarations/SettlementResult/v1/bindings/go/signing

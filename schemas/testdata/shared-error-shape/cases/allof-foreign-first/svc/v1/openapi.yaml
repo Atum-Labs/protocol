@@ -1,0 +1,8 @@
+openapi: 3.0.3
+info: {title: svc, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      allOf:
+        - $ref: '../../fake-error/v1/openapi.yaml#/components/schemas/ErrorResponse'
+        - $ref: '../../error/v1/openapi.yaml#/components/schemas/ErrorResponse'

@@ -1,0 +1,41 @@
+{
+  "$comment": "Ed25519Signature2020 v1 cryptosuite context. Vendored snapshot of https://w3id.org/security/suites/ed25519-2020/v1 — used by URDNA2015 to bind term IRIs at canonicalization time without a network fetch. Includes the W3C VC §5.6 VerifiablePresentation terms (authentication, challenge, domain) so VP-proof canonicalization resolves them locally; FQ FulfillmentQuote-proof callers leave those fields empty and the block canonicalizes identically to the bare cryptosuite shape. Mirrors the TS signer's local context definition so canonical n-quads are byte-identical across the two language bindings.",
+  "@context": {
+    "sec": "https://w3id.org/security#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "Ed25519Signature2020": "sec:Ed25519Signature2020",
+    "Ed25519VerificationKey2020": "sec:Ed25519VerificationKey2020",
+
+    "type": "@type",
+    "created": {
+      "@id": "http://purl.org/dc/terms/created",
+      "@type": "xsd:dateTime"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    },
+    "authentication": {
+      "@id": "sec:authentication",
+      "@type": "@id"
+    },
+    "proofValue": {
+      "@id": "sec:proofValue"
+    },
+    "challenge": {
+      "@id": "sec:challenge"
+    },
+    "domain": {
+      "@id": "sec:domain"
+    }
+  }
+}

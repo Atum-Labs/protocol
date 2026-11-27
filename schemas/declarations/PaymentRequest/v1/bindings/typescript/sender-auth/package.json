@@ -1,0 +1,39 @@
+{
+  "name": "@atum-labs/payment-request-sender-auth",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Chain-agnostic sender_auth signing + verification for PaymentRequest (EVM Permit2 / Tron TIP-712 / Solana).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atum-labs/evm-escrow-encoding": "workspace:*",
+    "@atum-labs/tvm-escrow-encoding": "workspace:*",
+    "@atum-labs/solana-escrow-encoding": "workspace:*",
+    "@atum-labs/stellar-escrow-encoding": "workspace:*",
+    "@atum-labs/schema-declarations": "workspace:*",
+    "bs58": "^6.0.0",
+    "ethers": "^6.13.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,433 @@
+diff -ru ../evm-contracts/src/Escrow.sol ./contracts/Escrow.sol
+--- ../evm-contracts/src/Escrow.sol	2026-02-03 12:32:47
++++ ./contracts/Escrow.sol	2026-02-03 12:32:11
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+-import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
+-import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
++import {IPermit2, ISignatureTransfer} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
++import {TIP712} from "./TIP712.sol";
+ import {
+     AccessControlDefaultAdminRules
+ } from "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
+@@ -13,7 +13,7 @@
+ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+ import {ITokenConfig} from "./interfaces/ITokenConfig.sol";
+ 
+-contract Escrow is IEscrow, ITokenConfig, EIP712, AccessControlDefaultAdminRules, Pausable {
++contract Escrow is IEscrow, ITokenConfig, TIP712, AccessControlDefaultAdminRules, Pausable {
+     using SafeERC20 for IERC20;
+     using SignatureChecker for address;
+ 
+@@ -53,6 +53,9 @@
+     // Permit2 contract
+     IPermit2 public immutable i_permit2;
+ 
++    // USDT address on Tron - This is to account for the known bug in `transfer`, which always returns false
++    IERC20 public immutable i_usdt;
++
+     // Allowlist for tokens that are allowed to be used for deposits
+     mapping(IERC20 token => TokenConfig tokenConfig) private s_tokenConfigs;
+     IERC20[] private s_allowlistedTokens;
+@@ -78,12 +81,14 @@
+      *      `changeDefaultAdminDelay(newDelay)` with an appropriate value (e.g., 2 days).
+      *      The delay change is also scheduled, providing additional protection.
+      */
+-    constructor(IPermit2 permit2, address defaultAdmin)
+-        EIP712("Escrow", "3") // EIP-712 domain for Escrow contract
++    constructor(IPermit2 permit2, IERC20 usdt, address defaultAdmin)
++        TIP712("Escrow", "3") // TIP-712 domain for Escrow contract
+         AccessControlDefaultAdminRules(1, defaultAdmin)
+     {
+-        require(address(permit2) != address(0), Permit2CannotBeZeroAddress());
++        if (address(permit2) == address(0)) revert Permit2CannotBeZeroAddress();
++        if (address(usdt) == address(0)) revert USDTCannotBeZeroAddress();
+         i_permit2 = permit2;
++        i_usdt = usdt;
+     }
+ 
+     ////////////////////////
+@@ -94,7 +99,7 @@
+     function deposit(DepositInput calldata depositInput) external whenNotPaused returns (bytes32 paymentId) {
+         TokenConfig memory tokenConfig = s_tokenConfigs[IERC20(depositInput.permit.permitted.token)];
+         // Check that the token is allowlisted
+-        require(tokenConfig.tokenDecimals != 0, TokenNotAllowed(IERC20(depositInput.permit.permitted.token)));
++        if (tokenConfig.tokenDecimals == 0) revert TokenNotAllowed(IERC20(depositInput.permit.permitted.token));
+         uint256 feeAmount = determineFee(depositInput.permit.permitted.amount, tokenConfig);
+         paymentId = _deposit(depositInput, feeAmount);
+         emit Deposited(
+@@ -133,7 +138,7 @@
+             if (i == 0 || token != currentToken) {
+                 currentToken = token;
+                 currentConfig = s_tokenConfigs[token];
+-                require(currentConfig.tokenDecimals != 0, TokenNotAllowed(token));
++                if (currentConfig.tokenDecimals == 0) revert TokenNotAllowed(token);
+             }
+ 
+             uint256 feeAmount = determineFee(depositInputs[i].permit.permitted.amount, currentConfig);
+@@ -150,26 +155,25 @@
+         // Basic requirements block
+         {
+             // Check that the depositor is not the zero address
+-            require(depositInput.depositor != address(0), DepositCannotBeZeroAddress());
++            if (depositInput.depositor == address(0)) revert DepositCannotBeZeroAddress();
+             // Check that the reserver is not the zero address
+-            require(depositInput.depositWitness.reserver != address(0), ReserverCannotBeZeroAddress());
++            if (depositInput.depositWitness.reserver == address(0)) revert ReserverCannotBeZeroAddress();
+             // Check that the releaser is not the zero address
+-            require(depositInput.depositWitness.releaser != address(0), ReleaserCannotBeZeroAddress());
++            if (depositInput.depositWitness.releaser == address(0)) revert ReleaserCannotBeZeroAddress();
+             // Check that the settler is not the zero address
+-            require(depositInput.reserveWitness.settler != address(0), SettlerCannotBeZeroAddress());
++            if (depositInput.reserveWitness.settler == address(0)) revert SettlerCannotBeZeroAddress();
+             // Check that the amount is not zero
+-            require(depositInput.permit.permitted.amount > 0, DepositAmountCannotBeZero());
++            if (depositInput.permit.permitted.amount == 0) revert DepositAmountCannotBeZero();
+             // Generate a payment ID from the depositor, signature, and permit nonce
+             // This prevents griefing attacks where a malicious actor could front-run with another user's signature
+             paymentId =
+                 keccak256(abi.encode(depositInput.depositor, depositInput.depositSignature, depositInput.permit.nonce));
+             // Check that the payment ID matches the reserve witness payment ID
+-            require(
+-                paymentId == depositInput.reserveWitness.paymentId,
+-                DepositNotFound(depositInput.reserveWitness.paymentId)
+-            );
++            if (paymentId != depositInput.reserveWitness.paymentId) {
++                revert DepositNotFound(depositInput.reserveWitness.paymentId);
++            }
+             // Check if the deposit already exists (either active or completed)
+-            require(s_activeDepositHashes[paymentId] == bytes32(0), DepositAlreadyExists(paymentId));
++            if (s_activeDepositHashes[paymentId] != bytes32(0)) revert DepositAlreadyExists(paymentId);
+         }
+ 
+         // Validation and storage block
+@@ -193,7 +197,7 @@
+         // Reserve signature verification block
+         // We verify the reserve signature before the deposit signature so that the external call to permit2 happens last
+         {
+-            // Verify reserver signature using EIP-712 with minimal witness data
++            // Verify reserver signature using TIP-712 with minimal witness data
+             // The paymentId cryptographically commits to all deposit details via the depositor's signature
+             bytes32 reserveWitnessHash = keccak256(
+                 abi.encode(
+@@ -202,13 +206,10 @@
+                     depositInput.reserveWitness.settler
+                 )
+             );
+-            bytes32 reserveWitnessDigest = _hashTypedDataV4(reserveWitnessHash);
++            bytes32 reserveWitnessDigest = _hashTypedData(reserveWitnessHash);
+             // Check that recovered address is the reserver from the original deposit witness
+-            require(
+-                depositInput.depositWitness.reserver
+-                    .isValidSignatureNow(reserveWitnessDigest, depositInput.reserveSignature),
+-                InvalidSignature()
+-            );
++            if (!depositInput.depositWitness.reserver
++                    .isValidSignatureNow(reserveWitnessDigest, depositInput.reserveSignature)) revert InvalidSignature();
+         }
+ 
+         // Deposit signature verification block (permit2 transfer)
+@@ -261,15 +262,17 @@
+     /// 2. Reconstruct ActiveDeposit from witness data (including settler)
+     /// 3. Compute hash and compare against stored hash
+     /// 4. Clear storage (delete hash) before token transfer
+-    /// 5. Verify EIP-712 signature includes all witness fields
++    /// 5. Verify TIP-712 signature includes all witness fields
+     /// Storage clearing provides replay protection - subsequent calls fail.
+     function _release(ReleaseInput calldata releaseInput) private {
+         // Check if settler is set (cannot release without settler)
+-        require(releaseInput.releaseWitness.settler != address(0), NotReserved(releaseInput.releaseWitness.paymentId));
++        if (releaseInput.releaseWitness.settler == address(0)) {
++            revert NotReserved(releaseInput.releaseWitness.paymentId);
++        }
+ 
+         // Check if deposit exists
+         bytes32 activeDepositHash = s_activeDepositHashes[releaseInput.releaseWitness.paymentId];
+-        require(activeDepositHash != bytes32(0), DepositNotFound(releaseInput.releaseWitness.paymentId));
++        if (activeDepositHash == bytes32(0)) revert DepositNotFound(releaseInput.releaseWitness.paymentId);
+ 
+         // Reconstruct ActiveDeposit from witness (must include settler)
+         ActiveDeposit memory passedActiveDeposit = ActiveDeposit({
+@@ -284,15 +287,14 @@
+ 
+         // Validate witness data matches stored deposit (including settler)
+         bytes32 passedHash = keccak256(abi.encode(passedActiveDeposit));
+-        require(
+-            activeDepositHash == passedHash,
+-            InvalidWitnessValues(releaseInput.releaseWitness.paymentId, activeDepositHash, passedHash)
+-        );
++        if (activeDepositHash != passedHash) {
++            revert InvalidWitnessValues(releaseInput.releaseWitness.paymentId, activeDepositHash, passedHash);
++        }
+ 
+         // Clear storage before transfer (prevents reentrancy)
+         delete s_activeDepositHashes[releaseInput.releaseWitness.paymentId];
+ 
+-        // Verify releaser signature using EIP-712 with full witness data
++        // Verify releaser signature using TIP-712 with full witness data
+         bytes32 structHash = keccak256(
+             abi.encode(
+                 RELEASE_WITNESS_TYPE_HASH,
+@@ -307,20 +309,26 @@
+             )
+         );
+ 
+-        bytes32 digest = _hashTypedDataV4(structHash);
++        bytes32 digest = _hashTypedData(structHash);
+ 
+         // Check that recovered address is the releaser
+-        require(
+-            releaseInput.releaseWitness.releaser.isValidSignatureNow(digest, releaseInput.releaseSignature),
+-            InvalidSignature()
+-        );
++        if (!releaseInput.releaseWitness.releaser.isValidSignatureNow(digest, releaseInput.releaseSignature)) {
++            revert InvalidSignature();
++        }
+ 
+         // Transfer remaining tokens to settler
+-        IERC20(releaseInput.releaseWitness.token)
+-            .safeTransfer(
++        if (IERC20(releaseInput.releaseWitness.token) == i_usdt) {
++            i_usdt.transfer(
+                 releaseInput.releaseWitness.settler,
+                 releaseInput.releaseWitness.amount - releaseInput.releaseWitness.feeAmount
+             );
++        } else {
++            IERC20(releaseInput.releaseWitness.token)
++                .safeTransfer(
++                    releaseInput.releaseWitness.settler,
++                    releaseInput.releaseWitness.amount - releaseInput.releaseWitness.feeAmount
++                );
++        }
+ 
+         // Add fees to total fees collected for token
+         s_tokenFeeRevenue[IERC20(releaseInput.releaseWitness.token)] += releaseInput.releaseWitness.feeAmount;
+@@ -357,7 +365,7 @@
+     function _refund(RefundInput calldata refundInput) private {
+         // Check if deposit exists
+         bytes32 activeDepositHash = s_activeDepositHashes[refundInput.refundWitness.paymentId];
+-        require(activeDepositHash != bytes32(0), DepositNotFound(refundInput.refundWitness.paymentId));
++        if (activeDepositHash == bytes32(0)) revert DepositNotFound(refundInput.refundWitness.paymentId);
+ 
+         // Reconstruct ActiveDeposit from witness
+         ActiveDeposit memory passedActiveDeposit = ActiveDeposit({
+@@ -372,10 +380,9 @@
+ 
+         // Validate witness data matches stored deposit
+         bytes32 passedHash = keccak256(abi.encode(passedActiveDeposit));
+-        require(
+-            activeDepositHash == passedHash,
+-            InvalidWitnessValues(refundInput.refundWitness.paymentId, activeDepositHash, passedHash)
+-        );
++        if (activeDepositHash != passedHash) {
++            revert InvalidWitnessValues(refundInput.refundWitness.paymentId, activeDepositHash, passedHash);
++        }
+ 
+         // Clear storage before transfer (prevents reentrancy)
+         delete s_activeDepositHashes[refundInput.refundWitness.paymentId];
+@@ -395,17 +402,20 @@
+             )
+         );
+ 
+-        bytes32 digest = _hashTypedDataV4(structHash);
++        bytes32 digest = _hashTypedData(structHash);
+ 
+         // Check that recovered address is the releaser
+-        require(
+-            refundInput.refundWitness.releaser.isValidSignatureNow(digest, refundInput.refundSignature),
+-            InvalidSignature()
+-        );
++        if (!refundInput.refundWitness.releaser.isValidSignatureNow(digest, refundInput.refundSignature)) {
++            revert InvalidSignature();
++        }
+ 
+         // Transfer tokens back to depositor
+-        IERC20(refundInput.refundWitness.token)
+-            .safeTransfer(refundInput.refundWitness.depositor, refundInput.refundWitness.amount);
++        if (IERC20(refundInput.refundWitness.token) == i_usdt) {
++            i_usdt.transfer(refundInput.refundWitness.depositor, refundInput.refundWitness.amount);
++        } else {
++            IERC20(refundInput.refundWitness.token)
++                .safeTransfer(refundInput.refundWitness.depositor, refundInput.refundWitness.amount);
++        }
+     }
+ 
+     /// @inheritdoc ITokenConfig
+@@ -475,9 +485,7 @@
+         }
+ 
+         // Ensure fee never exceeds deposit amount
+-        if (feeAmount > amount) {
+-            revert ITokenConfig.FeeExceedsDepositAmount(amount, feeAmount);
+-        }
++        if (feeAmount > amount) revert ITokenConfig.FeeExceedsDepositAmount(amount, feeAmount);
+     }
+ 
+     /// @inheritdoc IEscrow
+@@ -517,10 +525,10 @@
+     }
+ 
+     function _allowToken(IERC20 token, uint8 decimals) private {
+-        require(address(token) != address(0), TokenCannotBeZeroAddress());
+-        require(decimals != 0, TokenDecimalsCannotBeZero());
+-        require(decimals <= MAX_TOKEN_DECIMALS, TokenDecimalsExceedMaximum(decimals, MAX_TOKEN_DECIMALS));
+-        require(!_isTokenAllowed(token), TokenAlreadyAllowed(token));
++        if (address(token) == address(0)) revert TokenCannotBeZeroAddress();
++        if (decimals == 0) revert TokenDecimalsCannotBeZero();
++        if (decimals > MAX_TOKEN_DECIMALS) revert TokenDecimalsExceedMaximum(decimals, MAX_TOKEN_DECIMALS);
++        if (_isTokenAllowed(token)) revert TokenAlreadyAllowed(token);
+ 
+         // Initialize with zero fees (fees configured separately via setTokenFeeConfig)
+         s_tokenConfigs[token] =
+@@ -539,7 +547,7 @@
+     }
+ 
+     function _setTokenFeeConfig(IERC20 token, uint88 feePercentage, uint80 minFee, uint80 maxFee) private {
+-        require(_isTokenAllowed(token), TokenNotAllowed(token));
++        if (!_isTokenAllowed(token)) revert TokenNotAllowed(token);
+ 
+         TokenConfig storage config = s_tokenConfigs[token];
+         uint8 tokenDecimals = config.tokenDecimals;
+@@ -552,7 +560,7 @@
+ 
+         // Validate fee bounds
+         if (minFee > 0 && maxFee > 0) {
+-            require(minFee <= maxFee, MinFeeCannotBeGreaterThanMaxFee());
++            if (minFee > maxFee) revert MinFeeCannotBeGreaterThanMaxFee();
+         }
+         if (maxFee > 0 && feePercentage == 0) {
+             revert FeePercentageCannotBeZeroWhenMaxFeeIsSet();
+@@ -594,7 +602,7 @@
+ 
+     /// @inheritdoc ITokenConfig
+     function clearTokenFeeConfig(IERC20 token) external onlyRole(TOKEN_CONFIG_ROLE) {
+-        require(_isTokenAllowed(token), TokenNotAllowed(token));
++        if (!_isTokenAllowed(token)) revert TokenNotAllowed(token);
+ 
+         // Clear all fee parameters (preserve decimals)
+         TokenConfig storage config = s_tokenConfigs[token];
+@@ -607,7 +615,7 @@
+ 
+     /// @inheritdoc ITokenConfig
+     function disallowToken(IERC20 token) external onlyRole(TOKEN_CONFIG_ROLE) {
+-        require(_isTokenAllowed(token), CouldNotDisallowToken(token));
++        if (!_isTokenAllowed(token)) revert CouldNotDisallowToken(token);
+ 
+         delete s_tokenConfigs[token];
+ 
+@@ -629,14 +637,18 @@
+ 
+     /// @inheritdoc ITokenConfig
+     function withdrawFeeRevenue(IERC20 token, address recipient) external onlyRole(TREASURER_ROLE) {
+-        require(recipient != address(0), RecipientCannotBeZeroAddress());
+-        require(recipient != address(this), RecipientCannotBeSelf());
++        if (recipient == address(0)) revert RecipientCannotBeZeroAddress();
++        if (recipient == address(this)) revert RecipientCannotBeSelf();
+ 
+         uint256 feeRevenue = s_tokenFeeRevenue[token];
+-        require(feeRevenue > 0, NoFeesToWithdraw(token));
++        if (feeRevenue == 0) revert NoFeesToWithdraw(token);
+ 
+         s_tokenFeeRevenue[token] = 0;
+-        token.safeTransfer(recipient, feeRevenue);
++        if (token == i_usdt) {
++            i_usdt.transfer(recipient, feeRevenue);
++        } else {
++            token.safeTransfer(recipient, feeRevenue);
++        }
+         emit FeeRevenueWithdrawn(token, recipient, feeRevenue);
+     }
+ 
+diff -ru ../evm-contracts/src/FulfillmentProxy.sol ./contracts/FulfillmentProxy.sol
+--- ../evm-contracts/src/FulfillmentProxy.sol	2026-02-03 12:32:47
++++ ./contracts/FulfillmentProxy.sol	2026-02-03 12:32:11
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity 0.8.27;
++pragma solidity 0.8.23;
+ 
+ import {IFulfillmentProxy} from "./interfaces/IFulfillmentProxy.sol";
+ import {
+@@ -37,9 +37,11 @@
+ 
+     /// @inheritdoc IFulfillmentProxy
+     function strictFulfill(Fulfillment calldata params, uint256 deadline) external whenNotPaused {
+-        require(block.timestamp <= deadline, DeadlineExpired(deadline, block.timestamp));
++        if (block.timestamp > deadline) revert DeadlineExpired(deadline, block.timestamp);
+         bytes32 paymentIdSenderHash = keccak256(abi.encode(params.paymentId, msg.sender));
+-        require(!s_strictlyFulfilled[paymentIdSenderHash], AlreadyFulfilled(params.paymentId, msg.sender));
++        if (s_strictlyFulfilled[paymentIdSenderHash]) {
++            revert AlreadyFulfilled(params.paymentId, msg.sender);
++        }
+         s_strictlyFulfilled[paymentIdSenderHash] = true;
+         fulfill(params);
+     }
+Only in ./contracts: ITIP712.sol
+Only in ./contracts: Migrations.sol
+Only in ./contracts: TIP712.sol
+diff -ru ../evm-contracts/src/interfaces/IEscrow.sol ./contracts/interfaces/IEscrow.sol
+--- ../evm-contracts/src/interfaces/IEscrow.sol	2026-02-03 12:32:47
++++ ./contracts/interfaces/IEscrow.sol	2026-02-03 12:32:11
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: MIT
+ pragma solidity ^0.8.0; // @aderyn-ignore
+ 
+-import {ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
++import {ISignatureTransfer} from "@alexroan/permit2-tron/contracts/interfaces/IPermit2.sol";
+ 
+ /**
+  * @title IEscrow
+@@ -181,7 +181,7 @@
+ 
+     /// @notice Emitted when many new deposits are created
+     /// @dev Arrays are non-indexed to preserve data (indexed arrays are hashed and unreadable)
+-    /// @param paymentIds The payment IDs
++    /// @param paymentIds The payment ids
+     /// @param depositWitnesses The deposit witnesses
+     /// @param reserveWitnesses The reserve witnesses
+     /// @param feeAmounts The fee amounts for each deposit
+@@ -228,6 +228,9 @@
+     /// @notice Permit2 cannot be zero
+     error Permit2CannotBeZeroAddress();
+ 
++    /// @notice USDT cannot be zero
++    error USDTCannotBeZeroAddress();
++
+     /// @notice Depositor address cannot be zero
+     error DepositCannotBeZeroAddress();
+ 
+@@ -262,14 +265,14 @@
+     /// @dev The returned paymentId is generated as keccak256(depositor, signature, permit.nonce) and must be used for all subsequent operations.
+     /// This function requires both deposit and reserve signatures to set the settler immediately upon deposit.
+     /// @param depositInput Contains the permit, depositor, deposit witness, deposit signature, reserve witness, and reserve signature
+-    /// @return paymentId Unique identifier for this payment (keccak256(depositor, signature, permit.nonce)) - use for release/refund
++    /// @return paymentId Unique payment identifier (keccak256(depositor, signature, permit.nonce)) - use for release/refund
+     function deposit(DepositInput calldata depositInput) external returns (bytes32 paymentId);
+ 
+     /// @notice Deposit many tokens into the escrow, each with their own permit, depositor, deposit witness, deposit signature, reserve witness, and reserve signature
+     /// @dev Processes multiple deposits in a single transaction. Each deposit requires both deposit and reserve signatures
+     /// to set the settler immediately. Each deposit generates a unique paymentId as keccak256(depositor, signature, permit.nonce).
+     /// @param depositInputs Contains the permit, depositor, deposit witness, deposit signature, reserve witness, and reserve signature for each deposit
+-    /// @return paymentIds Contains the payment ID for each deposit
++    /// @return paymentIds Contains the payment id for each deposit
+     function depositMany(DepositInput[] calldata depositInputs) external returns (bytes32[] memory paymentIds);
+ 
+     /// @notice Release the deposit to the settler (requires settler to be set during deposit())
+diff -ru ../evm-contracts/src/interfaces/IFulfillmentProxy.sol ./contracts/interfaces/IFulfillmentProxy.sol
+--- ../evm-contracts/src/interfaces/IFulfillmentProxy.sol	2026-02-03 12:32:47
++++ ./contracts/interfaces/IFulfillmentProxy.sol	2026-02-03 12:32:11
+@@ -42,8 +42,8 @@
+     event FulfilledMany(Fulfillment[] fulfillments, address indexed settler, uint256 timestamp);
+ 
+     /// @notice Struct for the parameters of the fulfill function
+-    /// @param paymentId The payment ID - For EVM chains this will be the paymentId from the Escrow contract.
+-    /// For other chains this can be any unique identifier that can be used to reference the origin of the deposit on source chain.
++    /// @param paymentId The payment identifier - For EVM chains this will be the paymentId from the Escrow contract.
++    /// For other chains this can be any unique identifier that can be used to reference the origin of the payment on source chain.
+     /// @param to The recipient address
+     /// @param token The token address to transfer
+     /// @param amount The amount of tokens to transfer
+Only in ./contracts: test

@@ -1,0 +1,100 @@
+{
+  "name": "@atum-labs/x402-atum-escrow",
+  "version": "0.6.0",
+  "description": "The atum-escrow x402 scheme as installable mechanisms: client (payer), server (resource-server 402 builder), facilitator (keyless relay to Atum), and a payment-identifier-aware fetch wrapper.",
+  "author": "Atum Labs, Inc.",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/Atum-Labs/protocol/tree/main/schemas/apis/x402/v1/bindings/x402-atum-escrow#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Atum-Labs/protocol.git",
+    "directory": "schemas/apis/x402/v1/bindings/x402-atum-escrow"
+  },
+  "bugs": {
+    "url": "https://github.com/Atum-Labs/protocol/issues"
+  },
+  "keywords": [
+    "atum",
+    "x402",
+    "atum-escrow",
+    "payment-scheme",
+    "cross-chain",
+    "stablecoin",
+    "escrow",
+    "permit2"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./facilitator": {
+      "types": "./dist/facilitator.d.ts",
+      "default": "./dist/facilitator.js"
+    },
+    "./fetch": {
+      "types": "./dist/fetch.d.ts",
+      "default": "./dist/fetch.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-NOTICES.txt"
+  ],
+  "scripts": {
+    "prebuild:deps": "node -e \"if(!require('fs').existsSync('../../../../../../pnpm-workspace.yaml')){console.error('protocol workspace not found at ../../../../../../pnpm-workspace.yaml. Is this checked out inside the protocol monorepo?');process.exit(1)}\"",
+    "build:deps": "pnpm --filter \"@atum-labs/x402-atum-escrow^...\" run build",
+    "build": "tsup && node scripts/stamp-entry-headers.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
+    "test": "pnpm run typecheck:tests && vitest run",
+    "clean": "rm -rf dist && pnpm --filter \"@atum-labs/x402-atum-escrow^...\" run clean",
+    "check:publishable": "node scripts/check-publishable.mjs",
+    "gen:notices": "node scripts/gen-third-party-notices.mjs",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run build && pnpm run check:publishable"
+  },
+  "dependencies": {
+    "@x402/core": "2.17.0",
+    "@x402/fetch": "2.17.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "bs58": "^6.0.0",
+    "ethers": "^6.13.0",
+    "tweetnacl": "^1.0.3",
+    "zod": "^3.25.76",
+    "zod-validation-error": "^3.4.1"
+  },
+  "devDependencies": {
+    "@atum-labs/atum-escrow": "workspace:*",
+    "@atum-labs/evm-escrow-encoding": "workspace:*",
+    "@atum-labs/payment-request-sender-auth": "workspace:*",
+    "@atum-labs/payment-request-token-approval": "workspace:*",
+    "@atum-labs/publish-guard": "workspace:*",
+    "@atum-labs/schema-declarations": "workspace:*",
+    "@atum-labs/solana-escrow-encoding": "workspace:*",
+    "@atum-labs/tvm-escrow-encoding": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@x402/express": "2.17.0",
+    "@x402/extensions": "2.17.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.11"
+  }
+}

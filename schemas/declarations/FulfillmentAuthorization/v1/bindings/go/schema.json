@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/FulfillmentAuthorization/v1/schema.json",
+  "title": "FulfillmentAuthorization",
+  "description": "Authorization for an originator to fulfill a payment request. The settler produces this declaration after authorizeFulfillment when the payment request's fulfill executor is \"originator\". A settler fulfill does not produce it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scheme", "authorization", "fulfillment_quote_json", "evidence"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver-shaped declaration version (MAJOR.MINOR). The major component is locked to this schema's parent directory (v1 → major must be 1).",
+      "pattern": "^1\\.[0-9]+$",
+      "examples": ["1.0"]
+    },
+    "scheme": {
+      "type": "string",
+      "description": "Authorization scheme: EIP-3009 for an EVM destination, SOROBAN-AUTH for a Stellar one.",
+      "enum": ["EIP-3009", "SOROBAN-AUTH"]
+    },
+    "authorization": {
+      "description": "Signed authorization. For scheme EIP-3009, message_prehash is the EIP-712 TransferWithAuthorization typed data as a JSON string ({domain, types, primaryType, message}, with uint256 values as decimal strings), message is its EIP-712 digest, signature is the settler's 65-byte signature over that digest, and payload is absent. message.validBefore is the payment request's fulfillment_deadline in whole unix seconds, and message.nonce is the fulfillment quote hash. For scheme SOROBAN-AUTH the Soroban fulfillment proxy treats the authorization hash as 32 opaque bytes; the signed form is not defined here yet and the bindings do not validate this scheme.",
+      "$ref": "#/$defs/SignedMessage"
+    },
+    "fulfillment_quote_json": {
+      "type": "string",
+      "description": "Raw JSON of the fulfillment quote (schemas/declarations/FulfillmentQuote/v1/schema.json), including proof metadata so its canonical quote hash can be computed."
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Pointer to the on-chain evidence of the fulfillment authorization.",
+      "additionalProperties": false,
+      "required": ["transaction_id", "log_index"],
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Chain transaction identifier. EVM transactions are 0x-prefixed hex, Tron and Stellar transactions are hex without that prefix, and Solana transactions are base58."
+        },
+        "log_index": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "$defs": {
+    "SignedMessage": {
+      "type": "object",
+      "description": "A message that has been cryptographically signed to prove authorization. The signature proves you control the wallet that's sending funds.",
+      "required": [
+        "message",
+        "signature"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The data that was signed. Format depends on the blockchain:\n- EVM: Hex-encoded message hash (with 0x prefix)\n- Solana: Hex-encoded message hash (with 0x prefix)\n- Tron: Hex-encoded message hash (possibly without 0x prefix)"
+        },
+        "message_prehash": {
+          "type": "string",
+          "description": "Optional: If 'message' contains a hash, this field contains the original data before it was hashed. Useful for verification and debugging."
+        },
+        "signature": {
+          "type": "string",
+          "description": "The cryptographic signature proving you authorized this message. Hex-encoded with a 0x prefix on every supported chain. The signer's own public key is base58 on Solana, but the signature itself is not."
+        },
+        "payload": {
+          "type": "object",
+          "description": "Optional chain-specific payload containing additional signing context (e.g., delegate_signer for Solana). Preserved through the pipeline for downstream consumers.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

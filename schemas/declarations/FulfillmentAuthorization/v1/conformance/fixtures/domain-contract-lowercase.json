@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "scheme": "EIP-3009",
+  "authorization": {
+    "message": "0xc8e9dc59ed28a58882942c92c4b713585152e41c75a4a56a258eb753b7eab621",
+    "message_prehash": "{\"domain\":{\"name\":\"USDC\",\"version\":\"2\",\"chainId\":84532,\"verifyingContract\":\"0x036cbd53842c5426634e7929541ec2318f3dcf7e\"},\"types\":{\"TransferWithAuthorization\":[{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\"},{\"name\":\"validAfter\",\"type\":\"uint256\"},{\"name\":\"validBefore\",\"type\":\"uint256\"},{\"name\":\"nonce\",\"type\":\"bytes32\"}]},\"primaryType\":\"TransferWithAuthorization\",\"message\":{\"from\":\"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\",\"to\":\"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\",\"value\":\"100000\",\"validAfter\":\"0\",\"validBefore\":\"1893542400\",\"nonce\":\"0xf4583e1f3a3111bb3d58a611e40e0b9fd41ca6df158117e5d2613ce91a72fcb7\"}}",
+    "signature": "0xbeabfd2cd7cbd74e83ac2e058dc2846f71480f58959c34095fb92867d4ff748f434f51909a6a937533211f5b4d8e7acb22b274559943de5399c56a70f73275ed1b"
+  },
+  "fulfillment_quote_json": "{\"version\":\"1.0\",\"source_amount\":\"100100\",\"award_deadline\":\"2030-01-01T00:00:00Z\",\"source\":{\"id\":\"eip155:421614/erc20:0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d\",\"account\":\"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\"},\"destination\":{\"id\":\"eip155:84532/erc20:0x036CbD53842c5426634e7929541eC2318f3dCF7e\",\"account\":\"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\"},\"settler_address\":\"0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266\",\"payment_request_json\":\"{\\\"version\\\":\\\"1.0\\\",\\\"request_id\\\":\\\"fa-conformance-1\\\",\\\"source\\\":{\\\"asset_identifier\\\":\\\"eip155:421614/erc20:0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d\\\",\\\"account\\\":\\\"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\\\"},\\\"destination\\\":[{\\\"asset_identifier\\\":\\\"eip155:84532/erc20:0x036CbD53842c5426634e7929541eC2318f3dCF7e\\\",\\\"account\\\":\\\"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC\\\"}],\\\"fulfillment_amount\\\":\\\"100000\\\",\\\"quote_deadline\\\":\\\"2030-01-01T00:00:00Z\\\",\\\"fulfillment_deadline\\\":\\\"2030-01-02T00:00:00.335Z\\\",\\\"fulfillment_verifier\\\":{\\\"account\\\":\\\"0x0000000000000000000000000000000000000004\\\",\\\"endpoint\\\":\\\"https://veri-fill.example.com\\\"},\\\"escrow_contract_address\\\":\\\"0x0000000000000000000000000000000000000003\\\",\\\"executor\\\":{\\\"deposit\\\":\\\"settler\\\",\\\"reserve\\\":\\\"settler\\\",\\\"fulfill\\\":\\\"originator\\\"}}\",\"@context\":[\"https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld\",\"https://w3id.org/security/suites/secp256k1recovery-2020/v2\"],\"verifiableCredential\":[],\"proof\":{\"type\":\"EcdsaSecp256k1RecoverySignature2020\",\"created\":\"2029-12-31T23:00:00.000Z\",\"verificationMethod\":\"did:pkh:eip155:84532:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266#blockchainAccountId\",\"proofPurpose\":\"assertionMethod\",\"jws\":\"eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..VQKzOeEgntLNoOCjoLXn62I4Xtu8F_YivDlHA39UcYgb-kin-PNWRCJ5yuDU0gMqVF0fSX0eHfrPlzK9B39Frhs\"}}",
+  "evidence": {
+    "transaction_id": "0xabababababababababababababababababababababababababababababababab",
+    "log_index": 7
+  },
+  "@context": [
+    "https://schemas.atum.network/declarations/FulfillmentAuthorization/v1/context.jsonld",
+    "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+  ],
+  "type": "FulfillmentAuthorization",
+  "proof": {
+    "type": "EcdsaSecp256k1RecoverySignature2020",
+    "created": "2029-12-31T23:00:00.000Z",
+    "verificationMethod": "did:pkh:eip155:84532:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266#blockchainAccountId",
+    "proofPurpose": "assertionMethod",
+    "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..K-W_-KAKvUNLdjAbySo1HNRUT2eoeHLZOVhre7UCab1-bm0svO72fm_Uwz-b8ICNY8oC1vn94MOcjbRkcUPTaBs"
+  }
+}

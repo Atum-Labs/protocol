@@ -1,0 +1,233 @@
+# Common OpenAPI Components
+# This file contains shared schemas used across multiple Atum APIs
+openapi: 3.0.3
+info:
+  title: Atum Common Components
+  description: Shared schemas and components for Atum APIs
+  version: 1.0.0
+
+components:
+  schemas:
+    AtumError:
+      type: object
+      description: Standardized error structure for all Atum services
+      required:
+        - code
+        - message
+        - timestamp
+        - request_id
+      properties:
+        code:
+          type: string
+          description: >-
+            Internal, machine-readable error code in SCREAMING_SNAKE_CASE. Projected to a
+            public ErrorResponse.code through catalog.json, so this value is never sent
+            to an integrator and the two lists below are different vocabularies.
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          examples:
+            - TX_REVERTED
+            - IDEMPOTENCY_TERMS_MISMATCH
+            - CHAIN_NOT_SUPPORTED
+            - INVALID_REQUEST
+            - QUOTE_DEADLINE_EXPIRED
+            - COUNTERPARTY_TIMEOUT
+            - WALLET_KMS_ERROR
+        message:
+          type: string
+          description: Human-readable error message
+          maxLength: 500
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: "2024-03-15T10:35:00Z"
+        request_id:
+          type: string
+          description: Distributed request ID for debugging across services
+          example: "req_123456789"
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Absent when the error is
+            not about a specific payment.
+          example: "0xc7108e200d11580e7e75185991084b42a535af588ba8267cd0d1e7df089e5c9c"
+        domain:
+          type: string
+          description: Service domain where the error originated
+          enum:
+            - PAYMENT_GATEWAY
+            - SETTLER_GATEWAY
+            - SETTLER_AGENT
+            - WALLET_ORCHESTRATION
+            - VERIFICATION_SERVICE
+            - BLOCKCHAIN
+            - EXTERNAL_SERVICE
+            - IDENTITY_SIGNING
+            - AUTHORIZATION_SERVICE
+            - COUNTERPARTY_GATEWAY
+          example: "SETTLER_GATEWAY"
+        details:
+          type: object
+          description: Additional context-specific error details
+          additionalProperties: true
+        blockchain_context:
+          $ref: '#/components/schemas/BlockchainContext'
+
+    ErrorResponse:
+      type: object
+      description: >-
+        Safe, outward-facing error. The ONLY error shape returned to
+        integrators. Derived from an internal AtumError through the error
+        catalog. Never contains the internal message, details, or
+        blockchain_context.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: >-
+            Public, machine-readable error category in SCREAMING_SNAKE_CASE.
+            Many internal codes may map to one public code.
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          examples:
+            - SETTLEMENT_FAILED
+            - NO_QUOTES_RECEIVED
+            - SERVICE_BUSY
+            - INTERNAL_ERROR
+        message:
+          type: string
+          description: Curated, safe, human-readable message shown to the user
+          maxLength: 500
+          example: "We couldn't complete the settlement for this payment."
+        request_id:
+          type: string
+          description: >-
+            Correlation id the user quotes to support to locate the internal
+            error record
+          example: "req_123456789"
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Reconcile with the payment
+            status endpoint before retrying, because a failed settlement leaves the
+            on-chain outcome unguaranteed. Absent when the error is not about a
+            specific payment, which is every error raised before a payment exists.
+          example: "0xc7108e200d11580e7e75185991084b42a535af588ba8267cd0d1e7df089e5c9c"
+        docs_url:
+          type: string
+          format: uri
+          description: Link to the documentation page for this public code
+          example: "https://docs.atum.xyz/errors#settlement-failed"
+        domain:
+          type: string
+          description: Originating service domain, sourced from the AtumError
+          enum:
+            - PAYMENT_GATEWAY
+            - SETTLER_GATEWAY
+            - SETTLER_AGENT
+            - WALLET_ORCHESTRATION
+            - VERIFICATION_SERVICE
+            - BLOCKCHAIN
+            - EXTERNAL_SERVICE
+            - IDENTITY_SIGNING
+            - AUTHORIZATION_SERVICE
+            - COUNTERPARTY_GATEWAY
+          example: "SETTLER_AGENT"
+        retry_classification:
+          type: string
+          description: >-
+            What the caller should do next. Optional: absent means the condition has
+            not been classified, which is not the same as safe to retry.
+
+            Which retry this is about: re-sending the same `request_id` is an
+            idempotent replay that returns the stored outcome, so it is always safe.
+            This value is about the step that is NOT safe by default, submitting a new
+            `request_id`, which creates a new payment.
+
+            RETRY_AFTER_DELAY: no payment was created and the condition is transient, so
+            re-send the same `request_id` after a delay.
+            RECONCILE_THEN_DECIDE: the outcome is not known. Check the payment before
+            issuing a new `request_id`, or you may pay twice. Only meaningful alongside
+            a `payment_id`, since you cannot reconcile a payment you cannot name.
+            RETRY_WITH_NEW_IDENTIFIER: terminal, and no settlement was ever awarded for
+            it, so a fresh `request_id` is safe to submit.
+            POLL_FOR_COMPLETION: the operation is still running. Poll its status. Do not
+            submit a new `request_id` until it is terminal, and do not re-send this one
+            expecting a different answer.
+            NOT_RETRYABLE_FIX_REQUEST: the request itself is wrong. Fix it and re-send.
+            Whether the same `request_id` may be reused is answered by
+            `request_id_reusable`, not by this value: an unserved corridor is also a
+            fix-the-request condition and it does spend the id.
+            ALREADY_DONE: the operation had already completed. Read its current state
+            rather than submitting anything.
+            CONTACT_SUPPORT: not resolvable by the caller. Quote `request_id`.
+
+            Also present on an asynchronous payment failure, which is reported as the
+            `error` object on the payment status endpoint. That object carries this
+            field and `docs_url` alongside the code and message.
+          enum:
+            - RETRY_AFTER_DELAY
+            - RECONCILE_THEN_DECIDE
+            - RETRY_WITH_NEW_IDENTIFIER
+            - POLL_FOR_COMPLETION
+            - NOT_RETRYABLE_FIX_REQUEST
+            - ALREADY_DONE
+            - CONTACT_SUPPORT
+          example: "RECONCILE_THEN_DECIDE"
+
+        request_id_reusable:
+          type: boolean
+          description: >-
+            Whether the caller may re-send this same `request_id`.
+
+            True means no payment was created for it, so the id is still free and
+            re-sending the corrected request under it is the normal path.
+
+            False means a payment exists for this id. It is spent, and re-sending it
+            only replays this same outcome, so a further attempt needs a new id.
+
+            Absent means undetermined. Treat it as false, because assuming an id is
+            free when it is not is the direction that wastes an attempt.
+
+            This is deliberately separate from `retry_classification`, which answers
+            what the caller must change. The two come apart: a malformed body and an
+            unserved corridor are both NOT_RETRYABLE_FIX_REQUEST, and only the first
+            leaves the id reusable.
+          example: false
+
+    BlockchainContext:
+      type: object
+      description: Blockchain-specific error context
+      properties:
+        chain_id:
+          type: string
+          description: CAIP-2 chain identifier
+          pattern: "^[a-z0-9]+:[a-zA-Z0-9_-]+$"
+          example: "eip155:1"
+        transaction_hash:
+          type: string
+          description: Failed transaction hash
+          pattern: "^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$"
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        block_number:
+          type: integer
+          description: Block number where error occurred
+          example: 12345678
+        contract_address:
+          type: string
+          description: Contract that caused the error
+          pattern: "^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$"
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        revert_reason:
+          type: string
+          description: Smart contract revert reason
+          example: "Insufficient balance"
+        gas_used:
+          type: string
+          description: Gas consumed before failure
+          example: "21000"
+        estimated_gas_needed:
+          type: string
+          description: Estimated gas needed for success
+          example: "50000"

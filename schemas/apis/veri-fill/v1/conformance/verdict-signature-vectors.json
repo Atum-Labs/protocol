@@ -1,0 +1,374 @@
+{
+  "_comment": "Signature vectors for verdicts. Every signature here was produced by a signer independent of the bindings in this repository, named in generatedWith, under the fixed TEST keys in keys, which are public and must never sign anything else. signingInputHex is what the scheme signs: the EIP-712 digest for eip712-secp256k1, the TRON-prefixed keccak256 of the preimage for tip191-secp256k1, and the preimage bytes themselves for ed25519-raw. typedData is the payload a typed-data signer receives for an eip712-secp256k1 verdict. signer is the address GET /v1/public-keys/{chain_id} would serve for that key. bindings/go/verdict_signature_vectors_test.go asserts every vector, and any other implementation that signs or verifies a verdict MUST assert against this same file.",
+  "generatedWith": {
+    "runtime": "node v26.9.0",
+    "eip712": "ethers 6.15.0: Wallet.signTypedData for signature, TypedDataEncoder.hash for signingInputHex, TypedDataEncoder.encodeType for the type strings",
+    "tip191": "tronweb 6.0.4: Trx.signMessageV2 for signature, utils.message.hashMessage for signingInputHex",
+    "ed25519": "node v26.9.0 node:crypto sign(null, preimage, key) over the preimage bytes"
+  },
+  "keys": {
+    "secp256k1PrivateKey": "0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
+    "ed25519Seed": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+  },
+  "eip712": {
+    "domainType": "EIP712Domain(string name,string version,uint256 chainId)",
+    "domainName": "Atum Verdict",
+    "domainVersion": "1",
+    "fulfillmentType": "FulfillmentVerdict(string domain,bytes32 paymentId,string chainId,string outcome,uint256 blockNumber,bytes32 blockHash,string finalityPolicy,bytes32 transactionHash,address fulfiller)",
+    "depositType": "DepositVerdict(string domain,bytes32 paymentId,string chainId,address escrowAddress,string outcome,uint256 blockNumber,bytes32 blockHash,string finalityPolicy,bytes32 transactionHash)"
+  },
+  "vectors": [
+    {
+      "name": "eip155/fulfillment/delivered",
+      "kind": "fulfillment",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "eip155:42161",
+        "outcome": "delivered",
+        "block_number": "21500000",
+        "block_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        "finality_policy": "confirmations:12",
+        "transaction_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "fulfiller": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4",
+        "signature_scheme": "eip712-secp256k1",
+        "signature": "f6674815ff7041b12891bcc6362236d07c9a8392a7ba6a249b82b30112ce4cb85f60efd4c2a1158890c0e1841d54725f5b3c37edc14f898e9bb47e13b382c3331b"
+      },
+      "typedData": {
+        "domain": {
+          "name": "Atum Verdict",
+          "version": "1",
+          "chainId": "42161"
+        },
+        "primaryType": "FulfillmentVerdict",
+        "types": {
+          "EIP712Domain": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "version",
+              "type": "string"
+            },
+            {
+              "name": "chainId",
+              "type": "uint256"
+            }
+          ],
+          "FulfillmentVerdict": [
+            {
+              "name": "domain",
+              "type": "string"
+            },
+            {
+              "name": "paymentId",
+              "type": "bytes32"
+            },
+            {
+              "name": "chainId",
+              "type": "string"
+            },
+            {
+              "name": "outcome",
+              "type": "string"
+            },
+            {
+              "name": "blockNumber",
+              "type": "uint256"
+            },
+            {
+              "name": "blockHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "finalityPolicy",
+              "type": "string"
+            },
+            {
+              "name": "transactionHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "fulfiller",
+              "type": "address"
+            }
+          ]
+        },
+        "message": {
+          "domain": "did:web:atum.network",
+          "paymentId": "0x1234567890123456789012345678901234567890123456789012345678901234",
+          "chainId": "eip155:42161",
+          "outcome": "delivered",
+          "blockNumber": "21500000",
+          "blockHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+          "finalityPolicy": "confirmations:12",
+          "transactionHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "fulfiller": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4"
+        }
+      },
+      "signingInputHex": "9a44f4c44bdae14dff7be66edac5a18749a0d56345175c4d25bfff458fe9ebbc",
+      "signer": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23"
+    },
+    {
+      "name": "eip155/fulfillment/not-delivered",
+      "kind": "fulfillment",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "eip155:42161",
+        "outcome": "not_delivered",
+        "block_number": "21500123",
+        "block_hash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+        "finality_policy": "confirmations:12",
+        "transaction_hash": "",
+        "fulfiller": "",
+        "signature_scheme": "eip712-secp256k1",
+        "signature": "dfa054e41da3a9a2f2b0ee235e8eab4105bc717935a5d4a2cc8e1c680b41c92062022a83f92359b97aab69c76464f9044715d5c6b1f4ff539c839f793969a8341b"
+      },
+      "typedData": {
+        "domain": {
+          "name": "Atum Verdict",
+          "version": "1",
+          "chainId": "42161"
+        },
+        "primaryType": "FulfillmentVerdict",
+        "types": {
+          "EIP712Domain": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "version",
+              "type": "string"
+            },
+            {
+              "name": "chainId",
+              "type": "uint256"
+            }
+          ],
+          "FulfillmentVerdict": [
+            {
+              "name": "domain",
+              "type": "string"
+            },
+            {
+              "name": "paymentId",
+              "type": "bytes32"
+            },
+            {
+              "name": "chainId",
+              "type": "string"
+            },
+            {
+              "name": "outcome",
+              "type": "string"
+            },
+            {
+              "name": "blockNumber",
+              "type": "uint256"
+            },
+            {
+              "name": "blockHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "finalityPolicy",
+              "type": "string"
+            },
+            {
+              "name": "transactionHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "fulfiller",
+              "type": "address"
+            }
+          ]
+        },
+        "message": {
+          "domain": "did:web:atum.network",
+          "paymentId": "0x1234567890123456789012345678901234567890123456789012345678901234",
+          "chainId": "eip155:42161",
+          "outcome": "not_delivered",
+          "blockNumber": "21500123",
+          "blockHash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+          "finalityPolicy": "confirmations:12",
+          "transactionHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "fulfiller": "0x0000000000000000000000000000000000000000"
+        }
+      },
+      "signingInputHex": "b2cb5e04dcdb3794ccb5f70faf520048246938b038622ad22344817d6d1612c2",
+      "signer": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23"
+    },
+    {
+      "name": "eip155/deposit/held",
+      "kind": "deposit",
+      "verdict": {
+        "block_hash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+        "finality_policy": "confirmations:12",
+        "block_number": "21500000",
+        "chain_id": "eip155:1",
+        "domain": "did:web:atum.network",
+        "escrow_address": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4",
+        "outcome": "held",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "signature": "ade1e8d20cb681455f76a6e24f1bdf954d8b3520a5a58058f3869daa61cc035b2379f382bd4f0df9e04505cdf1bdb72e54f0b61ea73ab9358172b8e42ef14b9e1b",
+        "signature_scheme": "eip712-secp256k1",
+        "transaction_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      },
+      "typedData": {
+        "domain": {
+          "name": "Atum Verdict",
+          "version": "1",
+          "chainId": "1"
+        },
+        "primaryType": "DepositVerdict",
+        "types": {
+          "EIP712Domain": [
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "version",
+              "type": "string"
+            },
+            {
+              "name": "chainId",
+              "type": "uint256"
+            }
+          ],
+          "DepositVerdict": [
+            {
+              "name": "domain",
+              "type": "string"
+            },
+            {
+              "name": "paymentId",
+              "type": "bytes32"
+            },
+            {
+              "name": "chainId",
+              "type": "string"
+            },
+            {
+              "name": "escrowAddress",
+              "type": "address"
+            },
+            {
+              "name": "outcome",
+              "type": "string"
+            },
+            {
+              "name": "blockNumber",
+              "type": "uint256"
+            },
+            {
+              "name": "blockHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "finalityPolicy",
+              "type": "string"
+            },
+            {
+              "name": "transactionHash",
+              "type": "bytes32"
+            }
+          ]
+        },
+        "message": {
+          "domain": "did:web:atum.network",
+          "paymentId": "0x1234567890123456789012345678901234567890123456789012345678901234",
+          "chainId": "eip155:1",
+          "escrowAddress": "0x742d35cc6634c0532925a3b844bc9e7595f0beb4",
+          "outcome": "held",
+          "blockNumber": "21500000",
+          "blockHash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+          "finalityPolicy": "confirmations:12",
+          "transactionHash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        }
+      },
+      "signingInputHex": "ed8e2afae66f56ca7c7a06c744fe398e33ddd4eaf002604b08e9518270abb696",
+      "signer": "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23"
+    },
+    {
+      "name": "tron/fulfillment/delivered",
+      "kind": "fulfillment",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "tron:mainnet",
+        "outcome": "delivered",
+        "block_number": "67240249",
+        "block_hash": "0x0000000004029f79c1a2c6bfa2e2f2ba1d6a9e3f5c7b8d9e0f1a2b3c4d5e6f70",
+        "finality_policy": "confirmations:19",
+        "transaction_hash": "0xcf5cea05000000000000000000000000000000000000000000000000000000ab",
+        "fulfiller": "TLZVYZskxoJt4M4bYHPJm5hdM4ZAhcC25i",
+        "signature_scheme": "tip191-secp256k1",
+        "signature": "defde9fa42da6cd3bcf78616b312ad23264868791c187fb6b8c1506f543d3f2874e0635c0764acf0aa66ee12cd15903af7c2a1b7b0a614c40879af90572af5e31b"
+      },
+      "signingInputHex": "994add2473948c82f2554cd08c97ce6ae5c3ea3739873bf91c120971c8c81c0c",
+      "signer": "TE2H9hWjzYdwzDFRJfx9BFhr4MmjH1CHaz"
+    },
+    {
+      "name": "tron/deposit/held",
+      "kind": "deposit",
+      "verdict": {
+        "block_hash": "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+        "finality_policy": "confirmations:19",
+        "block_number": "21500000",
+        "chain_id": "tron:mainnet",
+        "domain": "did:web:atum.network",
+        "escrow_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        "outcome": "held",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "signature": "7aa41616a95ac8c15606e2c7d846f88d7a39e74f1faef51d647032d0fead85c04c623e59e50d32b97a8117e5ba14b20cac1442e83cdd6e4019534668cd1193e91c",
+        "signature_scheme": "tip191-secp256k1",
+        "transaction_hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      },
+      "signingInputHex": "576922d762a27ed9ace0fe219a0455eb92811facb86a98afb374eb14c63eb369",
+      "signer": "TE2H9hWjzYdwzDFRJfx9BFhr4MmjH1CHaz"
+    },
+    {
+      "name": "solana/fulfillment/delivered",
+      "kind": "fulfillment",
+      "verdict": {
+        "domain": "did:web:atum.network",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "chain_id": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "outcome": "delivered",
+        "block_number": "362000123",
+        "block_hash": "3jN5sUEycSXnmaswEkKQiiJnbPeCDyteJj775ypraaro",
+        "finality_policy": "commitment:finalized",
+        "transaction_hash": "2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T",
+        "fulfiller": "9jJDiD25RUicWu4uVAmVtETvHVp5ooq3ntB7c1D9TqNP",
+        "signature_scheme": "ed25519-raw",
+        "signature": "87b748771f4e257638eeabdc5c04486aac977ad66c0e1d2d42cf3c59d8e6653e04622743ce778720fc5b9e1a8e6f3741a8fc441d0c611a631ce1b5cca00d1c0f"
+      },
+      "signingInputHex": "6174756d2d766572646963742f66756c66696c6c6d656e742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d33393a736f6c616e613a3565796b7434557346763850384e4a64545245705931767a714b715a4b7664700a6f7574636f6d653d393a64656c6976657265640a626c6f636b5f6e756d6265723d393a3336323030303132330a626c6f636b5f686173683d34343a336a4e35735545796353586e6d617377456b4b5169694a6e62506543447974654a6a3737357970726161726f0a66696e616c6974795f706f6c6963793d32303a636f6d6d69746d656e743a66696e616c697a65640a7472616e73616374696f6e5f686173683d38373a32416e613170557076325a624d566b77463546586170596542456a64784461744c6e376e764a6b68675453586273353953795a53783836366258697250676a385151564235377578484a4247315946766b5262466a34540a66756c66696c6c65723d34343a396a4a4469443235525569635775347556416d5674455476485670356f6f71336e7442376331443954714e500a",
+      "signer": "9C6hybhQ6Aycep9jaUnP6uL9ZYvDjUp1aSkFWPUFJtpj"
+    },
+    {
+      "name": "solana/deposit/held",
+      "kind": "deposit",
+      "verdict": {
+        "block_hash": "GHtXQBsoZHVnNFa9YevAzFr17DJjgHXk3ycTKD5xD3Zi",
+        "finality_policy": "commitment:finalized",
+        "block_number": "21500000",
+        "chain_id": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "domain": "did:web:atum.network",
+        "escrow_address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "outcome": "held",
+        "payment_id": "0x1234567890123456789012345678901234567890123456789012345678901234",
+        "signature": "d4c3b7cfed1d823e11b8ffe4266ccf73efacc47111d51ab695e4936ad234c20fbee3e61b94cbeba7044b6bbe76b8aa975320905c26b999481ecdbe6d86403e0d",
+        "signature_scheme": "ed25519-raw",
+        "transaction_hash": "5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW"
+      },
+      "signingInputHex": "6174756d2d766572646963742f6465706f7369742f310a646f6d61696e3d32303a6469643a7765623a6174756d2e6e6574776f726b0a7061796d656e745f69643d36363a3078313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233340a636861696e5f69643d33393a736f6c616e613a3565796b7434557346763850384e4a64545245705931767a714b715a4b7664700a657363726f775f616464726573733d34343a39577a44587742626d6b67385a54624e4d7155787651524179725a7a44734759644c564c397a59744157574d0a6f7574636f6d653d343a68656c640a626c6f636b5f6e756d6265723d383a32313530303030300a626c6f636b5f686173683d34343a474874585142736f5a48566e4e466139596576417a46723137444a6a6748586b337963544b44357844335a690a66696e616c6974795f706f6c6963793d32303a636f6d6d69746d656e743a66696e616c697a65640a7472616e73616374696f6e5f686173683d38383a3556455276384e4d767a624a4d456b5638786e724c6b4561575274537a39436f734b44596a434a6a42526e624a4c67703875697242676d51706a4b686f5234746a46335a70527a72466d425636556a4b6469535a6b5155570a",
+      "signer": "9C6hybhQ6Aycep9jaUnP6uL9ZYvDjUp1aSkFWPUFJtpj"
+    }
+  ]
+}

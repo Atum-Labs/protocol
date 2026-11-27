@@ -1,0 +1,10 @@
+{
+  "@context": [
+    "https://schemas.atum.network/declarations/BidDecline/v1/context.jsonld"
+  ],
+  "payment_id": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+  "quote_request_id": "",
+  "reason_code": "DEADLINE_TOO_SHORT",
+  "message": "remaining fulfillment window 42s is below the 120s minimum for eip155:8453 -> solana:mainnet",
+  "issued_at": "2026-10-13T12:00:00.000Z"
+}

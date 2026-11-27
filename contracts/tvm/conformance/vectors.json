@@ -1,0 +1,183 @@
+{
+  "_comment": "FROZEN cross-side parity vectors (TVM). Both reserve_parity_test.go (Go) and reserve-parity.test.ts (TS) assert against this file; do not edit by hand. Regenerate from contracts/tvm/bindings/go/escrow-encoding: REGEN_PARITY=1 go test ./... -run TestRegenerateReserveParityVectors",
+  "reserve": [
+    {
+      "name": "anchor/examples-shasta",
+      "chainID": 2494104990,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+      "settler": "0xa601a68f95f0cb1ec1e186b1f4f709478bde679f",
+      "expectedDigest": "0xb0245d1de88ea677343ff99c9f83434c60a3f6438475d28731231d9be64bcca7"
+    },
+    {
+      "name": "mask-overflow",
+      "chainID": 6789072286,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+      "settler": "0xa601a68f95f0cb1ec1e186b1f4f709478bde679f",
+      "expectedDigest": "0xb0245d1de88ea677343ff99c9f83434c60a3f6438475d28731231d9be64bcca7"
+    },
+    {
+      "name": "mainnet-chainId",
+      "chainID": 728126428,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+      "settler": "0xa601a68f95f0cb1ec1e186b1f4f709478bde679f",
+      "expectedDigest": "0xa469e5934603b6902b71d388fc26330ab28b40130a57866d346fc1d599d9db59"
+    },
+    {
+      "name": "zero-paymentId",
+      "chainID": 2494104990,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "settler": "0xa601a68f95f0cb1ec1e186b1f4f709478bde679f",
+      "expectedDigest": "0x4ee9b7950e0fb40df3e5b810f19ef0c2f3954cb50651003a68b800c9484401ca"
+    },
+    {
+      "name": "max-paymentId",
+      "chainID": 2494104990,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "settler": "0xa601a68f95f0cb1ec1e186b1f4f709478bde679f",
+      "expectedDigest": "0xf7c571485b0e22e672b5e7494f6f54228e0c1fcdedabc99815090ddbd244bce2"
+    },
+    {
+      "name": "zero-settler",
+      "chainID": 2494104990,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+      "settler": "0x0000000000000000000000000000000000000000",
+      "expectedDigest": "0xa732786d9ba85e909abc1bb9ec05fd3bfdd5646af5382e53355d08ea81c7c2a4"
+    },
+    {
+      "name": "settler-equals-escrow",
+      "chainID": 2494104990,
+      "escrow": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "paymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc",
+      "settler": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "expectedDigest": "0x1e0a155c851276f408e5906d14150427f92a857ce288bd282af406fb3c54e9fd"
+    }
+  ],
+  "paymentId": [
+    {
+      "name": "anchor/examples-paymentId",
+      "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+      "signature": "0x164f0f9c1cd6a10420502792d408b54e81c73652f51db08b0da0884b3179c52877fd386c009a1b6fc242a5afcf03ab583c1a407bacbf1626c0ca30c7851d81ce1c",
+      "nonce": "1776340107514",
+      "expectedPaymentId": "0xd927076fea2c62b09e3b0b7fe343573849be3933d4d645dbaa8fd0bbc06f13bc"
+    },
+    {
+      "name": "base58-depositor",
+      "depositor": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4py",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0xcade6a330b88306b3b597d8b848129b5892ec9388bb17b68a4736cb925cc03b4"
+    },
+    {
+      "name": "hex41-depositor",
+      "depositor": "0x412e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0xcade6a330b88306b3b597d8b848129b5892ec9388bb17b68a4736cb925cc03b4"
+    },
+    {
+      "name": "plain-hex-depositor",
+      "depositor": "0x2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0xcade6a330b88306b3b597d8b848129b5892ec9388bb17b68a4736cb925cc03b4"
+    },
+    {
+      "name": "alt-base58-zero-nonce",
+      "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+      "signature": "0xdeadbeef",
+      "nonce": "0",
+      "expectedPaymentId": "0x2f8994d2937b6aecda48b73217ee833b6a52af2d0de865c78774676419b1d02a"
+    },
+    {
+      "name": "alt-base58-large-nonce",
+      "depositor": "TR6y9bCmyGBvb3ALZSwVJkw8YThbwmFX8N",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "340282366920938463463374607431768211455",
+      "expectedPaymentId": "0xb38f88b821967aaa20f7c1adb0b0d4f71512c339bbf430226acdd4556bb26ab6"
+    },
+    {
+      "name": "leading-41-base58",
+      "depositor": "TFxRTJi1NBJ2qMr3NJvszkPGVtvSVcNLx8",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0x55d3459a6a639e44784bcab2fd7d974d6202a1f444700bb10be4f26c39ee0c89"
+    },
+    {
+      "name": "leading-41-hex41",
+      "depositor": "0x4141aabbccddeeff00112233445566778899aabbcc",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0x55d3459a6a639e44784bcab2fd7d974d6202a1f444700bb10be4f26c39ee0c89"
+    },
+    {
+      "name": "leading-41-plain-hex",
+      "depositor": "0x41aabbccddeeff00112233445566778899aabbcc",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "1",
+      "expectedPaymentId": "0x55d3459a6a639e44784bcab2fd7d974d6202a1f444700bb10be4f26c39ee0c89"
+    }
+  ],
+  "rejectPaymentId": [
+    {
+      "name": "empty",
+      "depositor": "",
+      "reason": "empty address"
+    },
+    {
+      "name": "bad-base58-checksum",
+      "depositor": "TEDjSzRsnkhQNEeptyKaSgvmaREdttQ4qS",
+      "reason": "base58check checksum mismatch"
+    },
+    {
+      "name": "non-base58-chars",
+      "depositor": "T0OIl0OIl0OIl0OIl0OIl0OIl0OIl",
+      "reason": "0 O I l are not in the base58 alphabet"
+    },
+    {
+      "name": "hex-19-bytes",
+      "depositor": "0xaabbccddeeff00112233445566778899aabbcc",
+      "reason": "19 bytes, not 20"
+    },
+    {
+      "name": "hex-21-bytes",
+      "depositor": "0xaabbccddeeff00112233445566778899aabbccddee",
+      "reason": "21 bytes, not 20"
+    },
+    {
+      "name": "uppercase-0X-prefix",
+      "depositor": "0X2e9fbe1886fa094573e3bd25c554e827873bb9fc",
+      "reason": "Go strips only lowercase 0x"
+    },
+    {
+      "name": "wrong-marker-4f",
+      "depositor": "0x4f41aabbccddeeff00112233445566778899aabbcc",
+      "reason": "marker differs from 41 in the low nibble only"
+    },
+    {
+      "name": "wrong-marker-a1",
+      "depositor": "0xa141aabbccddeeff00112233445566778899aabbcc",
+      "reason": "marker differs from 41 in the high nibble only"
+    },
+    {
+      "name": "interior-0x",
+      "depositor": "e96051e8da2f0cc02c370x2252dfacfdb129b5d4d6",
+      "reason": "0x inside the body is address data, not a prefix"
+    },
+    {
+      "name": "interior-0x-after-marker",
+      "depositor": "410x00112233445566778899aabbccddeeff001122",
+      "reason": "0x adjacent to the marker is address data, not a prefix"
+    },
+    {
+      "name": "double-0x-prefix",
+      "depositor": "0x0xe96051e8da2f0cc02c372252dfacfdb129b5d4d6",
+      "reason": "exactly one leading 0x comes off, not a run of them"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+==============================================================================
+@atumlabs/x402-atum-escrow
+
+@atumlabs/x402-atum-escrow is licensed under the Apache License, Version 2.0, as stated
+in the package-root LICENSE file. THIS file is not that license. This
+package includes the third-party software identified below; the licenses and
+notices reproduced here apply only to those third-party components. They do not
+modify the Apache-2.0 license governing this package or any Atum-authored code.
+
+The published artifact of this package (the compiled code under dist/) statically
+bundles the third-party open-source components listed below; their source is
+redistributed within this package, so their license and copyright notices are
+reproduced here. Components and versions were taken from the exact modules the
+build inlined. This file does NOT cover packages the consumer installs separately
+as dependencies of this package (for example @x402/core, @x402/fetch, ethers,
+ajv, bs58, tweetnacl, and zod) — those ship under their own licenses and are not
+redistributed here.
+
+LICENSE SUMMARY (1 component)
+------------------------------------------------------------------------------
+    1  MIT
+==============================================================================
+
+------------------------------------------------------------------------------
+@noble/hashes  1.8.0   (MIT)
+Author: Paul Miller (https://paulmillr.com)
+------------------------------------------------------------------------------
+
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+

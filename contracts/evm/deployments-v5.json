@@ -1,0 +1,196 @@
+{
+  "42431": {
+    "name": "Tempo Moderato",
+    "mainnet": false,
+    "generation": "direct-deposit escrow with EscrowReserveLib (CORE-3048, CORE-3055); PRE-AUDIT build fc312410 (CORE-3057 open)",
+    "contracts": {
+      "Escrow": "0x2db35C05D04F8bB21C602735C4FA9eEc932c2536",
+      "EscrowReserveLib": "0x88090131EC8bdFA1759f6B0e27d5aEa307b8eBBf",
+      "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+      "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+    },
+    "escrowInitcodeHash": "0xb47546a2ed9f8392fd0e24855bbf06daa54f68128b5fdbc1d05828a9d667e612",
+    "salt": "0x22b4280b956c7f0613b6313bbd60cf38e78fdbd98dee9876ee5db5fb1e7e4367",
+    "factory": "0x4e59b44847b379578588920ca78fbf26c0b4956c",
+    "deployer": "0x11121EECf186b5365C3E65A7B16BfD231eAC76B5",
+    "sourceCommit": "fc31241074585bafa7eafd2f89f94fdc0b805c08",
+    "transactions": {
+      "deployEscrowReserveLib": {
+        "hash": "0xc4cf9910313be9eaaf4b5ad55715921a2fc72f80cd42ae939c3787ccbf5e97c4",
+        "block": 40622265,
+        "gasUsed": 4990430
+      },
+      "deployEscrow": {
+        "hash": "0x3dfaf471fbc8bbe01d2a2be89d606a8953fc2a1d1880a52d73dcfe21a1f7e90b",
+        "block": 40622362,
+        "gasUsed": 26220374
+      },
+      "grantPauserRole": {
+        "hash": "0x91481b6d3e11e0b1248df3d022a6697c36d6cbc70f1c1e593b5476c2aa4f7dac",
+        "block": 40622366,
+        "gasUsed": 283491
+      },
+      "grantTreasurerRole": {
+        "hash": "0x34054574ae998f32185e7535482cdc2a3c8f3c1bb13112517e66ff27302e8d8a",
+        "block": 40622370,
+        "gasUsed": 283491
+      },
+      "grantTokenConfigRole": {
+        "hash": "0xf027b6795773bf08d37d19bffada38d130b7fbfd265b36e91f28a100e8587dab",
+        "block": 40622372,
+        "gasUsed": 283491
+      }
+    },
+    "tokenConfig": {
+      "feePercentage6Decimals": 20000,
+      "minFee6Decimals": 0,
+      "maxFee6Decimals": 250000000,
+      "decimals": 6,
+      "tokens": {
+        "pathUSD": {
+          "address": "0x20C0000000000000000000000000000000000000",
+          "tx": "0x3937e43840664ec561b89224afa0474e16de9dd98650a4b3e54c19f220e11103"
+        },
+        "alphaUSD": {
+          "address": "0x20C0000000000000000000000000000000000001",
+          "tx": "0x193fca2ec265ac2c55255bf4759ab7dbabd0ffb65bd0ac1922889be9944f1711"
+        },
+        "betaUSD": {
+          "address": "0x20C0000000000000000000000000000000000002",
+          "tx": "0x754662d223f27c1acd9fc038c3445889ba0637a73d53d32eeddd33dfd20bafcd"
+        },
+        "thetaUSD": {
+          "address": "0x20C0000000000000000000000000000000000003",
+          "tx": "0xb7f976df816f0958d5b8f845c8d9bd3e760d04caabcf72276fff9fb2b9697bb5"
+        },
+        "USDC.e": {
+          "address": "0x20C0000000000000000000009e8d7eB59B783726",
+          "tx": "0x5767ff1b110db61d73ced19e4fd16a35e5c1e7699789cf5f683ee82398f1fc9a"
+        },
+        "OUSD": {
+          "address": "0x20c0000000000000000000006a37DA5C996874BE",
+          "tx": "0x6e8e282e4c28a38297e00c8127a1df4b1c22f96cfe9b4c592ef6ce05055932b3"
+        }
+      }
+    },
+    "roles": {
+      "PAUSER_ROLE": "0x11121EECf186b5365C3E65A7B16BfD231eAC76B5",
+      "TREASURER_ROLE": "0x11121EECf186b5365C3E65A7B16BfD231eAC76B5",
+      "TOKEN_CONFIG_ROLE": "0x11121EECf186b5365C3E65A7B16BfD231eAC76B5",
+      "DEFAULT_ADMIN_ROLE": "0x11121EECf186b5365C3E65A7B16BfD231eAC76B5",
+      "defaultAdminDelaySeconds": 1
+    }
+  },
+  "4217": {
+    "name": "Tempo Mainnet",
+    "mainnet": true,
+    "generation": "direct-deposit escrow with EscrowReserveLib (CORE-3048, CORE-3055, CORE-3264); PRE-AUDIT build fc312410 (CORE-3057 open); non-default next to the v4 escrow 0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+    "contracts": {
+      "Escrow": "0xedaD6a9846c79A64449603e95F8c77fd5A46881b",
+      "EscrowReserveLib": "0x88090131EC8bdFA1759f6B0e27d5aEa307b8eBBf",
+      "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+      "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+    },
+    "escrowInitcodeHash": "0xf1b5460aa1a5d469309a0f121dbb2704e3d35932940acd33a16293926cf8f130",
+    "escrowReserveLibInitcodeHash": "0x95c7b8ba109f5fa99ce4df543ef20decb79a264e4bc5765a4dd9f2d21913b33d",
+    "salt": "0x22b4280b956c7f0613b6313bbd60cf38e78fdbd98dee9876ee5db5fb1e7e4367",
+    "factory": "0x4e59b44847b379578588920ca78fbf26c0b4956c",
+    "deployer": "0xf92f2F170C2f649AE8CF07A8a84c43C74d65fE5A",
+    "sourceCommit": "fc31241074585bafa7eafd2f89f94fdc0b805c08",
+    "constructorArgs": {
+      "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+      "defaultAdmin": "0xf92f2F170C2f649AE8CF07A8a84c43C74d65fE5A"
+    },
+    "transactions": {
+      "deployEscrowReserveLib": {
+        "hash": "0xf24fe38630f1d827818a2b38cddb43566cdd89b5eb4559cc065e7448d80e63b9",
+        "block": 46378716,
+        "gasUsed": 4990430
+      },
+      "deployEscrow": {
+        "hash": "0x49de635b2176a24eab47bf2a1721ce51dd91ea73684093169ca388d59c836785",
+        "block": 46378758,
+        "gasUsed": 26220374
+      },
+      "grantPauserRole": {
+        "hash": "0x9f6b36494fbb53655aab852e43741cda3af0b9c94057460ac27f5f7dbbdf1979",
+        "block": 46378762,
+        "gasUsed": 283491
+      },
+      "grantTreasurerRole": {
+        "hash": "0x7fb83816c756421fbab51d0e6865fc8079136958a1b52cc699d0b43c29e87a3e",
+        "block": 46378766,
+        "gasUsed": 283491
+      },
+      "grantTokenConfigRole": {
+        "hash": "0xb6d7f4eefa37d6a39ead5a71c06d29af6904e3efbd830cc676c31274b1261c95",
+        "block": 46378769,
+        "gasUsed": 283491
+      }
+    },
+    "tokenConfig": {
+      "feePercentage6Decimals": 20000,
+      "minFee6Decimals": 0,
+      "maxFee6Decimals": 250000000,
+      "decimals": 6,
+      "tokens": {
+        "pathUSD": {
+          "address": "0x20C0000000000000000000000000000000000000",
+          "tx": "0xa2181973e2c356938b38c9c8a79bb1a4f340e77c26b164fa6211d9269bd38b75"
+        },
+        "rUSD": {
+          "address": "0x20c0000000000000000000007F7ba549dd0251B9",
+          "tx": "0xdead82479b888423e79c2d29bdf6bdcdf69425b5024543a156684ea1d58747b1"
+        },
+        "USDT0": {
+          "address": "0x20C00000000000000000000014f22CA97301EB73",
+          "tx": "0x655621a6452a7eefdb5d5de3c9b9825fa604bc7947edca9ab53a66f55eeaaa5e"
+        },
+        "SBC": {
+          "address": "0x20C000000000000000000000Ae247A1130450f09",
+          "tx": "0x5c1579d3c130edc10946e7daadcd5c54fd2dd5b9f4d743cf2bdd8e513bdcb5c3"
+        },
+        "USDC.e": {
+          "address": "0x20C000000000000000000000b9537d11c60E8b50",
+          "tx": "0x10d7e231a7eb4a3450e13bd7b7660c68052c9e4fcc8a537f063eeddf6b031f49"
+        },
+        "OUSD": {
+          "address": "0x20c0000000000000000000006a37DA5C996874BE",
+          "tx": "0x9077232e3de7873abd9f474c9ea1f8f80632e4f75dc793a189a77195815ee5ea",
+          "feeConfigTx": "0x682a4cff7bbc4d04fa18d52cc53e47424847d683c096a6ab6be2b33b2b987cc0"
+        },
+        "GBPA": {
+          "address": "0x20C0000000000000000000000a6Da882d075a4C3",
+          "tx": "0xbfc1ba01ad11b92ee0548e1027773f871879c2e33db14d3c98859c06f763aeaf",
+          "feeConfigTx": "0xc4e7a88bbb526c32bdc70138eac736a2462d276c47a1319b2d72f73e96798846"
+        }
+      }
+    },
+    "verification": {
+      "verifier": "https://contracts.tempo.xyz",
+      "EscrowReserveLib": {
+        "matchId": "30445",
+        "match": "match",
+        "creationMatch": "match",
+        "runtimeMatch": "match",
+        "verifiedAt": "2026-10-29T02:24:58Z",
+        "jobId": "89d059dc-c450-4edd-b952-f61f5bb29471"
+      },
+      "Escrow": {
+        "matchId": "30446",
+        "match": "match",
+        "creationMatch": "match",
+        "runtimeMatch": "match",
+        "verifiedAt": "2026-10-29T02:25:27Z",
+        "jobId": "cbc0c421-3fcc-41fb-a1ee-838a3b058228",
+        "url": "https://contracts.tempo.xyz/v2/contract/4217/0xedaD6a9846c79A64449603e95F8c77fd5A46881b?fields=sources,abi"
+      }
+    },
+    "notes": [
+      "PRE-AUDIT: this is the fc312410 build, deployed while the security audit (CORE-3057) is still open. It is a non-default escrow next to the v4 escrow 0x815d450F443466d52D3c1fB7a57D74D463D1E6F0, which stays the default. Audit fixes change the bytecode, so the audited build derives different addresses and gets its own record rather than replacing this entry while settlements name this escrow. The same fc312410 build is on Tempo Moderato (42431), above.",
+      "The v4 FulfillmentProxy is reused, not redeployed: it is the proxy next to the v4 escrow 0x815d450F443466d52D3c1fB7a57D74D463D1E6F0 in deployments-v4.json.",
+      "Seven tokens are allowlisted, each at fee 20000, min 0, max 250000000, 6 decimals. OUSD and GBPA were allowed first and given the same fee config in a second transaction (feeConfigTx); the v4 escrow charges zero on those two.",
+      "Role holders and the admin delay are deliberately not recorded here: the admin handover is in progress (CORE-2268, CORE-3264). Read them from the chain."
+    ]
+  }
+}

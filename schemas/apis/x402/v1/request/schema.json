@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "file://apis/x402/v1/request/schema.json",
+  "title": "AtumEscrowRequest",
+  "description": "The MPP `charge` challenge request — the method-specific `request` blob inside an mppx Challenge. It carries the source option the payer funds from plus the destination/corridor block (the reused `extra`). MPP has no x402 `accepts[]` envelope, so the source option that x402 carried at the `accepts[]` top level rides here alongside `extra`. One source option per challenge; a 402 may advertise several challenges to offer several source options.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source", "extra"],
+  "properties": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The source chain/token/cap the payer funds from.",
+      "required": ["network", "asset", "amount"],
+      "properties": {
+        "network": {
+          "type": "string",
+          "pattern": "^[-a-z0-9]+:.+$",
+          "description": "CAIP-2 source chain id (e.g. eip155:8453)."
+        },
+        "asset": {
+          "type": "string",
+          "pattern": "^(0x[0-9a-fA-F]{40}|[1-9A-HJ-NP-Za-km-z]{32,44}|[GC][A-Z2-7]{55})$",
+          "description": "Source token address (EVM hex, base58 or a Stellar strkey, per the source chain)."
+        },
+        "amount": {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "description": "Source spend cap (fulfillmentAmount + markup), in atomic token units — the authoritative `max_source_amount` the payer signs."
+        }
+      }
+    },
+    "extra": {
+      "$ref": "../extra/schema.json"
+    }
+  }
+}

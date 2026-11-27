@@ -1,0 +1,103 @@
+{
+  "x402Version": 2,
+  "accepted": {
+    "scheme": "atum-escrow",
+    "network": "eip155:8453",
+    "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "payTo": "0x938deF3968f2227dD44Dbd270C491F6CAC1F2e33",
+    "amount": "10300000",
+    "maxTimeoutSeconds": 60,
+    "extra": {
+      "atum": {
+        "destination": {
+          "network": "eip155:42161",
+          "asset": "0x52e52f345139e57b87d288c9ea794bb3fbe591c3",
+          "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        "fulfillmentAmount": "10000000",
+        "quoteDeadlineSeconds": 20,
+        "fulfillmentDeadlineSeconds": 300,
+        "escrow": "0x938deF3968f2227dD44Dbd270C491F6CAC1F2e33",
+        "fulfillmentProxy": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "reserver": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "releaser": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+        "fulfillmentVerifierEndpoint": "https://veri-fill.example.com"
+      },
+      "atumResource": "GET /report"
+    }
+  },
+  "extensions": {
+    "payment-identifier": {
+      "info": {
+        "required": true,
+        "id": "pay_order_4711_a1b2c3d4"
+      }
+    }
+  },
+  "payload": {
+    "paymentRequest": {
+      "version": "1.0",
+      "request_id": "req_abc123",
+      "source": {
+        "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "account": "0xF0D07a1c182Bc68a757C641014e0bAE7C4f17640"
+      },
+      "destination": [
+        {
+          "asset_identifier": "eip155:42161/erc20:0x52e52f345139e57b87d288c9ea794bb3fbe591c3",
+          "account": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        }
+      ],
+      "fulfillment_amount": "10000000",
+      "max_source_amount": "10300000",
+      "quote_deadline": "2026-07-08T12:00:20Z",
+      "fulfillment_deadline": "2026-07-08T12:05:00Z",
+      "sender_auth": {
+        "message_scheme": "EVM_PERMIT2",
+        "signed_messages": [
+          {
+            "message": "0xabcdef",
+            "message_prehash": { "domain": {}, "types": {}, "message": {} },
+            "signature": "0xdeadbeef"
+          }
+        ]
+      },
+      "presentation": {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://schemas.atum.network/declarations/PaymentRequestEnvelope/v1/context.jsonld"
+        ],
+        "type": ["VerifiablePresentation", "PaymentRequestEnvelope"],
+        "holder": "did:pkh:eip155:8453:0xF0D07a1c182Bc68a757C641014e0bAE7C4f17640",
+        "verifiableCredential": [
+          {
+            "@context": ["https://www.w3.org/2018/credentials/v1"],
+            "id": "urn:atum:vc:example:known-to-atum:1",
+            "type": ["VerifiableCredential", "KnownToAtum"],
+            "issuer": "did:web:issuer.atum.network",
+            "issuanceDate": "2026-07-08T11:59:00Z",
+            "credentialSubject": {
+              "id": "did:pkh:eip155:8453:0xF0D07a1c182Bc68a757C641014e0bAE7C4f17640"
+            },
+            "proof": {
+              "type": "EcdsaSecp256k1RecoverySignature2020",
+              "created": "2026-07-08T11:59:00Z",
+              "verificationMethod": "did:web:issuer.atum.network#key-1",
+              "proofPurpose": "assertionMethod",
+              "jws": "eyJhbGciOiJFUzI1NkstUiJ9..EXAMPLE_ISSUER_SIGNATURE"
+            }
+          }
+        ],
+        "proof": {
+          "type": "EcdsaSecp256k1RecoverySignature2020",
+          "created": "2026-07-08T12:00:00Z",
+          "verificationMethod": "did:pkh:eip155:8453:0xF0D07a1c182Bc68a757C641014e0bAE7C4f17640#blockchainAccountId",
+          "proofPurpose": "authentication",
+          "challenge": "0x9f2c4d1a7b8e3f60c5d29a04e1b7c8d3f6a29b0e4c7d1a2f8b3e6c9d0a1f2b3c4",
+          "domain": "did:web:atum.network",
+          "jws": "eyJhbGciOiJFUzI1NkstUiJ9..EXAMPLE_HOLDER_SIGNATURE"
+        }
+      }
+    }
+  }
+}

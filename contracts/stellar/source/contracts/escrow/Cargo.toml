@@ -1,0 +1,26 @@
+[package]
+name = "escrow"
+description = "Atum Protocol escrow for Soroban"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+# hazmat-address: only for `Address::to_payload`, to encode addresses as fixed-width bytes in
+# digests. Never used for authentication.
+soroban-sdk = { workspace = true, features = ["hazmat-address"] }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+# Test-only signer; the same version soroban-sdk's testutils already resolves.
+ed25519-dalek = "2.2.0"
+# Reads the shared conformance vectors (test_conformance.rs); already in the lockfile via soroban-sdk testutils.
+serde_json = "1"
+# Cross-contract lifecycle test (deposit -> fulfill -> release) runs the proxy in the same Env.
+# A dev-dependency is not built into the escrow wasm, and the proxy does not depend on the escrow.
+fulfillment-proxy = { path = "../fulfillment_proxy" }

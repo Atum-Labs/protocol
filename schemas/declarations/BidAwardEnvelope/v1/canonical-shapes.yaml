@@ -1,0 +1,31 @@
+# Shapes this declaration shares with the others are generated from
+# declarations/common/shapes/v1/schema.json rather than written here, so a producer and a
+# verifier reading different declarations cannot end up with different ideas of what a
+# credential, a proof or a signed message looks like.
+#
+# Where this declaration restricts a shared shape further, or names the specific value a
+# field binds to, that is listed under `overlay` with the reason. Everything else comes
+# from the shared definition unchanged.
+#
+# To change one of these, edit the shared source and run:
+#
+#     make -C schemas generate-canonical-shapes
+
+target: schema.json
+source: ../../common/shapes/v1/schema.json
+
+shapes:
+  - name: VerifiableCredential
+    from: $defs/VerifiableCredential
+  - name: VPDataIntegrityProof
+    from: $defs/VPDataIntegrityProof
+    reason: |
+      Names the value this envelope's challenge binds to and the service identifier its
+      domain must equal. Both are specific to this envelope; the shared definition states
+      only the rule.
+    overlay:
+      properties:
+        challenge:
+          description: "Replay-binding challenge. MUST equal award_hash(payment_id, quote_hash, settler_id) \u2014 the content-addressed award-decision identifier, recomputed by the settler from the award it received. The same authority key signing a different payment, quote, or settler yields a different award_hash, so a captured envelope cannot be replayed across awards."
+        domain:
+          description: "Replay-binding domain. MUST equal the verifier's configured NETWORK-WIDE service identifier `did:web:<env>.atum.network` (e.g., did:web:devnet.atum.network). Distinct from FQE's settler-specific domain so a captured envelope can't be misrouted to FQE-shaped verifiers; without it, a staging envelope could be replayed against production."

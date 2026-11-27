@@ -1,0 +1,111 @@
+# Example SENDER sub-org policy config for `apply-policies`.
+#
+# The sender's secp256k1 accounts sign ONE thing: a Permit2 PermitWitnessTransferFrom authorizing
+# a deposit into the Atum escrow, sent as typed data so Turnkey can read its members. Its Solana
+# account signs one raw ed25519 digest. buildSenderPolicies emits the whole bounded set from this
+# file: a per-chain typed-data ALLOW binding the domain, escrow, token, witness roles and
+# destination, the ed25519 raw allow, the raw-signing denies (batch form, KECCAK256/SHA256/NO_OP,
+# 7702 delegation), the per-chain approve-to-Permit2 ALLOW, zero-native-value DENY, gas/fee caps,
+# and the Solana program allowlist.
+type: sender
+
+chains:
+  Ethereum: { kind: evm, chainId: 'eip155:11155111' }
+  Tron: { kind: tron, chainId: 'tron:shasta' }
+  Solana: { kind: solana, chainId: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1' }
+
+senderExtras:
+  # "mainnet" or "testnet" — selects the Tron Permit2 deployment address.
+  network: testnet
+
+  # The escrow the sender may name as Permit2 `spender`. REQUIRED for every EVM/Tron chain.
+  # Permit2 does not sign the transfer recipient, so whoever is named here is who can pull the
+  # approved allowance — this is the funds-destination binding, not a formality. Read it from
+  # the gateway's GET /v1/defaults?chain_id=<caip2> (escrow_contract).
+  # Tron is given in base58, the form the deployment records publish. The emitter converts it to
+  # the hex the TIP-712 message carries, and base58 is checksum verified, so a mistyped base58
+  # address throws instead of silently becoming a different one. The emitter also accepts the
+  # already-converted hex, which is why pasting an EVM escrow here is NOT caught: the deployments
+  # are per chain, and a wrong address denies every Tron deposit on `spender`. Copy the base58
+  # from the deployment record and let the emitter do the conversion.
+  escrows:
+    Ethereum:
+      - '0x0f875601504c9179562506afa34b2d084268869b' # escrow (v4), Sepolia
+    Tron:
+      - 'TNW6knfy7gD5W8meUAj9cdqpjFZVHN4vUw' # escrow (v4), Shasta
+
+  # Per-chain token contracts the sender may approve(Permit2, ...) and name as the permitted
+  # token. ERC-20 = 0x hex, TRC-20 = base58.
+  allowedTokens:
+    Ethereum:
+      - '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238'
+    Tron:
+      - 'TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs'
+
+  # The payees the sender may commit to. REQUIRED for every EVM/Tron chain.
+  #
+  # Given as their two CAIP components, NOT as a pre-composed string: apply-policies joins them
+  # with `buildEscrowDestination`, the same function the payer signs through. The escrow stores
+  # only keccak256(bytes(destination)) and cannot tell a formatting disagreement from a wrong
+  # payee, and casing is per-segment — eip155 hex folds to lowercase, every base58 segment keeps
+  # its exact case. A hand-written entry that gets one segment wrong matches nothing and silently
+  # denies every payment on that chain, so the parts are the supported input.
+  #
+  # One entry per destination ASSET, since the asset is part of the identifier. A cross-chain
+  # corridor is listed under its SOURCE chain: a Sepolia-to-Solana payment is an EVM-source
+  # deposit whose witness carries a Solana destination.
+  #
+  # TAKE THE ASSET IDENTIFIER FROM WHAT PAYMENT-GW RETURNS FOR THE CORRIDOR, not from memory.
+  # Composing fixes casing but NOT the asset namespace, and nothing normalises that: `spl:` and
+  # `token:` are both well formed and hash to DIFFERENT commitments. The SDKs emit `spl:` (hence
+  # the Solana entry below) while ONCHAIN_SPEC.md ratifies `token:`, so this is a live divergence,
+  # not a hypothetical. Guess wrong and that corridor is denied while every test stays green.
+  allowedDestinations:
+    Ethereum:
+      - { asset: 'eip155:11155111/erc20:0x1c7d4b196cb0c7b01d743fbc6116a902379c7238', account: '0xc0ffee254729296a45a3885639ac7e10f9d54979' }
+      - { asset: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1/spl:4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', account: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' }
+    Tron:
+      - { asset: 'eip155:11155111/erc20:0x1c7d4b196cb0c7b01d743fbc6116a902379c7238', account: '0xc0ffee254729296a45a3885639ac7e10f9d54979' }
+
+  # The two witness roles. REQUIRED for every EVM/Tron chain: either one can divert funds at
+  # settlement and the payer pins neither client-side, so the policy is the only place they are
+  # bound. Read from the gateway's GET /v1/defaults?chain_id=<caip2> as `quote_selector` and
+  # `fulfillment_verifier.account`.
+  #
+  # Both roles are PER CHAIN. The quote selector is keyed per chain in the deployment
+  # (`quote_selector_<chain>_private_key`), so the Tron values are different accounts from the
+  # Ethereum ones and must not be copied across. The Tron entries below are the base58 zero
+  # address, a deliberate placeholder: it is checksum valid so the config still parses, it can
+  # never be a real signer, and leaving it in place denies every Tron deposit rather than
+  # authorising the wrong account. Replace both before applying.
+  reservers:
+    Ethereum:
+      - '0xd0f080e23f95571d26eeb1fad24a5f3d66835195' # quote_selector
+    Tron:
+      - 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' # PLACEHOLDER, read from /v1/defaults?chain_id=tron:shasta
+  releasers:
+    Ethereum:
+      - '0x27050ee47befc43f4df7807a7aa8073039e5fa89' # fulfillment_verifier.account
+    Tron:
+      - 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb' # PLACEHOLDER, read from /v1/defaults?chain_id=tron:shasta
+
+  # Required when a Solana chain is present — Atum's escrow program ID for this deployment.
+  # v4, Solana DEVNET — which is Atum's testnet cluster. Base58 is CASE-SENSITIVE: never lowercase
+  # this. NOTE the v4 program ids DIFFER PER CLUSTER, unlike v1/v3 where one pair served every
+  # cluster, so a mainnet sub-org needs 5BD9UAUCRCg6Chv6CS5k4sBHGd7CciWpng9u7iJxJFjx instead.
+  solanaEscrowProgramId: '2MHznjRgbc4AbXkYaq69CiL4ZmnvBShg8QmyLxniwMkf'
+
+  # Optional. Stellar (CORE-3095): add `Stellar: { kind: stellar, chainId: 'stellar:testnet' }` under
+  # `chains:` and uncomment this. The sender's Stellar account per Stellar chain, a G... strkey. The
+  # raw ed25519 allow (hex or text, NOT_APPLICABLE) is scoped to it. Turnkey documents no Stellar
+  # transaction parsing, so nothing about the signed payload is bound server-side.
+  # PLACEHOLDER (the all-zero key), which apply-policies refuses.
+  # stellarSigners:
+  #   Stellar:
+  #     - 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF' # PLACEHOLDER, the sub-org's Stellar account
+
+  # Optional gas/fee DoS caps.
+  evmCaps:
+    Ethereum: { maxGasLimit: 200000, maxFeePerGasWei: '100000000000' }
+  tronCaps:
+    Tron: { maxFeeLimitSun: '1000000000' }

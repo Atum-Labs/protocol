@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "authorization": {
+    "message": "0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f",
+    "message_prehash": "{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"ReserveWitness\":[{\"name\":\"paymentId\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"deadline\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"1\",\"chainId\":\"1\",\"verifyingContract\":\"0x1234567890123456789012345678901234567890\"},\"message\":{\"paymentId\":\"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef\",\"settler\":\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\",\"deadline\":\"1705320000\"}}",
+    "signature": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef12"
+  },
+  "fulfillment_quote_json": "{\"source_amount\":\"1000000\",\"source\":{\"id\":\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"account\":\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\"},\"destination\":{\"id\":\"eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174\",\"account\":\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\"},\"settler_address\":\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\",\"award_deadline\":\"2024-01-15T11:00:00Z\",\"payment_request_json\":\"{\\\"request_id\\\":\\\"req_123456789\\\",\\\"source\\\":{\\\"asset_identifier\\\":\\\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\\\",\\\"account\\\":\\\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\\\"},\\\"escrow_contract_address\\\":\\\"0x1234567890123456789012345678901234567890\\\"}\"}"
+} 

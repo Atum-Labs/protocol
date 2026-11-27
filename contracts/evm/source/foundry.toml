@@ -1,0 +1,47 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+solc = "0.8.27"
+bytecode_hash = "none"
+cbor_metadata = false
+always_use_create_2_factory = true
+optimizer = true
+via_ir = true
+optimizer_runs = 4294967295
+gas_reports = ["Escrow", "FulfillmentProxy"]
+# forge >= 1.8 defaults `isolate` to true; CI pins v1.7.1, where it is false. The committed
+# snapshots/*.json are measured without isolation, so pin it or local runs drift from CI.
+# `make bench-batching` passes --isolate explicitly (test/bench/BatchingGas.t.sol).
+isolate = false
+fs_permissions = [
+    { access = "read", path = "test/fork" },
+    { access = "read", path = "src/Escrow.sol" },
+    # Read-only: the same typehash source tie for the reserve library's copies.
+    { access = "read", path = "src/EscrowReserveLib.sol" },
+    # Read-only: test/EncodingExamples.verify.t.sol rebuilds each canonical EIP-712 type string from
+    # the struct DECLARATION in the interface, and each event's DECLARATION (parameter order,
+    # `indexed` placement, names) from its `event` declaration, so a reordered struct member or a
+    # transposed pair of same-type event parameters fails CI (CORE-2120).
+    { access = "read", path = "src/interfaces/IEscrow.sol" },
+    # Read-only: test/EncodingExamples.verify.t.sol parses the published cross-language
+    # signing fixture at runtime so a wrong golden in it fails CI (CORE-2120).
+    { access = "read", path = "encoding-examples.json" },
+    # Read-only: test/Escrow.directDepositVectors.t.sol runs the direct deposit fixture the Go and
+    # TypeScript encoders assert against through the real escrow (CORE-3049).
+    { access = "read", path = "../conformance/direct-deposit-vectors.json" },
+    # Read-only: test/Escrow.awardSdkVectors.t.sol submits the awards the TypeScript SDK built to
+    # the real escrow and Permit2.
+    { access = "read", path = "../../../schemas/declarations/PaymentRequest/v1/conformance/award-sdk-vectors.json" },
+]
+
+[fuzz]
+runs = 10000
+
+[invariant]
+fail_on_revert = true
+runs = 1
+depth = 100
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

@@ -1,0 +1,72 @@
+{
+  "EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
+    "name": "Solana Devnet",
+    "mainnet": false,
+    "deployed": true,
+    "verifiedOnChain": "2026-08-27",
+    "upgradeAuthority": "6jbdyQZcMm8AsgpNCQnEKHNzb2fqbV84JqeAabUqQ1bS",
+    "upgradeAuthorityNote": "on-curve; the devnet payer. Program keypairs are custodied elsewhere and are NOT needed for upgrades, which the authority signs.",
+    "contracts": {
+      "Escrow": "2MHznjRgbc4AbXkYaq69CiL4ZmnvBShg8QmyLxniwMkf",
+      "FulfillmentProxy": "FGMSseEvfdXHWnYwDcSyCorqJr3pT83zuasdy8ve8KmS"
+    },
+    "onChain": {
+      "escrowDataLength": 495536,
+      "escrowLastDeployedSlot": 487486498,
+      "fulfillmentProxyDataLength": 307920,
+      "fulfillmentProxyLastDeployedSlot": 487486807,
+      "escrowProtocolConfigBytes": 216,
+      "fulfillmentProxyProtocolConfigBytes": 636,
+      "note": "the 636-byte proxy config is the v4 layout carrying enforce_settler_allowlist and the pre-sized allowlist; data lengths match the local v4 build exactly"
+    },
+    "addressLookupTable": {
+      "address": "EWnjocMM4TxaZv2GimQKGvoLa68Fc2qhaabEayVL9nEi",
+      "authority": "6jbdyQZcMm8AsgpNCQnEKHNzb2fqbV84JqeAabUqQ1bS",
+      "addresses": 8,
+      "covers": [
+        "USDC"
+      ],
+      "note": "USDC only. The cluster's registered USDT mint BQcdHdAQW1hczDbBi9hiegXAR7A98Q9jx3X3iBBBDiq4 is NOT a mint -- System-owned, zero-length, AccountNotParsable to spl-token -- so there is nothing correct to table for it and its mint_fee_config was never initialised. Extending this table is NOT the devnet fix; either drop USDT from the devnet config or mint a real one and seed 6c first. Separately, the authority keypair is not held locally, unlike mainnet's.",
+      "shapeNote": "differs from mainnet's: includes Token-2022 but OMITS the two program ids, so it compresses less. Both are valid v4-era tables."
+    }
+  },
+  "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+    "name": "Solana Mainnet",
+    "mainnet": true,
+    "deployed": true,
+    "upgradeAuthorityNote": "the payer, which KEPT authority because SKIP_REVOKE_AUTHORITY=true was set rather than running --final. The v1/v3 mainnet authority 9YvUZVux... is an off-curve Squads PDA and is NOT reused: these are fresh programs.",
+    "contracts": {
+      "Escrow": "5BD9UAUCRCg6Chv6CS5k4sBHGd7CciWpng9u7iJxJFjx",
+      "FulfillmentProxy": "CMxMPzpmeJPJbyUK4DDSDEhEYdCCAUt7w5cr5SWEHoNJ"
+    },
+    "keypairs": "$ATUM_HOME/keys/svm-mainnet-programs/ (0600); generated deliberately rather than fabricated by anchor build inside the gitignored target/deploy/",
+    "verifiedOnChain": "2026-08-28",
+    "upgradeAuthority": "FVt14Ru5WvzRgy64qDBxCSPf815wUnrSsR4p58eaitBW",
+    "onChain": {
+      "escrowDataLength": 495536,
+      "escrowLastDeployedSlot": 442172405,
+      "fulfillmentProxyDataLength": 307920,
+      "fulfillmentProxyLastDeployedSlot": 442172850,
+      "escrowProtocolConfig": "5D9qbEz6sCbnT9LzW8zsPmpVHQpKuPamAShCHaW22bqo",
+      "escrowProtocolConfigBytes": 216,
+      "fulfillmentProxyProtocolConfig": "369Ro9ohfGKV5ToG1uqjPf6HtNnfciKQ2NMXRxXmrvxa",
+      "fulfillmentProxyProtocolConfigBytes": 636,
+      "note": "both loader-owned and executable; data lengths byte-identical to the devnet v4 build, and initialize_protocol has run. The 636-byte proxy config is the v4 layout."
+    },
+    "addressLookupTable": {
+      "address": "9p8MkwJ9weNq2SjT6XW31wC6tkBzdAtcKeShSCg4Li1Z",
+      "authority": "FVt14Ru5WvzRgy64qDBxCSPf815wUnrSsR4p58eaitBW",
+      "addresses": 11,
+      "covers": [
+        "USDC",
+        "USDT"
+      ],
+      "extendedOn": "2026-08-28",
+      "note": "ONE table per cluster: the settler holds a single addressLookupTable, so a second table cannot be wired and any mint only in it is silently unserved. Extended from 9 to 11 entries to cover USDT rather than creating a second table.",
+      "superseded": {
+        "address": "7EDbzZDzr7XD4yDDfUwNYYpP8qZ2H7g16uQnBry52Lei",
+        "note": "the former USDT-only table, 9 entries, still ACTIVE and same authority. Redundant now that the table above covers both mints. Referenced by nothing. Kept as the rollback target until the settler config naming the combined table has shipped and been observed working; deactivation has a cooldown and is irreversible."
+      }
+    }
+  }
+}

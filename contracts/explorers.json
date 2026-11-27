@@ -1,0 +1,322 @@
+{
+  "$comment": [
+    "Primary block explorer per chain, and how to ask whether a contract's SOURCE is verified.",
+    "",
+    "Keyed exactly as the deployments-v4.json files are, per VM, so joining needs no translation.",
+    "",
+    "'checks' is an ORDERED preference list, not a set. The audit tries each in turn and stops at the",
+    "first that says verified, recording WHICH one answered -- a contract verified on any of them is",
+    "visible to someone who looks there, so the audit reports where it is actually visible.",
+    "",
+    "  etherscan  - PREFERRED. The explorer people actually open, and it recompiles and compares",
+    "               bytecode itself, so it is the only one of the three that can give us a FULL match.",
+    "               Needs ETHERSCAN_API_KEY: one V2 key covers 14 of our 16 chains (Tempo is absent",
+    "               from Etherscan's chain list). Without the key this check reports could-not-check,",
+    "               never unverified -- a missing key must not manufacture a gap.",
+    "  sourcify   - Keyless fallback. Ours can only ever reach PARTIAL match: foundry.toml sets",
+    "               bytecode_hash=none and cbor_metadata=false, and restoring that metadata would",
+    "               change the initcode and move every CREATE2 address.",
+    "  blockscout - Keyless fallback, per-chain instances. Present for 11 of 16; Avalanche, Fuji and",
+    "               Amoy have none. Optimism and OP Sepolia redirect to explorer.optimism.io.",
+    "  tronscan   - TVM.",
+    "  osec       - SVM. Solana has no Etherscan-style source verification; the equivalent is a",
+    "               verified BUILD in the OtterSec registry. A different guarantee, recorded as such.",
+    "  []         - no explorer identified; audited as unresolved, not as absent."
+  ],
+  "evm": {
+    "42220": {
+      "name": "Celoscan",
+      "url": "https://celoscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://celo.blockscout.com"
+        }
+      ]
+    },
+    "42161": {
+      "name": "Arbiscan",
+      "url": "https://arbiscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://arbitrum.blockscout.com"
+        }
+      ]
+    },
+    "8453": {
+      "name": "BaseScan",
+      "url": "https://basescan.org",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://base.blockscout.com"
+        }
+      ]
+    },
+    "1": {
+      "name": "Etherscan",
+      "url": "https://etherscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://eth.blockscout.com"
+        }
+      ]
+    },
+    "137": {
+      "name": "PolygonScan",
+      "url": "https://polygonscan.com",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://polygon.blockscout.com"
+        }
+      ]
+    },
+    "80002": {
+      "name": "Amoy PolygonScan",
+      "url": "https://amoy.polygonscan.com",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        }
+      ]
+    },
+    "421614": {
+      "name": "Arbitrum Sepolia Arbiscan",
+      "url": "https://sepolia.arbiscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://arbitrum-sepolia.blockscout.com"
+        }
+      ]
+    },
+    "11142220": {
+      "name": "Celo Sepolia Celoscan",
+      "url": "https://sepolia.celoscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://celo-sepolia.blockscout.com"
+        }
+      ]
+    },
+    "11155111": {
+      "name": "Sepolia Etherscan",
+      "url": "https://sepolia.etherscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://eth-sepolia.blockscout.com"
+        }
+      ]
+    },
+    "84532": {
+      "name": "Base Sepolia BaseScan",
+      "url": "https://sepolia.basescan.org",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://base-sepolia.blockscout.com"
+        }
+      ]
+    },
+    "10": {
+      "name": "Optimistic Etherscan",
+      "url": "https://optimistic.etherscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://explorer.optimism.io"
+        }
+      ]
+    },
+    "11155420": {
+      "name": "OP Sepolia Etherscan",
+      "url": "https://sepolia-optimism.etherscan.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://testnet-explorer.optimism.io"
+        }
+      ]
+    },
+    "43114": {
+      "name": "Snowtrace",
+      "url": "https://snowtrace.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        }
+      ]
+    },
+    "43113": {
+      "name": "Snowtrace Testnet",
+      "url": "https://testnet.snowtrace.io",
+      "checks": [
+        {
+          "via": "etherscan"
+        },
+        {
+          "via": "sourcify"
+        }
+      ]
+    },
+    "42431": {
+      "name": "Tempo Explorer",
+      "url": "https://explore.tempo.xyz",
+      "checks": [],
+      "note": "Tempo has an explorer at https://explore.tempo.xyz (explorer.tempo.xyz redirects there), but no source-verification API responded on it: the Blockscout, Etherscan-compatible and addresses routes all 404, and Tempo is absent from Etherscan's V2 chain list. Recorded as an OPEN QUESTION for Tempo rather than as 'no explorer' -- the explorer exists, the verification path is what is unknown."
+    },
+    "4217": {
+      "name": "Tempo Explorer",
+      "url": "https://explore.tempo.xyz",
+      "checks": [],
+      "note": "Tempo has an explorer at https://explore.tempo.xyz (explorer.tempo.xyz redirects there), but no source-verification API responded on it: the Blockscout, Etherscan-compatible and addresses routes all 404, and Tempo is absent from Etherscan's V2 chain list. Recorded as an OPEN QUESTION for Tempo rather than as 'no explorer' -- the explorer exists, the verification path is what is unknown."
+    },
+    "5042": {
+      "name": "Arc Explorer",
+      "url": "https://explorer.arc.io",
+      "checks": [
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://explorer.arc.io"
+        }
+      ],
+      "note": "Arc's explorer is a Blockscout instance. The testnet API answers api/v2 and already shows the testnet contracts as partially verified; the mainnet host sits behind a Cloudflare challenge that answers plain HTTP clients with 403, so a could-not-check from CI means the challenge, not an unverified contract: open the address page in a browser. Arc is absent from Etherscan's V2 chain list."
+    },
+    "5042002": {
+      "name": "Arc Explorer",
+      "url": "https://explorer.testnet.arc.io",
+      "checks": [
+        {
+          "via": "sourcify"
+        },
+        {
+          "via": "blockscout",
+          "api": "https://explorer.testnet.arc.io"
+        }
+      ],
+      "note": "Arc's explorer is a Blockscout instance. The testnet API answers api/v2 and already shows the testnet contracts as partially verified; the mainnet host sits behind a Cloudflare challenge that answers plain HTTP clients with 403, so a could-not-check from CI means the challenge, not an unverified contract: open the address page in a browser. Arc is absent from Etherscan's V2 chain list."
+    }
+  },
+  "tvm": {
+    "mainnet": {
+      "name": "Tronscan",
+      "url": "https://tronscan.org",
+      "checks": [
+        {
+          "via": "tronscan",
+          "api": "https://apilist.tronscanapi.com"
+        }
+      ]
+    },
+    "shasta": {
+      "name": "Shasta Tronscan",
+      "url": "https://shasta.tronscan.org",
+      "checks": [
+        {
+          "via": "tronscan",
+          "api": "https://shastapi.tronscan.org"
+        }
+      ]
+    }
+  },
+  "svm": {
+    "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+      "name": "Solana Explorer",
+      "url": "https://explorer.solana.com",
+      "checks": [
+        {
+          "via": "osec"
+        }
+      ]
+    },
+    "EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
+      "name": "Solana Explorer",
+      "url": "https://explorer.solana.com/?cluster=devnet",
+      "checks": [
+        {
+          "via": "osec"
+        }
+      ]
+    }
+  }
+}

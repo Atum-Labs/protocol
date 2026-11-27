@@ -1,0 +1,182 @@
+name: Publish x402-atum-escrow
+# Names the run so a real publish is unmistakable in the Actions tab, e.g.
+# "Publish x402-atum-escrow to npm @next (rc/sdk-0.8.0)". Anything under the CI
+# workflow is validation, never a publish.
+run-name: Publish ${{ github.event.inputs.package_name || 'x402-atum-escrow' }} to npm @${{ github.event.inputs.dist_tag || 'latest' }} (${{ github.ref_name }})
+
+# Publishes x402-atum-escrow, the atum-escrow x402 scheme as installable
+# mechanisms, to npm. Triggered deliberately from the manual "Run workflow" button
+# only. The publish is token-less via OIDC Trusted Publishing (a trusted publisher
+# must be configured on the package) and uses the npm CLI, since pnpm does not do
+# OIDC. The workspace names the package @atum-labs/<name>; it is published under
+# the npm org's scope, @atumlabs.
+#
+# Publishing also depends on configuration that lives outside this repo. npm
+# binds a trusted publisher to one repository plus one workflow FILENAME, so the
+# package must name this repository and this file. Leave npm's "environment" field
+# empty: the publish job below declares no `environment:`, so a value there would
+# not match the OIDC claim and the handshake fails to authenticate. Publishing
+# under a distinct `package_name` creates a distinct npm package, which needs its
+# own trusted publisher entry.
+#
+# NOTE: x402-atum-escrow is Apache-2.0. Default `access` is `public`.
+# Restricted remains available for partner-scoped package_name variants.
+#
+# Two jobs by design: the `publish` job runs the build tooling with NO repo write
+# access, and a separate `tag` job holds contents: write for the single git push,
+# so a compromised build dependency cannot write to this repo.
+#
+# What ships is the whole dispatched commit, so a release is published from its
+# own branch: a final version from release/*, a prerelease from rc/* (see
+# RELEASING.md). Before anything is installed, the run checks the branch, the
+# dist-tag and that CHANGELOG.md carries this version's notes. Every publish then
+# tags the commit <package_name>-v<version>, the record of what that version holds.
+#
+# Inputs:
+#   package_name  the name after the scope. A distinct name (for example
+#                 x402-atum-escrow-visa) publishes a separate package with its own
+#                 access list, so different partners can be granted different
+#                 packages. The code published is whatever is on the dispatched ref.
+#   access        npm visibility.
+#   dist_tag      the npm dist-tag. `npm install <pkg>` installs `latest`; a
+#                 prerelease (X.Y.Z-rc.N) goes to `next`.
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package name after the @atumlabs scope"
+        type: string
+        default: x402-atum-escrow
+      access:
+        description: "npm visibility"
+        type: choice
+        default: public
+        options:
+          - restricted
+          - public
+      dist_tag:
+        description: "npm dist-tag (a prerelease X.Y.Z-rc.N goes to next)"
+        type: choice
+        default: latest
+        options:
+          - latest
+          - next
+
+# One publish per (package, ref) at a time. Two dispatches started
+# close together would otherwise both pass the "does this version already exist?"
+# check before either publishes; the second then fails on the now-live version.
+# Never cancel a publish mid-flight — queue the next run instead.
+concurrency:
+  group: publish-${{ github.event.inputs.package_name || 'x402-atum-escrow' }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Baseline is read-only. Each job widens only what it needs.
+permissions:
+  contents: read
+
+env:
+  PACKAGE_NAME: ${{ github.event.inputs.package_name || 'x402-atum-escrow' }}
+  ACCESS: ${{ github.event.inputs.access || 'public' }}
+  DIST_TAG: ${{ github.event.inputs.dist_tag || 'latest' }}
+  SCOPE: "@atumlabs"
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # No contents: write here. This job runs pnpm build (third-party tooling), so
+    # it must not be able to write to the repo. Only the npm publish right.
+    permissions:
+      contents: read
+      id-token: write # npm OIDC trusted publishing
+    defaults:
+      run:
+        working-directory: schemas/apis/x402/v1/bindings/x402-atum-escrow
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      # Fail fast on a malformed package_name. This is format hygiene, not access
+      # control (the scope is fixed and only maintainers can dispatch this): it
+      # stops a typo from publishing an unremovable mis-named package. The pattern
+      # stays permissive so distinct names like x402-atum-escrow-visa still pass.
+      - name: Validate inputs
+        run: |
+          if ! printf '%s' "$PACKAGE_NAME" | grep -Eq '^[a-z0-9][a-z0-9._-]*$'; then
+            echo "Invalid package_name '$PACKAGE_NAME'. Use lowercase letters, digits, dot, underscore, or dash, starting with a letter or digit."
+            exit 1
+          fi
+          echo "inputs ok: ${SCOPE}/${PACKAGE_NAME}"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: pnpm
+          # Deliberately no registry-url: npm defaults to registry.npmjs.org, and
+          # setting it makes setup-node write an empty _authToken line into .npmrc
+          # that disables the OIDC handshake (actions/setup-node#1551).
+      # Before install, so a refused release builds nothing.
+      - name: Check the branch, dist-tag and release notes
+        working-directory: .
+        run: node tooling/publish-guard/bin/publish-guard.mjs changelog release-check --ref "$GITHUB_REF" --dist-tag "$DIST_TAG" --package-name "$PACKAGE_NAME" --cwd schemas/apis/x402/v1/bindings/x402-atum-escrow
+      # --- shared build + guard (single source of truth) ---
+      - name: Install workspace
+        working-directory: .
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      # The trailing "..." selects this package AND its workspace dependency closure —
+      # the escrow encoders, the schema bindings and the sender-auth SDK that tsup
+      # inlines. pnpm builds them topologically, each exactly once. Their dist is
+      # generated, not committed, and the install above ran --ignore-scripts.
+      - name: Build (bundles the workspace siblings into dist)
+        working-directory: .
+        run: pnpm --filter "@atum-labs/x402-atum-escrow..." run build
+      - name: Verify it bundles without workspace siblings
+        working-directory: .
+        run: node schemas/apis/x402/v1/bindings/x402-atum-escrow/scripts/check-publishable.mjs
+      # Relabel AFTER the guard: the guard compiles a consumer that imports the
+      # default name, so it must run against the default before we rename. The
+      # dist bytes are name-independent, so relabeling here does not change what
+      # was validated, only the name the tarball is published under.
+      - name: Set the package name for this publish
+        run: npm pkg set name="${SCOPE}/${PACKAGE_NAME}"
+      - name: Publish to npm (Trusted Publishing)
+        # Token-less publish via OIDC: the npm CLI (>= 11.5.1) authenticates with
+        # the workflow id-token against the package's configured trusted publisher,
+        # so no NPM_TOKEN is needed. pnpm does not perform the OIDC handshake, so
+        # this step uses npm. No --provenance: npm accepts provenance only when the
+        # source repository is public, and this repo is private.
+        run: |
+          npm install -g 'npm@^11.5.1'
+          npm -v
+          if [ "$ACCESS" = "public" ]; then
+            npm publish --access public --ignore-scripts --tag "$DIST_TAG"
+          else
+            npm publish --access restricted --ignore-scripts --tag "$DIST_TAG"
+          fi
+
+  # Separate job so contents: write is isolated to the tag push and never in scope
+  # while build tooling runs. It runs only this repo's code; nothing is installed.
+  # Runs after every successful publish.
+  tag:
+    name: Tag the release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # The exact commit that was built and published.
+          ref: ${{ github.sha }}
+      # Records which commit this version was built from. A re-run finds the tag
+      # already on this commit and passes; a tag on another commit fails.
+      - name: Tag the published commit
+        id: tag
+        run: node tooling/publish-guard/bin/publish-guard.mjs tag-release --package-name "$PACKAGE_NAME" --sha "$GITHUB_SHA" --cwd schemas/apis/x402/v1/bindings/x402-atum-escrow
+      - name: Warn if published but not tagged
+        # The tag step explains its own failures; this covers a failure before it.
+        if: ${{ failure() && steps.tag.outcome != 'failure' }}
+        run: |
+          echo "::error::Published ${SCOPE}/${PACKAGE_NAME} from ${GITHUB_SHA} but did not tag it."
+          echo "::error::Re-run the failed jobs: the publish is not repeated, only the tag."

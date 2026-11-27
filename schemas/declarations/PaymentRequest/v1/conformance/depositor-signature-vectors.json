@@ -1,0 +1,1329 @@
+{
+  "_comment": "Vectors for VerifyDepositorSignature (Go) and verifyDepositorSignature (TypeScript), asserted by both sender-auth suites against the same fake checker. Each vector is an input, the chain the fake checker models for the input's account, the result the function must return, and calls, every checker call it must make, in order, with its arguments in the checker's form (addresses and hex lowercase, 0x-prefixed; a Tron address is its 20-byte body). The fake models one account. chain.code is its code; absent means none. chain.isValidSignature is how the contract answers: returnData, or reverts; with onlyCaller it answers the ERC-1271 failure value (0xffffffff, padded) to any other msg.sender, as a module account that trusts only Permit2 does. A call to an account with no code returns no data, as eth_call does. chain.unavailable names the one checker method that fails as a transport error, with the message 'the chain is unavailable'. offline means no checker is supplied. signatureMaxLength is the longest signature, in characters with the 0x, that the rule reads; a longer one is malformed. It is also the veri-fill signature-validity route's maxLength. A signature that long does not belong in this file, so each suite builds its two length cases from this value: one exactly this long, passed through whole, and one a byte longer, refused as malformed. Written by hand: the signatures are inputs, made with the public anvil development keys 0 and 1 (signers below) over keccak256 of the labels below, and every expectation follows from Permit2's SignatureVerification.verify and the rules in readme.md. Each EOA-path signature was also recovered with an independent secp256k1 implementation using Permit2's own decoding before it was committed. Edit this file directly; there is nothing to regenerate.",
+  "signers": {
+    "key0": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "key1": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  "signatureMaxLength": 65536,
+  "digests": {
+    "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a": "atum/depositor-signature-vectors/3",
+    "0xd05214337f48960127ceb20065ad92df0f94ee51597817bd03701ba534cb1efe": "atum/depositor-signature-vectors/1"
+  },
+  "vectors": [
+    {
+      "name": "eoa-65-byte-v27-recovers",
+      "_comment": "Key 0 signs with v 27. The key check admits it and reads nothing.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-65-byte-v28-recovers",
+      "_comment": "Key 0 signs a digest whose recovery id is 1, spelled v 28. The account is lowercase: addresses compare without case.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "digest": "0xd05214337f48960127ceb20065ad92df0f94ee51597817bd03701ba534cb1efe",
+        "signature": "0xa5e9fff5bd2ac4ef8b427153d57f02c08f09506146a595535b10cda2beb56092500d23d278fd0b532d50d0978225726af75bf1a8e0bf721ceac6d452999e6bcb1c"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-uppercase-hex-recovers",
+      "_comment": "The v 27 signature and its digest in uppercase hex digits. Hex digits are read without case, as Permit2 only ever sees the bytes, so it recovers and reads nothing.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143ABD003825E8E8AF0671290B4ABA3461A06DE60EDF06C4A9E8371FCAA84E3A",
+        "signature": "0x857B68C462BE067564FB05AB0720207AC96B82F1549D67D67859A728FCDF2C6A37369DA59932990B69632103E3B9C7D292E3F74C9FF7CB73E044435B93657A491B"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-v0-refused",
+      "_comment": "The v 27 signature spelled with v 0. Permit2 passes v to ecrecover unchanged, which returns the zero address, so it is refused even though the key signed.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a4900"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature recovery id is not 27 or 28), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-v1-refused",
+      "_comment": "The v 28 signature spelled with v 1. Refused as v 0 is.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0xd05214337f48960127ceb20065ad92df0f94ee51597817bd03701ba534cb1efe",
+        "signature": "0xa5e9fff5bd2ac4ef8b427153d57f02c08f09506146a595535b10cda2beb56092500d23d278fd0b532d50d0978225726af75bf1a8e0bf721ceac6d452999e6bcb01"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature recovery id is not 27 or 28), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-64-byte-compact-recovers",
+      "_comment": "The v 27 signature in the EIP-2098 64-byte form, parity bit clear. Permit2 expands it.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a49"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-64-byte-compact-y-parity-1-recovers",
+      "_comment": "The v 28 signature in the EIP-2098 64-byte form, parity bit set.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0xd05214337f48960127ceb20065ad92df0f94ee51597817bd03701ba534cb1efe",
+        "signature": "0xa5e9fff5bd2ac4ef8b427153d57f02c08f09506146a595535b10cda2beb56092d00d23d278fd0b532d50d0978225726af75bf1a8e0bf721ceac6d452999e6bcb"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-high-s-recovers",
+      "_comment": "The malleated twin (r, n - s, v 28) of the v 27 signature. Permit2 has no low-s rule, so it is admitted, where RecoverSigner refuses it.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6ac8c9625a66cd66f4969cdefc1c46382c27cae59a0f50d4c7df8e1b313cd0c6f81c"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "eoa-other-signer-refused",
+      "_comment": "Key 1 signs for key 0's account, which has no code: Permit2 recovers key 1 and reverts InvalidSigner.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "the signature recovers to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-66-byte-refused",
+      "_comment": "A valid signature with one byte appended. Permit2 reverts InvalidSignatureLength for an account with no code.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b00"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature is neither 64 nor 65 bytes), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-multi-owner-signature-refused",
+      "_comment": "A 130-byte two-owner signature for an account with no code: only a contract can accept it.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature is neither 64 nor 65 bytes), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-r-zero-refused",
+      "_comment": "r is 0, which the ecrecover precompile refuses.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x000000000000000000000000000000000000000000000000000000000000000037369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature r or s is not in [1, n-1]), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-s-equals-n-refused",
+      "_comment": "s is the group order n, which the ecrecover precompile refuses.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6afffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd03641411b"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature r or s is not in [1, n-1]), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "eoa-r-not-on-curve-refused",
+      "_comment": "r is 5, in range but not the x-coordinate of any curve point, so no public key recovers.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x000000000000000000000000000000000000000000000000000000000000000537369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "no signer recovers from the signature (the signature recovers no public key), and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "contract-magic-verified",
+      "_comment": "A multi-owner Safe: a 130-byte signature of two owners, passed through whole. The address is uppercase; the checker receives it lowercase.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-uppercase-hex-lowercased-for-the-checker",
+      "_comment": "The multi-owner Safe signature and its digest in uppercase hex digits. The checker receives both lowercase, the same bytes, as it receives addresses.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143ABD003825E8E8AF0671290B4ABA3461A06DE60EDF06C4A9E8371FCAA84E3A",
+        "signature": "0x857B68C462BE067564FB05AB0720207AC96B82F1549D67D67859A728FCDF2C6A37369DA59932990B69632103E3B9C7D292E3F74C9FF7CB73E044435B93657A491B7632B07C3B76B33CBA09ACC0825E6F7AD29538AEDD6923372C04531A33E9F71273497B96F51C9104C0C2CC1D452C192DF0BDE05888253031D88767F0D98E239D1C"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-owner-key-high-s-contract-path",
+      "_comment": "An owner's high-s signature for a contract account. It recovers to the owner, not the account, so the verdict comes from the code, not from whether recovery succeeded.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6ac8c9625a66cd66f4969cdefc1c46382c27cae59a0f50d4c7df8e1b313cd0c6f81c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6ac8c9625a66cd66f4969cdefc1c46382c27cae59a0f50d4c7df8e1b313cd0c6f81c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-empty-signature-verified",
+      "_comment": "An empty signature, which a Safe accepts for a message approved on chain. Any length is passed through, zero included.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-failure-value-rejected",
+      "_comment": "The contract returns the ERC-1271 failure value.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0xffffffff00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature returned 0xffffffff00000000000000000000000000000000000000000000000000000000, not the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-revert-rejected",
+      "_comment": "The contract reverts, as a Safe does (GS026) on a signature it does not accept. A revert is the contract's answer, not an unreadable chain.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "reverts": true
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature reverted"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-empty-return-rejected",
+      "_comment": "The contract returns nothing, as one without isValidSignature and with a silent fallback does.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x"
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature returned 0x, not the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-magic-unpadded-rejected",
+      "_comment": "The four magic bytes alone. Permit2 decodes the answer as an ABI bytes4, which needs a whole word, so the decode reverts.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e"
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature returned 0x1626ba7e, not the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-magic-dirty-padding-rejected",
+      "_comment": "The magic bytes with a non-zero pad. The bytes4 decode refuses dirty padding.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000001"
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature returned 0x1626ba7e00000000000000000000000000000000000000000000000000000001, not the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-magic-then-more-data-verified",
+      "_comment": "The magic word followed by a second word. The decode reads the first word and ignores the rest.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-caller-gated-answers-permit2",
+      "_comment": "A module account gated on its caller: its keeper (key 1) signs the raw digest, and it answers the magic value only when msg.sender is Permit2, the failure value to anyone else. Admitted only because the call is made from Permit2.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xa7a0000000000000000000000000000000000d01",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "contract-caller-gated-configured-permit2",
+      "_comment": "The same module on a chain whose Permit2 is not at the canonical address: the configured one is the caller.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xa7a0000000000000000000000000000000000d01",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+        "permit2Contract": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+        }
+      ]
+    },
+    {
+      "name": "contract-caller-gated-wrong-permit2-rejected",
+      "_comment": "The module trusts a non-canonical Permit2 but none is configured, so the call comes from the canonical one and gets the failure value.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xa7a0000000000000000000000000000000000d01",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x5fbdb2315678afecb367f032d93f642f64180aa3"
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature returned 0xffffffff00000000000000000000000000000000000000000000000000000000, not the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0xa7a0000000000000000000000000000000000d01",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "eip7702-designator-takes-the-contract-path",
+      "_comment": "An EIP-7702 account: its code is the delegation designator, which is code to Permit2. A session key (key 1) signs, and the delegate accepts.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x7702000000000000000000000000000000000001",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0xef010063c0c19a282a1b52b07dd5a65b58948a07dae32b",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x7702000000000000000000000000000000000001"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x7702000000000000000000000000000000000001",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "eip7702-own-key-recovers-without-a-chain-read",
+      "_comment": "Key 0's account delegated under EIP-7702, signing with its own key. The key check admits it before any read, where Permit2 would ask the delegate: the one documented divergence, which can fail a deposit but not move funds.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "chain": {
+        "code": "0xef010063c0c19a282a1b52b07dd5a65b58948a07dae32b",
+        "isValidSignature": {
+          "returnData": "0xffffffff00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "code-read-unavailable",
+      "_comment": "The code read fails. Nothing is known about the signature, so it is neither valid nor refused.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        },
+        "unavailable": "hasCode"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "signature_unverifiable",
+        "detail": "the account's code could not be read: the chain is unavailable"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        }
+      ]
+    },
+    {
+      "name": "contract-call-unavailable",
+      "_comment": "The account has code and the isValidSignature call fails in transport, which is not a revert.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x5AFE00000000000000000000000000000000C0DE",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000"
+        },
+        "unavailable": "isValidSignatureFrom"
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "signature_unverifiable",
+        "detail": "isValidSignature could not be called: the chain is unavailable"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "eip155:42161",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+        }
+      ]
+    },
+    {
+      "name": "offline-eoa-recovers",
+      "_comment": "No checker: the key check needs none.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "offline": true,
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "offline-other-signer-unverifiable",
+      "_comment": "No checker, and the key did not sign: the code cannot be read.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "offline": true,
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "signature_unverifiable",
+        "detail": "the account's code could not be read: no chain reader was supplied"
+      },
+      "calls": []
+    },
+    {
+      "name": "tron-eoa-recovers",
+      "_comment": "Key 0's Tron account, in base58. Recovery gives the 20-byte body.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "TYBNgWfhGuNzdLtjKtxXTfskAhTbMcqbaG",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "tron-eoa-hex-account-recovers",
+      "_comment": "The same account in 41-prefixed hex.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "41f39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a49"
+      },
+      "result": {
+        "valid": true,
+        "path": "eoa",
+        "reason": "verified",
+        "detail": "the signature recovers to the account"
+      },
+      "calls": []
+    },
+    {
+      "name": "tron-eoa-other-signer-refused",
+      "_comment": "Key 1 signs for key 0's Tron account, which has no code. The checker receives the body.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "TYBNgWfhGuNzdLtjKtxXTfskAhTbMcqbaG",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "result": {
+        "valid": false,
+        "path": "eoa",
+        "reason": "signer_mismatch",
+        "detail": "the signature recovers to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, and the account has no code"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "tron:mainnet",
+          "account": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+        }
+      ]
+    },
+    {
+      "name": "tron-contract-answers-permit2",
+      "_comment": "A Tron contract account that answers only the pinned mainnet Permit2, TJhMXTHQHeQyMD7TcKQFqAePNgG4b31H9m, passed as its body.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "TJGL6Z2zEfHQ4bPKnPnAfMCswVfvKSazve",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "tron:mainnet",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "tron:mainnet",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8"
+        }
+      ]
+    },
+    {
+      "name": "tron-shasta-contract-answers-its-permit2",
+      "_comment": "On shasta the pinned Permit2 is TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp, not mainnet's.",
+      "input": {
+        "network": "tron:shasta",
+        "account": "TJGL6Z2zEfHQ4bPKnPnAfMCswVfvKSazve",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "tron:shasta",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "tron:shasta",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d"
+        }
+      ]
+    },
+    {
+      "name": "tron-contract-revert-rejected",
+      "_comment": "A Tron contract account that reverts.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "TJGL6Z2zEfHQ4bPKnPnAfMCswVfvKSazve",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "reverts": true
+        }
+      },
+      "result": {
+        "valid": false,
+        "path": "contract",
+        "reason": "contract_signature_rejected",
+        "detail": "isValidSignature reverted"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "tron:mainnet",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "tron:mainnet",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8"
+        }
+      ]
+    },
+    {
+      "name": "tron-configured-permit2",
+      "_comment": "A Tron network with no pinned Permit2, configured by the verifier (in base58).",
+      "input": {
+        "network": "tron:local",
+        "account": "TJGL6Z2zEfHQ4bPKnPnAfMCswVfvKSazve",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+        "permit2Contract": "TPUqJPASUn1zLvbLBgRZ5pBYrx7WSe5ahp"
+      },
+      "chain": {
+        "code": "0x608060405234801561001057600080fd5b50",
+        "isValidSignature": {
+          "returnData": "0x1626ba7e00000000000000000000000000000000000000000000000000000000",
+          "onlyCaller": "0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d"
+        }
+      },
+      "result": {
+        "valid": true,
+        "path": "contract",
+        "reason": "verified",
+        "detail": "isValidSignature returned the ERC-1271 magic value"
+      },
+      "calls": [
+        {
+          "method": "hasCode",
+          "network": "tron:local",
+          "account": "0x5afe00000000000000000000000000000000c0de"
+        },
+        {
+          "method": "isValidSignatureFrom",
+          "network": "tron:local",
+          "account": "0x5afe00000000000000000000000000000000c0de",
+          "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+          "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c",
+          "caller": "0x9433ffaad19a9aaff9ec184b879dd23ba5a6553d"
+        }
+      ]
+    },
+    {
+      "name": "tron-unknown-network-unsupported",
+      "_comment": "A Tron network with no pinned Permit2 and none configured.",
+      "input": {
+        "network": "tron:local",
+        "account": "TJGL6Z2zEfHQ4bPKnPnAfMCswVfvKSazve",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "unsupported_chain",
+        "detail": "no Permit2 contract is known for this tron network"
+      },
+      "calls": []
+    },
+    {
+      "name": "tron-malformed-network-unsupported",
+      "_comment": "A Tron network id with a third segment.",
+      "input": {
+        "network": "tron:mainnet:extra",
+        "account": "TYBNgWfhGuNzdLtjKtxXTfskAhTbMcqbaG",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "unsupported_chain",
+        "detail": "the network is not a valid tron chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "tron-bad-checksum-malformed",
+      "_comment": "Key 0's base58 account with its last character changed, so the checksum fails.",
+      "input": {
+        "network": "tron:mainnet",
+        "account": "TYBNgWfhGuNzdLtjKtxXTfskAhTbMcqbaH",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "malformed",
+        "detail": "the account is not an address on this chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "unsupported-namespace",
+      "_comment": "A Solana network: Permit2 does not run there.",
+      "input": {
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "unsupported_chain",
+        "detail": "the network is not an eip155 or tron chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "unsupported-eip155-reference",
+      "_comment": "An eip155 reference that is not a decimal chain id.",
+      "input": {
+        "network": "eip155:0xa4b1",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "unsupported_chain",
+        "detail": "the network is not a valid eip155 chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "unsupported-configured-permit2",
+      "_comment": "The configured Permit2 is not an address.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b",
+        "permit2Contract": "0x1234"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "unsupported_chain",
+        "detail": "the Permit2 contract is not an address on this chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "malformed-account",
+      "_comment": "An account that is not a 20-byte address.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0x1234",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "malformed",
+        "detail": "the account is not an address on this chain"
+      },
+      "calls": []
+    },
+    {
+      "name": "malformed-digest",
+      "_comment": "A 31-byte digest.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "malformed",
+        "detail": "the digest is not a 0x-prefixed 32-byte hex string"
+      },
+      "calls": []
+    },
+    {
+      "name": "malformed-signature-odd-length",
+      "_comment": "A signature with an odd number of hex digits.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "malformed",
+        "detail": "the signature is not 0x-prefixed hex"
+      },
+      "calls": []
+    },
+    {
+      "name": "malformed-signature-no-prefix",
+      "_comment": "A signature without its 0x prefix.",
+      "input": {
+        "network": "eip155:42161",
+        "account": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        "digest": "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a",
+        "signature": "857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+      },
+      "result": {
+        "valid": false,
+        "path": "none",
+        "reason": "malformed",
+        "detail": "the signature is not 0x-prefixed hex"
+      },
+      "calls": []
+    }
+  ]
+}

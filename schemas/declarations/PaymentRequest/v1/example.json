@@ -1,0 +1,61 @@
+{
+  "$comment": "sender_auth is real and self-consistent: signed_messages[0] is a four-member Permit2 deposit that commits to destination[0] and request_id, signed by source.account, whose key is a public development key: never fund it. permitted.amount is max_source_amount and permitted.spender is escrow_contract_address. originator_auth carries placeholder signature and proof values. Build your own deposits with the payment-gateway client.",
+  "version": "1.0",
+  "request_id": "req_123456789",
+  "source": {
+    "asset_identifier": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "account": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  "destination": [
+    {
+      "asset_identifier": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "account": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+    }
+  ],
+  "fulfillment_amount": "1000000",
+  "max_source_amount": "1000001",
+  "quote_deadline": "2024-01-15T10:35:00Z",
+  "fulfillment_deadline": "2024-01-15T11:00:00Z",
+  "settler_auth_required": { "policy1": true, "policy2": false },
+  "sender_auth": {
+    "message_scheme": "EVM_PERMIT2",
+    "signed_messages": [
+      {
+        "message": "0xe177832df3290704cd1a3977781954e7dbdbbc6ac677202bf42ad72806ffde18",
+        "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"amount\":\"1000001\"},\"spender\":\"0x1234567890123456789012345678901234567890\",\"nonce\":\"123\",\"deadline\":\"1924991999\",\"witness\":{\"depositRequestHash\":\"0x5924d564ee72bb1c3fff4e6a5462fcfdb105b007f8fc0bd4b8d6159886f7c4f4\",\"destination\":\"solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v@9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\"reserver\":\"0x2222222222222222222222222222222222222222\",\"releaser\":\"0x3333333333333333333333333333333333333333\"}}}",
+        "signature": "0x7075e157cd47b91459ce4a425b7308ad0bea71cd75feb1a63d3c00b8e60992927240ee5a63e96b1327d9c0e63f84d809253c66c01cca274f2bb65bfae3753ab31b"
+      }
+    ]
+  },
+  "escrow_contract_address": "0x1234567890123456789012345678901234567890",
+  "fulfillment_verifier": {
+    "account": "0x3333333333333333333333333333333333333333",
+    "endpoint": "https://veri-fill.example.com"
+  },
+  "originator_auth": {
+    "verifiable_credential": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://schemas.atum.xyz/credentials/kyc/v1"
+      ],
+      "id": "https://example.com/credentials/123",
+      "type": ["VerifiableCredential", "KYCCredential"],
+      "issuer": "did:example:issuer123",
+      "issuanceDate": "2024-01-01T00:00:00Z",
+      "credentialSubject": {
+        "id": "did:example:subject456",
+        "kycStatus": "approved",
+        "verificationLevel": "basic"
+      },
+      "proof": {
+        "type": "Ed25519Signature2020",
+        "created": "2024-01-01T00:00:00Z",
+        "verificationMethod": "did:example:issuer123#key1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z3FSLfxKAKCXRU..."
+      }
+    },
+    "verification_method_id": "did:example:subject456#key1",
+    "signature": "0xabcdef1234567890..."
+  }
+}

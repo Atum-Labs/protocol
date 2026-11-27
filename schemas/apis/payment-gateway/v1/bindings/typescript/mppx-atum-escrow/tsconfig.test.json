@@ -1,0 +1,20 @@
+// Type-checks the test files, which tsconfig.json deliberately excludes.
+//
+// vitest strips types rather than checking them, so without this the test files
+// under src/ compile to nothing and a type error in a test is invisible until the
+// assertion it guards silently stops meaning what it says.
+//
+// A separate config rather than dropping the exclude from tsconfig.json: that file
+// is the one tsup reads for the declaration build, and pulling test files and their
+// vitest types into that program changes what the published .d.ts is derived from.
+// Checking is a separate concern from building, so it gets a separate config.
+//
+// Run via `pnpm typecheck:tests` (wired into `pnpm test`). Needs the in-repo
+// `@atum-labs/*` packages compiled first: run `pnpm run build:deps`.
+{
+  "extends": "./tsconfig.json",
+  // `extends` replaces these wholesale rather than merging, so both are restated:
+  // same source tree, minus the exclusion of *.test.ts.
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

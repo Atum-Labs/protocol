@@ -1,0 +1,28 @@
+// Type-checks the test files, which tsconfig.json deliberately excludes.
+//
+// ts-jest reports type errors for the test files it compiles, so this is not the
+// only check on them — it is the wider one. It checks the whole program in a single
+// pass, so test-only helpers that no test imports are covered too, and it runs
+// without executing the suite. It also keeps one mechanism for test type-checking
+// across the publishable packages.
+//
+// A separate config rather than dropping the exclude from tsconfig.json: that file
+// is the one tsup reads for the declaration build, and pulling test files and their
+// jest types into that program changes what the published .d.ts is derived from.
+// Checking is a separate concern from building, so it gets a separate config.
+//
+// Run via `pnpm typecheck:tests` (wired into `pnpm test`). Needs the in-repo
+// `@atum-labs/*` packages compiled first: run `pnpm run build:deps`.
+{
+  "extends": "./tsconfig.json",
+  // `extends` replaces these wholesale rather than merging, so both are restated:
+  // same source tree, minus the exclusion of *.test.ts.
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "compilerOptions": {
+    // Unlike the other packages' configs, the base here emits: it sets outDir to
+    // ./dist, which is tsup's output directory. Type-checking must not write there,
+    // so this program is check-only.
+    "noEmit": true
+  }
+}

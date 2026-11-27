@@ -1,0 +1,55 @@
+{
+  "name": "@atum-labs/schema-declarations",
+  "private": true,
+  "version": "1.0.0",
+  "exports": {
+    "./AuthorizationResponse/v1/bindings/typescript": "./AuthorizationResponse/v1/bindings/typescript/index.ts",
+    "./AuthorizationResponseEnvelope/v1/bindings/typescript": "./AuthorizationResponseEnvelope/v1/bindings/typescript/index.ts",
+    "./AuthorizationResponseEnvelope/v1/bindings/typescript/version": "./AuthorizationResponseEnvelope/v1/bindings/typescript/version.ts",
+    "./BidAward/v1/bindings/typescript": "./BidAward/v1/bindings/typescript/index.ts",
+    "./BidAward/v1/bindings/typescript/version": "./BidAward/v1/bindings/typescript/version.ts",
+    "./BidDecline/v1/bindings/typescript": "./BidDecline/v1/bindings/typescript/index.ts",
+    "./BidDeclineEnvelope/v1/bindings/typescript": "./BidDeclineEnvelope/v1/bindings/typescript/index.ts",
+    "./BidDeclineEnvelope/v1/bindings/typescript/version": "./BidDeclineEnvelope/v1/bindings/typescript/version.ts",
+    "./FulfillmentAuthorization/v1/bindings/typescript": "./FulfillmentAuthorization/v1/bindings/typescript/index.ts",
+    "./FulfillmentAuthorization/v1/bindings/typescript/version": "./FulfillmentAuthorization/v1/bindings/typescript/version.ts",
+    "./FulfillmentQuote/v1/bindings/typescript": "./FulfillmentQuote/v1/bindings/typescript/index.ts",
+    "./FulfillmentQuote/v1/bindings/typescript/version": "./FulfillmentQuote/v1/bindings/typescript/version.ts",
+    "./FulfillmentQuoteEnvelope/v1/bindings/typescript": "./FulfillmentQuoteEnvelope/v1/bindings/typescript/index.ts",
+    "./FulfillmentQuoteEnvelope/v1/bindings/typescript/version": "./FulfillmentQuoteEnvelope/v1/bindings/typescript/version.ts",
+    "./PaymentRequest/v1/bindings/typescript": "./PaymentRequest/v1/bindings/typescript/index.ts",
+    "./PaymentRequest/v1/bindings/typescript/eip3009": "./PaymentRequest/v1/bindings/typescript/eip3009.ts",
+    "./PaymentRequest/v1/bindings/typescript/validate": "./PaymentRequest/v1/bindings/typescript/validate.ts",
+    "./PaymentRequest/v1/bindings/typescript/version": "./PaymentRequest/v1/bindings/typescript/version.ts",
+    "./PaymentRequestEnvelope/v1/bindings/typescript": "./PaymentRequestEnvelope/v1/bindings/typescript/index.ts",
+    "./PaymentRequestEnvelope/v1/bindings/typescript/version": "./PaymentRequestEnvelope/v1/bindings/typescript/version.ts",
+    "./SettlementResult/v1/bindings/typescript": "./SettlementResult/v1/bindings/typescript/index.ts",
+    "./SettlementResultEnvelope/v1/bindings/typescript": "./SettlementResultEnvelope/v1/bindings/typescript/index.ts",
+    "./SettlementResultEnvelope/v1/bindings/typescript/version": "./SettlementResultEnvelope/v1/bindings/typescript/version.ts"
+  },
+  "scripts": {
+    "generate": "pnpm run generate:payment && pnpm run generate:fulfillment && pnpm run generate:bid && pnpm run generate:envelope && pnpm run generate:pre-envelope && pnpm run generate:auth-response && pnpm run generate:are-envelope && pnpm run generate:fulfillment-authorization && pnpm run generate:settlement-result && pnpm run generate:sre-envelope && pnpm run generate:bid-decline && pnpm run generate:bde-envelope",
+    "generate:payment": "mkdir -p PaymentRequest/v1/bindings/typescript/generated && json2ts -i PaymentRequest/v1/schema.json -o PaymentRequest/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:fulfillment": "mkdir -p FulfillmentQuote/v1/bindings/typescript/generated && json2ts -i FulfillmentQuote/v1/schema.json -o FulfillmentQuote/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:bid": "mkdir -p BidAward/v1/bindings/typescript/generated && json2ts -i BidAward/v1/schema.json -o BidAward/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:envelope": "mkdir -p FulfillmentQuoteEnvelope/v1/bindings/typescript/generated && json2ts -i FulfillmentQuoteEnvelope/v1/schema.json -o FulfillmentQuoteEnvelope/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:pre-envelope": "mkdir -p PaymentRequestEnvelope/v1/bindings/typescript/generated && json2ts -i PaymentRequestEnvelope/v1/schema.json -o PaymentRequestEnvelope/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:auth-response": "mkdir -p AuthorizationResponse/v1/bindings/typescript/generated && json2ts -i AuthorizationResponse/v1/schema.json -o AuthorizationResponse/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:are-envelope": "mkdir -p AuthorizationResponseEnvelope/v1/bindings/typescript/generated && json2ts -i AuthorizationResponseEnvelope/v1/schema.json -o AuthorizationResponseEnvelope/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:fulfillment-authorization": "mkdir -p FulfillmentAuthorization/v1/bindings/typescript/generated && json2ts -i FulfillmentAuthorization/v1/schema.json -o FulfillmentAuthorization/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:settlement-result": "mkdir -p SettlementResult/v1/bindings/typescript/generated && json2ts -i SettlementResult/v1/schema.json -o SettlementResult/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:sre-envelope": "mkdir -p SettlementResultEnvelope/v1/bindings/typescript/generated && json2ts -i SettlementResultEnvelope/v1/schema.json -o SettlementResultEnvelope/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:bid-decline": "mkdir -p BidDecline/v1/bindings/typescript/generated && json2ts -i BidDecline/v1/schema.json -o BidDecline/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "generate:bde-envelope": "mkdir -p BidDeclineEnvelope/v1/bindings/typescript/generated && json2ts -i BidDeclineEnvelope/v1/schema.json -o BidDeclineEnvelope/v1/bindings/typescript/generated/index.ts --unreachableDefinitions",
+    "test:declarations": "vitest run"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "ethers": "^6.12.1"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^13.1.2",
+    "vitest": "^4.1.11"
+  }
+}

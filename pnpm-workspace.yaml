@@ -1,0 +1,28 @@
+packages:
+  - 'schemas/declarations'
+  - 'schemas/declarations/common/ld-data-integrity/typescript'
+  - 'schemas/declarations/common/chain-address/typescript'
+  - 'schemas/declarations/*/v1/bindings/typescript/signing'
+  - 'schemas/declarations/*/v1/bindings/typescript/sender-auth'
+  - 'schemas/declarations/*/v1/bindings/typescript/token-approval'
+  - 'schemas/apis/*/*/bindings/typescript'
+  # gRPC/proto bindings nest one level deeper (e.g. settler-gateway/v1/session-stream).
+  - 'schemas/apis/*/*/*/bindings/typescript'
+  # x402 atum-escrow scheme bindings (extra + payload + request) live at the x402
+  # namespace root, since the scheme's types span all three sub-schemas.
+  - 'schemas/apis/x402/v1/bindings/typescript'
+  # Publishable SDKs sit in their API's bindings/. x402's sits beside the generated go/ and
+  # typescript/ it builds on, since its typescript/ is itself a package. payment-gateway has
+  # no generated TypeScript package, so its SDKs sit under bindings/typescript/, like the
+  # declarations' and contracts' bindings/typescript/<package>.
+  - 'schemas/apis/x402/v1/bindings/x402-atum-escrow'
+  - 'schemas/apis/payment-gateway/v1/bindings/typescript/mppx-atum-escrow'
+  - 'schemas/apis/payment-gateway/v1/bindings/typescript/client'
+  - 'contracts/*/bindings/typescript/escrow-encoding'
+  # Stellar deploy + smoke scripts (CORE-3092); lives under source/ like the SVM scripts
+  - 'contracts/stellar/source/scripts'
+  - 'key-management/common/typescript'
+  - 'key-management/providers/turnkey/typescript'
+  # Shared release tooling (publish guard, third-party notices, entry-header
+  # stamping) consumed by the publishable packages as a dev-only dependency.
+  - 'tooling/*'

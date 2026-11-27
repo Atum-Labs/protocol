@@ -1,0 +1,20 @@
+{
+    "421614": {
+        "name": "Arbitrum Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0xDa67F3E463aA7E256765E74300B0aFA3f1b7Eeea",
+            "FulfillmentProxy": "0xc7220217cd30ddC536f640bB8B6b4bEb0Da880Ec",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "11142220": {
+        "name": "Celo Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0xDa67F3E463aA7E256765E74300B0aFA3f1b7Eeea",
+            "FulfillmentProxy": "0xc7220217cd30ddC536f640bB8B6b4bEb0Da880Ec",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    }
+}

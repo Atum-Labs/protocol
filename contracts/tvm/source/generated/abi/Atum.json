@@ -1,0 +1,2676 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPermit2",
+        "name": "permit2",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC20",
+        "name": "usdt",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "defaultAdmin",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint48",
+        "name": "schedule",
+        "type": "uint48"
+      }
+    ],
+    "name": "AccessControlEnforcedDefaultAdminDelay",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlEnforcedDefaultAdminRules",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "defaultAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AccessControlInvalidDefaultAdmin",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "CouldNotDisallowToken",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "DeadlineExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DepositAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DepositAmountCannotBeZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DepositCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DepositNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "feeAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "FeeExceedsDepositAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FeePercentageCannotBeZeroWhenMaxFeeIsSet",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "fulfillmentDeadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "FulfillmentDeadlineInPast",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "expectedHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "passedHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "InvalidWitnessValues",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fulfillmentDeadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "currentTimestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "ManualRefundNotYetAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MinFeeCannotBeGreaterThanMaxFee",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "NoFeesToWithdraw",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NotReserved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "Permit2CannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RecipientCannotBeSelf",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RecipientCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReleaserCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReserverCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SettlerCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "TokenAlreadyAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenCannotBeZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenDecimalsCannotBeZero",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "TokenNotAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WitnessMismatch",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "DefaultAdminDelayChangeCanceled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "newDelay",
+        "type": "uint48"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "effectSchedule",
+        "type": "uint48"
+      }
+    ],
+    "name": "DefaultAdminDelayChangeScheduled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "DefaultAdminTransferCanceled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "acceptSchedule",
+        "type": "uint48"
+      }
+    ],
+    "name": "DefaultAdminTransferScheduled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.DepositWitness",
+        "name": "depositWitness",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ReserveWitness",
+        "name": "reserveWitness",
+        "type": "tuple"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "feeAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Deposited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32[]",
+        "name": "depositIds",
+        "type": "bytes32[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.DepositWitness[]",
+        "name": "depositWitnesses",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ReserveWitness[]",
+        "name": "reserveWitnesses",
+        "type": "tuple[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "feeAmounts",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "DepositedMany",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "FeeRevenueWithdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IFulfillmentProxy.Fulfillment",
+        "name": "fulfillment",
+        "type": "tuple"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "settler",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "Fulfilled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IFulfillmentProxy.Fulfillment[]",
+        "name": "fulfillments",
+        "type": "tuple[]"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "settler",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "FulfilledMany",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ManualRefundInput",
+        "name": "manualRefundInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "ManualRefunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ManualRefundInput[]",
+        "name": "manualRefundInputs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "ManualRefundedMany",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.RefundWitness",
+        "name": "refundWitness",
+        "type": "tuple"
+      }
+    ],
+    "name": "Refunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.RefundWitness[]",
+        "name": "refundWitnesses",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "RefundedMany",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ReleaseWitness",
+        "name": "releaseWitness",
+        "type": "tuple"
+      }
+    ],
+    "name": "Released",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "indexed": true,
+        "internalType": "struct IEscrow.ReleaseWitness[]",
+        "name": "releaseWitnesses",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "ReleasedMany",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "decimals",
+        "type": "uint8"
+      }
+    ],
+    "name": "TokenAllowed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "TokenDisallowed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "TokenFeesCleared",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint88",
+        "name": "feePercentage",
+        "type": "uint88"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint80",
+        "name": "minFee",
+        "type": "uint80"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint80",
+        "name": "maxFee",
+        "type": "uint80"
+      }
+    ],
+    "name": "TokenFeesUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DOMAIN_SEPARATOR",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PAUSER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TOKEN_CONFIG_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TREASURER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "acceptDefaultAdminTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decimals",
+        "type": "uint8"
+      }
+    ],
+    "name": "allowToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "decimals",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint88",
+        "name": "feePercentage",
+        "type": "uint88"
+      },
+      {
+        "internalType": "uint80",
+        "name": "minFee",
+        "type": "uint80"
+      },
+      {
+        "internalType": "uint80",
+        "name": "maxFee",
+        "type": "uint80"
+      }
+    ],
+    "name": "allowTokenAndSetFeeConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "beginDefaultAdminTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "cancelDefaultAdminTransfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint48",
+        "name": "newDelay",
+        "type": "uint48"
+      }
+    ],
+    "name": "changeDefaultAdminDelay",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "clearTokenFeeConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultAdmin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultAdminDelay",
+    "outputs": [
+      {
+        "internalType": "uint48",
+        "name": "",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "defaultAdminDelayIncreaseWait",
+    "outputs": [
+      {
+        "internalType": "uint48",
+        "name": "",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "token",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct ISignatureTransfer.TokenPermissions",
+                "name": "permitted",
+                "type": "tuple"
+              },
+              {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct ISignatureTransfer.PermitTransferFrom",
+            "name": "permit",
+            "type": "tuple"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IEscrow.DepositWitness",
+            "name": "depositWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "depositSignature",
+            "type": "bytes"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.ReserveWitness",
+            "name": "reserveWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "reserveSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.DepositInput",
+        "name": "depositInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "deposit",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "token",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                  }
+                ],
+                "internalType": "struct ISignatureTransfer.TokenPermissions",
+                "name": "permitted",
+                "type": "tuple"
+              },
+              {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "deadline",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct ISignatureTransfer.PermitTransferFrom",
+            "name": "permit",
+            "type": "tuple"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct IEscrow.DepositWitness",
+            "name": "depositWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "depositSignature",
+            "type": "bytes"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.ReserveWitness",
+            "name": "reserveWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "reserveSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.DepositInput[]",
+        "name": "depositInputs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "depositMany",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "depositIds",
+        "type": "bytes32[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint88",
+            "name": "feePercentage6Decimals",
+            "type": "uint88"
+          },
+          {
+            "internalType": "uint80",
+            "name": "maxFee6Decimals",
+            "type": "uint80"
+          },
+          {
+            "internalType": "uint80",
+            "name": "minFee6Decimals",
+            "type": "uint80"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tokenDecimals",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenConfig.TokenConfig",
+        "name": "tokenConfig",
+        "type": "tuple"
+      }
+    ],
+    "name": "determineFee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "feeAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "disallowToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IFulfillmentProxy.Fulfillment",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "fulfill",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IFulfillmentProxy.Fulfillment[]",
+        "name": "params",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "fulfillMany",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllowedTokens",
+    "outputs": [
+      {
+        "internalType": "contract IERC20[]",
+        "name": "allowedTokens",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "depositId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getDepositHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getFeeRevenue",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "revenue",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getTokenConfig",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint88",
+            "name": "feePercentage6Decimals",
+            "type": "uint88"
+          },
+          {
+            "internalType": "uint80",
+            "name": "maxFee6Decimals",
+            "type": "uint80"
+          },
+          {
+            "internalType": "uint80",
+            "name": "minFee6Decimals",
+            "type": "uint80"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tokenDecimals",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenConfig.TokenConfig",
+        "name": "tokenConfig",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "i_permit2",
+    "outputs": [
+      {
+        "internalType": "contract IPermit2",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "i_usdt",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "isTokenAllowed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isAllowed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct IEscrow.ManualRefundInput",
+        "name": "manualRefundInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "manualRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "depositor",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "feeAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "fulfillmentDeadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "reserver",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "releaser",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "settler",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct IEscrow.ManualRefundInput[]",
+        "name": "manualRefundInputs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "manualRefundMany",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingDefaultAdmin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      },
+      {
+        "internalType": "uint48",
+        "name": "schedule",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pendingDefaultAdminDelay",
+    "outputs": [
+      {
+        "internalType": "uint48",
+        "name": "newDelay",
+        "type": "uint48"
+      },
+      {
+        "internalType": "uint48",
+        "name": "schedule",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "feeAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.RefundWitness",
+            "name": "refundWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "refundSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.RefundInput",
+        "name": "refundInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "refund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "feeAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.RefundWitness",
+            "name": "refundWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "refundSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.RefundInput[]",
+        "name": "refundInputs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "refundMany",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "feeAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.ReleaseWitness",
+            "name": "releaseWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "releaseSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.ReleaseInput",
+        "name": "releaseInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "release",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "depositId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "depositor",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "feeAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "fulfillmentDeadline",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "reserver",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "releaser",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "settler",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct IEscrow.ReleaseWitness",
+            "name": "releaseWitness",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "releaseSignature",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IEscrow.ReleaseInput[]",
+        "name": "releaseInputs",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "releaseMany",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rollbackDefaultAdminDelay",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint88",
+        "name": "feePercentage",
+        "type": "uint88"
+      },
+      {
+        "internalType": "uint80",
+        "name": "minFee",
+        "type": "uint80"
+      },
+      {
+        "internalType": "uint80",
+        "name": "maxFee",
+        "type": "uint80"
+      }
+    ],
+    "name": "setTokenFeeConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "depositId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct IFulfillmentProxy.Fulfillment",
+        "name": "params",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      }
+    ],
+    "name": "strictFulfill",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "withdrawFeeRevenue",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

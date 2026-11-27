@@ -1,0 +1,225 @@
+{
+  "_maintained_by": "Hand-authored. The Go (bindings/go/rules.go) and TypeScript (bindings/typescript/validate.ts) implementations both read this file, so every vector here must hold in both. `executor` is the PaymentRequest member verbatim, omitted when null. `wantAsset` is the asset_identifier the refusal must name, and is empty when `wantErr` is false.",
+  "_rule": "An originator-fulfilled payment is delivered with an EIP-3009 transferWithAuthorization signed on the destination token, so every destination must appear in eip3009-tokens.json. Settler fulfill is unchecked (CORE-2776).",
+  "originatorFulfillDestinations": [
+    {
+      "name": "originator fulfill to a listed token",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "settler",
+        "fulfill": "originator"
+      },
+      "destinations": ["eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "originator fulfill matches a listed token case-insensitively",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "settler",
+        "fulfill": "originator"
+      },
+      "destinations": ["eip155:42161/erc20:0xAF88D065E77C8CC2239327C5EDB3A432268E5831"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "originator fulfill to an unlisted token on a listed chain",
+      "executor": "originator",
+      "destinations": ["eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"],
+      "wantErr": true,
+      "wantAsset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    },
+    {
+      "name": "originator fulfill to a chain with no listed tokens",
+      "executor": "originator",
+      "destinations": ["eip155:4217/erc20:0x20C000000000000000000000b9537d11c60E8b50"],
+      "wantErr": true,
+      "wantAsset": "eip155:4217/erc20:0x20C000000000000000000000b9537d11c60E8b50"
+    },
+    {
+      "name": "originator fulfill to a non-EVM destination",
+      "executor": "originator",
+      "destinations": [
+        "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/spltoken:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ],
+      "wantErr": true,
+      "wantAsset": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/spltoken:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    },
+    {
+      "name": "a listed address does not carry to a chain that does not list it",
+      "executor": "originator",
+      "destinations": ["eip155:1/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831"],
+      "wantErr": true,
+      "wantAsset": "eip155:1/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+    },
+    {
+      "name": "mixed destinations, the unlisted one is named",
+      "executor": "originator",
+      "destinations": [
+        "eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "wantErr": true,
+      "wantAsset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    },
+    {
+      "name": "mixed destinations, two unlisted, the first is named",
+      "executor": "originator",
+      "destinations": [
+        "eip155:10/erc20:0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+        "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"
+      ],
+      "wantErr": true,
+      "wantAsset": "eip155:10/erc20:0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"
+    },
+    {
+      "name": "mixed destinations, every leg listed",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "settler",
+        "fulfill": "originator"
+      },
+      "destinations": [
+        "eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "split executor giving fulfill to the originator, unlisted destination",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "settler",
+        "fulfill": "originator"
+      },
+      "destinations": ["eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"],
+      "wantErr": true,
+      "wantAsset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    },
+    {
+      "name": "split executor giving fulfill to the originator, listed destination",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "settler",
+        "fulfill": "originator"
+      },
+      "destinations": ["eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "settler fulfill to an unlisted token is unaffected",
+      "executor": "settler",
+      "destinations": ["eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "split executor keeping fulfill with the settler is unaffected",
+      "executor": {
+        "deposit": "settler",
+        "reserve": "originator",
+        "fulfill": "settler"
+      },
+      "destinations": ["eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "no executor means settler, so an unlisted token is unaffected",
+      "executor": null,
+      "destinations": ["eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"],
+      "wantErr": false,
+      "wantAsset": ""
+    },
+    {
+      "name": "originator fulfill to a listed address under the erc721 namespace",
+      "executor": "originator",
+      "destinations": ["eip155:8453/erc721:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+      "wantErr": true,
+      "wantAsset": "eip155:8453/erc721:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    },
+    {
+      "name": "originator fulfill to a listed address under an unknown namespace",
+      "executor": "originator",
+      "destinations": ["eip155:8453/zzz:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+      "wantErr": true,
+      "wantAsset": "eip155:8453/zzz:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    },
+    {
+      "name": "originator fulfill to a listed token carrying a CAIP-19 token id",
+      "executor": "originator",
+      "destinations": ["eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913/1"],
+      "wantErr": true,
+      "wantAsset": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913/1"
+    },
+    {
+      "name": "settler fulfill is unaffected by the namespace rule",
+      "executor": "settler",
+      "destinations": ["eip155:8453/erc721:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+      "wantErr": false,
+      "wantAsset": ""
+    }
+  ],
+  "_rawDocuments_maintained_by": "Raw JSON text, not a document to re-serialize: these vectors exist because encoding/json folds member names and keeps the last match while JSON.parse keeps every spelling, so the twin only survives in the bytes. Go passes the string to ValidateRules and TypeScript to validatePaymentRequestJSON, so both readers see identical bytes. wantErrKind is 'ambiguous' (refused before the rule runs), 'unsupported' (the rule refused it) or '' (admitted).",
+  "rawDocuments": [
+    {
+      "name": "executor twinned with Executor, unlisted destination",
+      "document": "{\"executor\":\"originator\",\"Executor\":\"settler\",\"destination\":[{\"asset_identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "ambiguous",
+      "wantAsset": ""
+    },
+    {
+      "name": "executor twinned the other way round, unlisted destination",
+      "document": "{\"executor\":\"settler\",\"Executor\":\"originator\",\"destination\":[{\"asset_identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "ambiguous",
+      "wantAsset": ""
+    },
+    {
+      "name": "EXECUTOR twinned in upper case, listed destination",
+      "document": "{\"executor\":\"originator\",\"EXECUTOR\":\"settler\",\"destination\":[{\"asset_identifier\":\"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "ambiguous",
+      "wantAsset": ""
+    },
+    {
+      "name": "destination twinned with Destination",
+      "document": "{\"executor\":\"originator\",\"destination\":[{\"asset_identifier\":\"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\",\"account\":\"0x1234567890123456789012345678901234567890\"}],\"Destination\":[{\"asset_identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "ambiguous",
+      "wantAsset": ""
+    },
+    {
+      "name": "asset_identifier twinned inside a destination leg",
+      "document": "{\"executor\":\"originator\",\"destination\":[{\"asset_identifier\":\"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\",\"Asset_Identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "ambiguous",
+      "wantAsset": ""
+    },
+    {
+      "name": "a twin inside a member these rules never read is not theirs to refuse",
+      "document": "{\"executor\":{\"deposit\":\"settler\",\"reserve\":\"settler\",\"fulfill\":\"originator\"},\"destination\":[{\"asset_identifier\":\"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\",\"account\":\"0x1234567890123456789012345678901234567890\"}],\"originator_auth\":{\"id\":\"a\",\"Id\":\"b\"}}",
+      "wantErrKind": "",
+      "wantAsset": ""
+    },
+    {
+      "name": "no twin, originator fulfill to an unlisted destination still refused by the rule",
+      "document": "{\"executor\":\"originator\",\"destination\":[{\"asset_identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "unsupported",
+      "wantAsset": "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    },
+    {
+      "name": "no twin, originator fulfill to a listed destination admitted",
+      "document": "{\"executor\":{\"deposit\":\"settler\",\"reserve\":\"settler\",\"fulfill\":\"originator\"},\"destination\":[{\"asset_identifier\":\"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "",
+      "wantAsset": ""
+    },
+    {
+      "name": "a lone Executor is not the executor, so an unlisted destination is not judged",
+      "document": "{\"Executor\":\"originator\",\"destination\":[{\"asset_identifier\":\"eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7\",\"account\":\"0x1234567890123456789012345678901234567890\"}]}",
+      "wantErrKind": "",
+      "wantAsset": ""
+    }
+  ]
+}

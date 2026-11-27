@@ -1,0 +1,26 @@
+# Conforming error shape, but the spec declares a 4xx and is NOT listed in
+# SHARED_ERROR_SPECS. Nothing would then hold it to error/v1, so dropping a
+# list entry must not be a way out of the shared shape.
+openapi: 3.0.3
+info: {title: svc, version: 1.0.0}
+paths:
+  /thing:
+    get:
+      responses:
+        '200': {description: ok}
+        '404':
+          description: not found
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ErrorResponse'}
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        request_id: {type: string}
+        docs_url: {type: string}
+        retry_count: {type: integer}

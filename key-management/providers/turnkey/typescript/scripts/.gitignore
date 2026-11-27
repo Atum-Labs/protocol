@@ -1,0 +1,8 @@
+# Secrets produced or consumed by the provisioning scripts — NEVER commit these.
+.env
+*.suborg.json
+*.apikey.json
+
+# Real policy configs (hold live allowlists/addresses). Only the *.example.yaml files are tracked.
+config/*.yaml
+!config/*.example.yaml

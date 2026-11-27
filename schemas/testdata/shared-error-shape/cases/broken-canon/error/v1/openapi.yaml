@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info: {title: canonical with no ErrorResponse, version: 1.0.0}
+components:
+  schemas:
+    AtumError:
+      type: object
+      required: [code]
+      properties:
+        code: {type: string}

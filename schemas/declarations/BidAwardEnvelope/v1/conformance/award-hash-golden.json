@@ -1,0 +1,27 @@
+{
+  "_comment": "Frozen cross-language golden for the BidAwardEnvelope award_hash binding. award_hash = \"0x\"+hex(keccak256(utf8(domain_separator \\n payment_id \\n quote_hash \\n settler_id))). The Go binding (bindings/go/award-hash, ComputeAwardHash) and the TS port (bindings/typescript/award-hash, computeAwardHash) BOTH assert their output equals these values; matching this file on both sides means they match each other. award_hash is signature-binding (the proof.challenge of an award-authority VP), NOT an identifier. Regenerate per conformance/README.md and bump the domain_separator \"v1\" suffix only if the preimage layout changes.",
+  "domain_separator": "atum:award_hash:v1",
+  "cases": [
+    {
+      "name": "simple-placeholder-ids",
+      "payment_id": "0xpay",
+      "quote_hash": "0xquote",
+      "settler_id": "settler-1",
+      "award_hash": "0x58ca2ddc7c552e1b5b9250a4eeb2f50679ebf111893fc2c19d74ab713cd54fff"
+    },
+    {
+      "name": "realistic-didpkh-settler",
+      "payment_id": "pay-123",
+      "quote_hash": "0xabc123",
+      "settler_id": "did:pkh:eip155:1:0xsettler",
+      "award_hash": "0x4366151738192c1bc3fa65c9e9bbffe360d3b36a38a8056a48527e01c0ff410e"
+    },
+    {
+      "name": "canonical-hex-fields",
+      "payment_id": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "quote_hash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+      "settler_id": "0x3333333333333333333333333333333333333333",
+      "award_hash": "0xb4b0720544de432f343c0bf3f156735b2869029de853206a87545efb60ef86b3"
+    }
+  ]
+}

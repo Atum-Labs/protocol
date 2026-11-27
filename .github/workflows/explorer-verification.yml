@@ -1,0 +1,66 @@
+# Nudge, do not gate: warn when a v4 deployment has no verified source on its explorer.
+#
+# DELIBERATELY NON-BLOCKING, in two independent ways:
+#
+#   1. It runs ONLY when a deployment record or the explorer map changes, so it is absent from
+#      every unrelated PR rather than being a green box people learn to ignore.
+#   2. The checker is invoked with --warn-only, so it always exits 0. The findings surface as
+#      ::warning:: annotations and a job summary table.
+#
+# Source verification is a publishing step someone performs against an explorer; it is not
+# something a PR author can fix in the diff under review. Failing their build for it would
+# block work on a condition they did not cause and cannot resolve there. So this reports, and
+# publishing the missing source is tracked as its own task.
+#
+# The one thing it will shout about loudly is a deployment with no entry in explorers.json:
+# that means a chain was added and silently escaped the audit, which is the failure the record
+# exists to prevent.
+name: Explorer source verification
+
+on:
+  pull_request:
+    paths:
+      - "contracts/*/deployments-v4.json"
+      - "contracts/explorers.json"
+      - "contracts/deploy/check-explorer-verification.mjs"
+      - ".github/workflows/explorer-verification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  explorer-verification:
+    name: Source verification status (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      # --warn-only makes the step exit 0 whatever it finds. The `|| true` is NOT a duplicate of
+      # that: it also swallows a crash in the script itself, which would otherwise fail a job
+      # this workflow promises cannot fail. The annotations still carry the findings either way.
+      - name: Check explorer source verification
+        run: node contracts/deploy/check-explorer-verification.mjs --warn-only || true
+
+      # Re-run without --warn-only purely to surface the verdict as a readable line. Its exit
+      # code is captured rather than propagated, so it still cannot fail the job.
+      #
+      # The capture has to be explicit. GitHub invokes `run:` as `bash -e {0}`, and the `set -uo
+      # pipefail` below does NOT undo that -- so a bare call followed by `case $?` never reaches
+      # the case at all: the shell aborts on the non-zero exit and fails the step. This workflow
+      # promises in its own header that it cannot fail, and it was failing on every PR that
+      # triggered it, which is the precise shape of a warning people learn to ignore.
+      - name: Report verdict
+        run: |
+          set -uo pipefail
+          code=0
+          node contracts/deploy/check-explorer-verification.mjs >/dev/null 2>&1 || code=$?
+          case $code in
+            0) echo "All v4 deployments have verified source." ;;
+            1) echo "::notice::Some v4 deployments have no verified source. See the job summary." ;;
+            2) echo "::notice::Some v4 deployments could not be checked. See the job summary." ;;
+            *) echo "::notice::The verification checker did not complete. See the step above." ;;
+          esac

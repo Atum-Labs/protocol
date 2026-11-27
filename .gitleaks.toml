@@ -1,0 +1,262 @@
+# Secret-scanning policy for protocol (CORE-2485).
+#
+# Extends the gitleaks default ruleset with the credential shapes this repo has
+# actually leaked or is likely to leak, and allowlists the deterministic test
+# material and public identifiers the working tree carries on purpose. Every
+# allowlist entry below is justified in the pre-publication audit report
+# (audit/pre-publication-2026-09-16.md, CORE-2485); add nothing here without
+# adding a row there.
+
+title = "protocol"
+
+[extend]
+useDefault = true
+
+# Alchemy app keys embedded in RPC URLs. The default ruleset has no Alchemy
+# rule, which is how one key sat in 28 fork-test configs from the July contract
+# import (1575c173) until the scrub in 5386f88a without a detector firing.
+[[rules]]
+id = "alchemy-api-key"
+description = "Alchemy app key embedded in an RPC URL"
+regex = '''(?:https?|wss?)://[a-z0-9-]+\.g\.alchemy\.com/v2/([A-Za-z0-9_-]{16,})'''
+secretGroup = 1
+keywords = ["alchemy.com"]
+
+[rules.allowlist]
+# The key the pre-publication audit found in history. Its value stays out of
+# this file on purpose; the commits that introduced it are pinned instead. The
+# Alchemy app is inactive (rejects with 403 "App is inactive"); the audit report
+# records it as `rotated`, with the timestamp tracked on CORE-2498.
+commits = [
+  "1575c1733457a182004ca2143b6c57c8d7af5962",
+  "00abb8ff548f9ec8e032b966abe55156ad6d2f85",
+  "1d11a479060c8999cb72c7f1650868f062944f69",
+]
+
+# A 32-byte hex private key used as a shell-style default (`${VAR:-0x...}`),
+# assigned to a signer/private-key/secret variable, or declared as a constant.
+# Test fixtures are allowlisted by value below so the rule stays focused on
+# config and source.
+[[rules]]
+id = "evm-private-key-literal"
+description = "EVM/Tron 32-byte private key literal in config or source"
+regex = '''(?i)(?:private[_-]?key[A-Z0-9_]*|priv[_-]?key[A-Z0-9_]*|signer|secret|mnemonic)[^\n]{0,40}?\b(?:0x)?([0-9a-fA-F]{64})\b'''
+secretGroup = 1
+keywords = ["private_key", "privatekey", "private-key", "privkey", "priv_key", "signer", "secret", "mnemonic"]
+
+[rules.allowlist]
+regexes = [
+  # Obviously fake keys: all zeros (the TronBox CI dummy), all ones (the TronWeb
+  # README example), the all-zeros-then-one constant, and the repeated-0x46
+  # wallet-core derivation test vector in contracts/tvm/deploy/import-deployer.sh.
+  '''0{64}''',
+  '''1{64}''',
+  '''0{63}1''',
+  '''(?:46){32}''',
+  # Placeholder key shapes from env examples and docs.
+  '''(?:1234567890abcdef){4}''',
+]
+
+# A 32-byte hex value assigned to any name at all (`FOO="0x..."`, `deployer: 0x...`,
+# `const k = '0x...'`). The rule above needs a key-ish word nearby; this one does
+# not, so a key under a neutral name is still reported. The price is that every
+# typehash, salt, role id and digest assigned in the tree needs an allowlist row
+# below, each justified in the audit report.
+[[rules]]
+id = "hex-64-assigned"
+description = "32-byte hex literal assigned to a variable, field or constant"
+regex = '''(?i)[A-Za-z_][A-Za-z0-9_.-]*\s*[:=]\s*["'`]?(?:0x)?([0-9a-f]{64})\b'''
+secretGroup = 1
+
+[rules.allowlist]
+# Matched against the whole line, so the NAME the value is assigned to can clear it:
+# a hash, digest, salt, checksum, topic, id or documented example is not a key,
+# whatever its value. A key assigned to such a name is the residual risk, and the
+# keyword rule above still covers the key-ish names.
+#
+# No `(?i)` anywhere in this list, on purpose: gitleaks joins a rule's allowlist
+# regexes into one alternation, so a case-insensitive flag on one of them applies
+# to every one after it and turns the segment anchoring below into substring
+# matching (`Id` would then clear `validatorSeed`). Casings are spelled out.
+regexTarget = "line"
+regexes = [
+  # Long tokens may appear anywhere in the name.
+  '''[A-Za-z0-9_.-]*(?:hash|Hash|HASH|digest|Digest|DIGEST|checksum|Checksum|CHECKSUM|typehash|Typehash|TYPEHASH|commitment|Commitment|COMMITMENT|sha256|Sha256|SHA256|signature|Signature|SIGNATURE|example|Example|EXAMPLE|preimage|Preimage|PREIMAGE|witness|Witness|WITNESS|domain|Domain|DOMAIN|separator|Separator|SEPARATOR|blockhash|Blockhash|BLOCKHASH|anchor|Anchor|ANCHOR|oracle|Oracle|ORACLE|pubkey|Pubkey|PUBKEY|pub_hex|Pub_hex|PUB_HEX|pubhex|Pubhex|PUBHEX|depositor|Depositor|DEPOSITOR|sample|Sample|SAMPLE)[A-Za-z0-9_.-]*\s*[:=]''',
+  # Short tokens must be a whole name segment: a snake_case / UPPER_CASE segment
+  # (optionally followed by digits, as in TOPIC0), a camelCase segment after a
+  # lowercase letter or digit, or a leading lowercase camelCase segment. So
+  # `tx_id`, `DEPOSITED_TOPIC0`, `depositId`, `txAnchor` are cleared; `validatorSeed`,
+  # `bridgeOperator`, `liquiditySource`, `roleValue` are reported.
+  '''(?:^|[^A-Za-z0-9_])(?:[A-Za-z0-9]+[_.-])*(?:id|ID|pid|PID|tx|TX|sig|SIG|root|ROOT|node|NODE|leaf|LEAF|slot|SLOT|mint|MINT|order|ORDER|topic|TOPIC|salt|SALT|proof|PROOF|nonce|NONCE|txid|TXID)[0-9]*(?:[_.-][A-Za-z0-9_.-]*)?\s*[:=]''',
+  '''[a-z0-9](?:Id|ID|Pid|PID|Tx|TX|Sig|SIG|Root|ROOT|Node|NODE|Leaf|LEAF|Slot|SLOT|Mint|MINT|Order|ORDER|Topic|TOPIC|Salt|SALT|Proof|PROOF|Nonce|NONCE|Txid|TXID)[0-9]*(?:[A-Z][A-Za-z0-9_.-]*)?\s*[:=]''',
+  '''(?:^|[^A-Za-z0-9_])(?:id|pid|tx|sig|root|node|leaf|slot|mint|order|topic|salt|proof|nonce|txid)[0-9]*[A-Z][A-Za-z0-9_.-]*\s*[:=]''',
+  # Test-vector names in Go/TS tables and the keccak role ids exported by the deploy scripts.
+  '''\b(?:[Ww]ant[A-Za-z0-9_]*|[Ee]xpected[A-Za-z0-9_]*|[Ii]nput|[Oo]ther|[Mm]essage|str|R_[A-Z]+)\s*[:=]''',
+  # Small integers padded to 32 bytes (Foundry `vm.sign` toy keys), repeated-byte
+  # fillers (0202..., 2222...) in encoding tests, and the secp256k1 curve order.
+  '''(?:0x)?0{40,}[0-9a-fA-F]{1,24}\b''',
+  '''(?:0[0-9a-fA-F]){32}''',
+  '''(?:22){32}''',
+  '''(?:99){32}''',
+  '''FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141''',
+  # Same placeholder shapes as evm-private-key-literal.
+  '''0{64}''',
+  '''1{64}''',
+  '''0{63}1''',
+  '''(?:46){32}''',
+  '''(?:1234567890abcdef){4}''',
+  '''(?:1234567890ABCDEF){4}''',
+]
+
+# Solana keypair files are JSON arrays of 64 bytes (32-byte seed + 32-byte
+# public key). The default ruleset has no detector for them.
+[[rules]]
+id = "solana-keypair-json"
+description = "Solana 64-byte keypair as a JSON byte array"
+regex = '''\[\s*(?:\d{1,3}\s*,\s*){63}\d{1,3}\s*\]'''
+
+[rules.allowlist]
+# The eleven throwaway localnet keypairs in contracts/svm/accounts/ (and, byte
+# for byte, at contracts/svm/docker/keypairs/ in the July import 1575c173),
+# documented as such in contracts/svm/docker/accounts.sh. The audit verified every
+# derived public key holds 0 lamports and has no signatures on mainnet-beta and
+# devnet. Pinned by the first six bytes of each array, not by path, so a new
+# keypair file dropped into the same directory is still reported.
+regexes = [
+  '''^\[\s*137\s*,\s*155\s*,\s*18\s*,\s*146\s*,\s*131\s*,\s*204\s*,''',
+  '''^\[\s*81\s*,\s*229\s*,\s*64\s*,\s*127\s*,\s*10\s*,\s*91\s*,''',
+  '''^\[\s*213\s*,\s*28\s*,\s*194\s*,\s*73\s*,\s*232\s*,\s*34\s*,''',
+  '''^\[\s*255\s*,\s*85\s*,\s*119\s*,\s*176\s*,\s*76\s*,\s*97\s*,''',
+  '''^\[\s*182\s*,\s*224\s*,\s*240\s*,\s*90\s*,\s*194\s*,\s*5\s*,''',
+  '''^\[\s*187\s*,\s*100\s*,\s*28\s*,\s*73\s*,\s*9\s*,\s*8\s*,''',
+  '''^\[\s*52\s*,\s*30\s*,\s*230\s*,\s*111\s*,\s*95\s*,\s*175\s*,''',
+  '''^\[\s*149\s*,\s*143\s*,\s*242\s*,\s*126\s*,\s*245\s*,\s*51\s*,''',
+  '''^\[\s*146\s*,\s*68\s*,\s*114\s*,\s*105\s*,\s*12\s*,\s*168\s*,''',
+  '''^\[\s*85\s*,\s*233\s*,\s*71\s*,\s*14\s*,\s*149\s*,\s*40\s*,''',
+  '''^\[\s*221\s*,\s*169\s*,\s*42\s*,\s*47\s*,\s*21\s*,\s*2\s*,''',
+]
+
+# Solana 64-byte secret keys are 87-88 base58 characters. Public keys are 43-44
+# characters and do not match.
+[[rules]]
+id = "solana-secret-key"
+description = "Solana base58-encoded 64-byte secret key"
+regex = '''\b([1-9A-HJ-NP-Za-km-z]{87,88})\b'''
+secretGroup = 1
+entropy = 4.5
+
+[allowlist]
+description = "Deterministic, publicly known test material and public identifiers"
+paths = [
+  # Git submodules (forge-std, permit2): third-party code that this repository
+  # holds only as a gitlink. CI does not check them out; a local run with
+  # submodules initialised would otherwise report their own test fixtures.
+  '''^contracts/[a-z]+/source/lib/''',
+  # Generated bindings and schema output: enum literals and quoted CAIP examples
+  # trip generic-api-key. Anchored to the directories the generators write to, so
+  # a hand-written file that happens to end in .gen.ts or schema.json elsewhere is
+  # still scanned.
+  '''^schemas/apis/payment-gateway/v1/bindings/typescript/client/src/generated/[^/]+\.gen\.ts$''',
+  '''^schemas/apis/[a-z0-9-]+/v[0-9]+/bindings/typescript/src/[^/]+\.gen\.ts$''',
+  '''^schemas/(?:apis|declarations)/(?:[A-Za-z0-9-]+/)+schema\.json$''',
+]
+regexes = [
+  # Anvil / Hardhat default accounts 0, 1 and 2, the only ones the repo uses.
+  # Published in `anvil --help`.
+  '''ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+  '''59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
+  '''5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a''',
+  # contracts/evm/docker/accounts.sh TEST_ACCOUNT_2 and TEST_ACCOUNT_3: local
+  # Anvil test accounts. The audit verified both derived addresses hold 0 and
+  # have nonce 0 on every mainnet and testnet the contracts target. Allowlisted
+  # by value, not by path, so a new key pasted into the file is still caught.
+  # TEST_ACCOUNT has no key here any more: its former key was funded and used on
+  # public testnets and was retired under CORE-2499. The local stack impersonates
+  # the address instead, so a key reappearing for it is a finding, not a fixture.
+  '''56e0cb477097ef6f9bfe54986904e520763f73518c891d866b31487f0d097a47''',
+  '''c4bbf4035c5b0eb93d12935b2ab5491a7a8430ebb8029190279116c3b1865cc2''',
+  # Deterministic P-256 test keypair for the Turnkey stamper unit tests
+  # (key-management/providers/turnkey/typescript/src/{stamp,client}.test.ts),
+  # documented there as generated for the tests and used nowhere else; the paired
+  # organisation id is a fixture UUID and the HTTP layer is mocked.
+  '''46a9d0f5ea716b8c0d1c1e9a396615404ab6879e517eb6d00c01363aafa4f080''',
+  # Tron regression fixture in schemas/apis/payment-gateway/v1/bindings/typescript/client/src/signers/raw.test.ts
+  # (a key whose derived address starts with byte 0x41). Address has no account
+  # on Tron mainnet, Shasta or Nile.
+  '''741563d3fd413af31c72f48f1d07ff411165f081b3b413358efe817fa76c2ca1''',
+  # 20-byte EVM addresses are public identifiers, not secrets.
+  '''\b0x[0-9a-fA-F]{40}\b''',
+  # Tron base58 addresses.
+  '''\bT[1-9A-HJ-NP-Za-km-z]{33}\b''',
+  # did:key identifiers are ed25519 public keys (multibase z6Mk prefix).
+  '''\bz6Mk[1-9A-HJ-NP-Za-km-z]{44}\b''',
+  # Solana CAIP-2 chain references: the first 32 characters of the mainnet-beta,
+  # devnet and testnet genesis hashes.
+  '''5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp''',
+  '''EtWTRABZaYq6iMfeYKouRu166VU2xqa1''',
+  '''4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z''',
+  # Solana public keys quoted as values: the mainnet and devnet program
+  # authorities and payer in contracts/svm/deploy/readiness.sh, and the USDC /
+  # USDT mints, the local usdc-mint and a test mint used as examples.
+  '''FVt14Ru5WvzRgy64qDBxCSPf815wUnrSsR4p58eaitBW''',
+  '''9YvUZVuxSLNgDh91Dzz6dQMZeWXFLWCwBmiuoursS5dQ''',
+  '''6jbdyQZcMm8AsgpNCQnEKHNzb2fqbV84JqeAabUqQ1bS''',
+  '''EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v''',
+  '''Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB''',
+  '''A347WT7YBHsnBvy1g8ReHFBmfiLG3DKHr2mYRRmD4aEo''',
+  '''4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU''',
+  '''cGfHiC6Kgg3FpFZvgwGcswsCRtp4aBP2fzuXRQPizuN''',
+  # Mainnet PYUSD and USDG Token-2022 mints, the real-mint fixtures in
+  # contracts/svm/source/tests/fixtures/real-mints/.
+  '''2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo''',
+  '''2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH''',
+  # Solana transaction signatures share the 87-88 character base58 shape of a
+  # secret key. The two quoted in the veri-fill conformance vectors, by value.
+  '''5VERv8NMvzbJMEkV8xnrLkEaWRtSz9CosKDYjCJjBRnbJLgp8uirBgmQpjKhoR4tjF3ZpRzrFmBV6UjKdiSZkQUW''',
+  '''2Ana1pUpv2ZbMVkwF5FXapYeBEjdxDatLn7nvJkhgTSXbs59SyZSx866bXirPgj8QQVB57uxHJBG1YFvkRbFj4T''',
+  # Ed25519 proofValues in the FulfillmentQuote conformance fixtures
+  # (schemas/declarations/FulfillmentQuote/v1/conformance/fixtures/ed25519-*.json): a multibase
+  # `z` plus a base58 signature, signed with the RFC 8032 all-zero test seed. A signature
+  # that encodes one character short is 88 characters, the shape of a secret key. By value,
+  # so a regenerated fixture is re-checked here. The VC proof, then the VP proof.
+  '''znnLQzB5s7GCD428Dv5CBEqoANhLBpjGBmZoksvmNv7VhNdXFUAUaeLtDXLjSAKCZpbmNHH8vwiHpTDZ35L7upPH''',
+  '''z1ossd2MTRqYAaHpRe9LY6pcgGdXBTEZ1Wg9nLEkc1rG1AjvHbG74tdiKrymBKH4wvYymqYWLq6QNRFPufvRdaMQ''',
+  # The six mainnet transactions committed as fixtures for the deployed-events value checks
+  # (contracts/svm/bindings/typescript/escrow-encoding/testdata/), each its own transaction's signature.
+  '''35tyoa5Q8CSDdyevFEwxA3zTEY2oyrdqkYuAoXWW3nyJ64oC9V9ohA9DjpAyaJo3213awVwgGDL6FyEcje4uFJgx''',
+  '''2SFAREVjWwo2RAgWab21t6PhSkvDEq6L9eqbDAajbbGZ6dvaFyZNKecfkJAc4q6HJrmt61t1z9erezDet7jqh8xH''',
+  '''5PKyt6s9UJZg2skSoU9igFC33RJFZByYswUjJfkyanFcEhJQ6GTQR2QFL15vN16DGxm5FAWWnhJw3HhqBh9EnzAU''',
+  '''5D3pPgAfVXv24UAPiee8AitTMJzohAM4yN7ZyiEZiV3RXHXWT8dWi7gwp9CCKS27hWVotLHRNsXQsxn6gD9kkvCj''',
+  '''4NdgVUKALH5G4BWBeJjx3m5eEcgUf1hmCVg5DJPtnzAMxreRBCr5YANbiizntxnrW9nsqQTvvKcATzM2fn5sw8SK''',
+  '''57pvD2xckRLB1cm63FaQ1ajbao28NaXvfmZVAhJzM8p3Cct4fDFs6pkS6rnuT7BScUbpdvgfuaqKaJp1LjiTA8iT''',
+  # The mainnet `release` transaction quoted in the pre-rewrite contracts/svm/source/docs/operations/upgrade-in-place.md
+  # (slot 461584558, the old escrow binary, memo program in the account list): a transaction signature, not a
+  # key. It decodes to 64 bytes whose last 32 are not the public key of the first 32, so it is not a keypair.
+  # By value, so a key pasted next to it is still caught. The current tree no longer quotes it, but main's
+  # history does and the push-to-main scan walks that history; drop this entry once history is filtered.
+  '''bNdxYEaADwcZNzSNWhTa4mF5KJyAiHVUPXh94f2MW8MnUMzwb6EYci7Qc3H2t986ddNo3cJAWFf1YZSVQhXgKbD''',
+  # The v4 mainnet address lookup table (contracts/svm/deployments-v4.json), which those
+  # transactions reference as `accountKey`, a name generic-api-key reads as a credential.
+  '''9p8MkwJ9weNq2SjT6XW31wC6tkBzdAtcKeShSCg4Li1Z''',
+  # The two XLM Stellar Asset Contract addresses (testnet, public) and the 32-byte contract ids behind
+  # them, quoted in contracts/stellar/conformance/{vectors.json,regenerate_vectors.py} as real-world
+  # strkey decode checks. Public identifiers; they trip generic-api-key as values of `strkey` / `key`.
+  '''CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC''',
+  '''CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA''',
+  '''d7928b72c2703ccfeaf7eb9ff4ef4d504a55a8b979fc9b450ea2c842b4d1ce61''',
+  '''25b4fcd859aec2fa6348438c489b3c3c10c98b6d21be4fd3cb30cb68953ef977''',
+  # keccak256 role identifiers exported by contracts/evm/deploy/deploy.sh and quoted in
+  # contracts/tvm/deploy/admin-preflight.js, without the 0x so the bare captured value matches too.
+  '''65d7a28e3265b37a6474929f336521b332c1681b933f6cb9f3376673440d862a''',
+  '''3496e2e73c4d42b75d702e60d9e48102720b8691234415963a5a857b86425d07''',
+  '''05eb16f4c9c7577cc114446a1a0bef50a2238ef90db029c789ddddf014b006a7''',
+  # The web3.js documentation example private key, used as a unit-test fixture in
+  # schemas/apis/payment-gateway/v1/bindings/go/client/sender_auth_test.go.
+  '''4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318''',
+  # OpenAPI examples of Stripe-shaped keys: the wallet-orch spec at HEAD and the
+  # settler-gateway registration spec that existed only in the July import (1fe1d615).
+  '''sk_test_abcdef123456''',
+  '''sk_live_abcd1234efgh5678''',
+  '''sk_live_ijkl9012mnop3456''',
+]
+stopwords = ["EVM_PERMIT2_ESCROW", "EVMPERMIT2ESCROW", "feePercentage6Decimals"]

@@ -1,0 +1,18 @@
+# One historical commit, excused by fingerprint: the retired
+# contracts/evm/docker/accounts.sh TEST_ACCOUNT_PRIVATE_KEY (audit
+# pre-publication-2026-09-16.md section 3.1). CORE-2499 removed the key from the
+# working tree and left it in history on purpose -- no mainnet exposure, the
+# address stays public as the impersonated devnet deployer, and the testnet
+# balances are abandoned -- but the push-to-main job walks all of main's
+# reachable history, so the commit that added the line is still scanned.
+#
+# Every entry here is commit-qualified (<commit>:<path>:<rule>:<line>), never the
+# bare <path>:<rule>:<line> form. That form is the "global fingerprint" gitleaks
+# also tests in BOTH modes, so a bare entry would blind the working-tree scan to
+# whatever value later lands on that line. That was the blind spot CORE-2499
+# closed by deleting this file; do not reopen it. Verified on 2026-09-17: with
+# these three lines in place the key pasted back onto accounts.sh:11 is still
+# reported by the working-tree scan.
+1d11a479060c8999cb72c7f1650868f062944f69:contracts/evm/docker/accounts.sh:evm-private-key-literal:11
+1d11a479060c8999cb72c7f1650868f062944f69:contracts/evm/docker/accounts.sh:generic-api-key:11
+1d11a479060c8999cb72c7f1650868f062944f69:contracts/evm/docker/accounts.sh:hex-64-assigned:11

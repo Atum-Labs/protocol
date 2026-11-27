@@ -1,0 +1,930 @@
+{
+  "_comment": "Awards built by payment-gateway-client awardQuote, one per source chain family and reserve route: the quote request, the settler's signed quote, the award body, the payment id the SDK derives, and the reserve witness a verifier expects. Each tampered entry is a reserve the SDK builds for another settler or for one unit less, with the reason the verifier refuses it. Read by the sender-auth Go and TypeScript suites and the EVM escrow test. Regenerate: REGEN_VECTORS=1 pnpm --filter @atum-labs/payment-gateway-client exec jest src/award-sdk-vectors.test.ts",
+  "vectors": [
+    {
+      "name": "eip155-depositor",
+      "route": "depositor",
+      "defaults": {
+        "chain_id": "eip155:1",
+        "escrow_contract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0x3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222",
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_eip155_depositor",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-eip155-depositor",
+        "source": {
+          "asset_identifier": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-eip155-depositor\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"account\":\"0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"quote_selector\":\"0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39\",\"fulfillment_verifier\":{\"account\":\"0x4444444444444444444444444444444444444444\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..zPTi_BtLZJxD7TAP18RVI08n7kTmKxptCQFrlHaa31R45iEOgOuEMMpvQkMoSdDXoFkzQlM4FtrSv7rm089LKBw"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-eip155-depositor",
+        "quote_request_id": "qr_sdk_eip155_depositor",
+        "quote_id": "0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a",
+        "sender_auth": {
+          "message_scheme": "EVM_PERMIT2",
+          "signed_messages": [
+            {
+              "message": "0x0f57e5dca816619309a243dd1906b28ad952229c5236bf5b26f1effcc46972b2",
+              "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"amount\":\"99000000\"},\"spender\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\",\"nonce\":\"67162395688735878566503768711375478917252650380519447085386292678408549034075\",\"deadline\":\"1780272301\",\"witness\":{\"depositRequestHash\":\"0x23747938a5694ee99651084814dabce7e52b7498b890ac130eea9886c444d395\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"reserver\":\"0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39\",\"releaser\":\"0x4444444444444444444444444444444444444444\"}}}",
+              "signature": "0xb7a5949d39e96cc4633d62d60d9ec72e2d6d1f22d5ed37264d46adc28bc3b9d34b6aa279096a71b0799821fe70a336b03371f13abc48661379dca2f6170e906a1c"
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0xd7be2f5b73101e78ae7426ba1d2a25b62bd0629895465631eb860ffd7aeb5ca0",
+          "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312\",\"quoteHash\":\"0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}",
+          "signature": "0x09392dde88298c7d077cf3eff220aee4a06ec2392b5b886b94db82d57ce8cbcb7617f6e3534f7820f6873661c4e9818802948699dfdb3b904410a5cdf5925fba1c"
+        }
+      },
+      "paymentId": "0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312",
+      "reserve": {
+        "expected": {
+          "network": "eip155:1",
+          "escrowContract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+          "depositId": "0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312",
+          "quoteHash": "0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a",
+          "settler": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "sourceAmount": "99000000",
+          "reserver": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+        },
+        "message": "0xd7be2f5b73101e78ae7426ba1d2a25b62bd0629895465631eb860ffd7aeb5ca0",
+        "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312\",\"quoteHash\":\"0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0x54dd01921ef60016ad83378a4705279b8bf8ef5c0ef85f6075dbb0e984675518",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312\",\"quoteHash\":\"0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a\",\"settler\":\"0x5656565656565656565656565656565656565656\",\"sourceAmount\":\"99000000\"}}",
+            "signature": "0x077180ef908a6257afc15726b1502d5a834d5a856c0926e15e83cfded37f4540391f4d4f98028260c26a2aee51d19f9d4bd619c0cdef7e0b8225d334b71311461b"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x6fec5a7a0f266e023e9b7961f328de7419685a1e9ad02725f333936dc23929f3",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xb60e08bb65236c286d7f725b3d2359be4e528b1c55ae1fa0828453ff3e9e9312\",\"quoteHash\":\"0x328b709bbc602f2bdfb8be6955c59ba59169375111f47e5a388089d491e1d42a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"98999999\"}}",
+            "signature": "0x303b2c97420a85009334a794012228fbf41b8d548585d9b8eb9a7dd3abf047577d42a43d709f82c0d95a3578c1d45b9508d4ae97727fd939b9b564660d43684f1b"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    },
+    {
+      "name": "eip155-selector",
+      "route": "selector",
+      "defaults": {
+        "chain_id": "eip155:1",
+        "escrow_contract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0x3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222",
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_eip155_selector",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-eip155-selector",
+        "source": {
+          "asset_identifier": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0xE7e469AfE81F94D7728d4429996DE7bD907A4Bc3",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-eip155-selector\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"account\":\"0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"quote_selector\":\"0xE7e469AfE81F94D7728d4429996DE7bD907A4Bc3\",\"fulfillment_verifier\":{\"account\":\"0x4444444444444444444444444444444444444444\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..3dPnhQz-7b0OQi5Wkty1_r3N7zMzD17Ka6hjTVux8BBU2in9_9mdwOQGmIj65cVkWebtcj3T5_6nR8kYAhuLkhs"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-eip155-selector",
+        "quote_request_id": "qr_sdk_eip155_selector",
+        "quote_id": "0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4",
+        "sender_auth": {
+          "message_scheme": "EVM_PERMIT2",
+          "signed_messages": [
+            {
+              "message": "0x59b451373b045b415883cd445e23c9062c0290171c018bc4cceac52287baea01",
+              "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"amount\":\"99000000\"},\"spender\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\",\"nonce\":\"56315779222648930470569992785344136394329069972429062550589157431528484730293\",\"deadline\":\"1780272301\",\"witness\":{\"depositRequestHash\":\"0x6ee50c97c67d15b830a418af32069568f0a0724cb62445d00627922b8bc5d7ee\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"reserver\":\"0xE7e469AfE81F94D7728d4429996DE7bD907A4Bc3\",\"releaser\":\"0x4444444444444444444444444444444444444444\"}}}",
+              "signature": "0xbf04027fb75f2dc1d26d6abc6fe9776436f9f2e184922abbe5febbb93a89319c061ef2c5b153f7b7ea82b04ba2c3b6956cae38effa55f6e84a2a1b2d4e9192d91b"
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0x40da47c377c27ead9fa5757887c347bf450eee57fede7a0f112e5197f0466dab",
+          "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17\",\"quoteHash\":\"0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}",
+          "signature": "0xb157f8e202fd0c3c1570735a093d81108e50d21ce6f62dca62be9e3a0bf6b67f7a0c7220936055727d94d8dd66336352b15a3b8c5315ae3dc89cf03bf532b1471b"
+        }
+      },
+      "paymentId": "0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17",
+      "reserve": {
+        "expected": {
+          "network": "eip155:1",
+          "escrowContract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+          "depositId": "0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17",
+          "quoteHash": "0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4",
+          "settler": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "sourceAmount": "99000000",
+          "reserver": "0xE7e469AfE81F94D7728d4429996DE7bD907A4Bc3"
+        },
+        "message": "0x40da47c377c27ead9fa5757887c347bf450eee57fede7a0f112e5197f0466dab",
+        "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17\",\"quoteHash\":\"0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0x714f90ef7862405233ead3d864904985b3b37955ac11c8b1bf1cea110c705cac",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17\",\"quoteHash\":\"0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4\",\"settler\":\"0x5656565656565656565656565656565656565656\",\"sourceAmount\":\"99000000\"}}",
+            "signature": "0xa2a29e196e13851160d4221d0ddc0a19630809de537c507a877d24459d9237d138f5c18c7eb448153d6938374692f67a6de7939cefc8dd866d86e74cbf3375771c"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x96915182bba4bd76971a002fa900e401eb13aaa5fb50c8b66dae84ba67f1c89c",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xfc3e5ec19c466dbaac8d5ad2f3b83fcfbeaaa6180b87ddf5ca6834e5c05b7c17\",\"quoteHash\":\"0x57385f9c308d5e2adf84b44d1f9fe95ac12592211d98dd8b81027db13deca6c4\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"98999999\"}}",
+            "signature": "0x2a3f1ef4a8900efdaabd87103f2ef4543648d7e5b591ef7f9437df57be8c993220b95289cef43d23740f8491b8773e00183b8b43984f591046abeb72f4313cd31b"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    },
+    {
+      "name": "eip155-contract-selector",
+      "route": "contract-selector",
+      "defaults": {
+        "chain_id": "eip155:1",
+        "escrow_contract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0x3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222",
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_eip155_contract_selector",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-eip155-contract-selector",
+        "source": {
+          "asset_identifier": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+        "quote_selector": "0x5afe00000000000000000000000000000000c0de",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "account": "0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-eip155-contract-selector\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"account\":\"0x2D08E5Fb0C4EBdfbB227E888E8c9305f8F7A9d39\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"quote_selector\":\"0x5afe00000000000000000000000000000000c0de\",\"fulfillment_verifier\":{\"account\":\"0x4444444444444444444444444444444444444444\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..p-ZU379MG9nN8XyWVhqZuO5UDn9OAkG-47wfuMKlV6hIQd8UUxpORSbSYBbhqpY45TDSI_PnCs4H5b9HEIPW9xs"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-eip155-contract-selector",
+        "quote_request_id": "qr_sdk_eip155_contract_selector",
+        "quote_id": "0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a",
+        "sender_auth": {
+          "message_scheme": "EVM_PERMIT2",
+          "signed_messages": [
+            {
+              "message": "0xa36bc8419f8dfe027c8048fd4c2e9b142bfed75b4aa3d8f95bf47b5b86da78c0",
+              "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x1\",\"verifyingContract\":\"0x000000000022D473030F116dDEE9F6B43aC78BA3\"},\"message\":{\"permitted\":{\"token\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"amount\":\"99000000\"},\"spender\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\",\"nonce\":\"43020477417621997869622817958731162228868134556560093753472943738052089180890\",\"deadline\":\"1780272301\",\"witness\":{\"depositRequestHash\":\"0x828e1f809dbdf5087b3d25ee3841ad7320c4aa6b8f4a7e99090b5e78fc239dac\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"reserver\":\"0x5aFE00000000000000000000000000000000C0De\",\"releaser\":\"0x4444444444444444444444444444444444444444\"}}}",
+              "signature": "0xf3cb04e3bfd9e0bb1263dbcb3623936c3eb67802974d735485712ae6c731797930edcd733cce5dc73bd7eb74539c6d2b1ce6dc2a6959b2ca12befad320a1f64a1c"
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0xe8a6969000c34e3f10420cb8841dc359edb406a2aec436cf1dbf73516d71c45a",
+          "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743\",\"quoteHash\":\"0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}",
+          "signature": "0x870063582584b7328cc7f6ecdda5defb8ef701f5ec18f913a49225291e1149f831959a714ba72cfc3d8b10f729f969653bd8288a719ed8cdbb47cbbe57eccb6c1c"
+        }
+      },
+      "paymentId": "0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743",
+      "reserve": {
+        "expected": {
+          "network": "eip155:1",
+          "escrowContract": "0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5",
+          "depositId": "0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743",
+          "quoteHash": "0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a",
+          "settler": "0x838Bb764befE99c94443f1726934dFfC1bD2355e",
+          "sourceAmount": "99000000",
+          "reserver": "0x5afe00000000000000000000000000000000c0de"
+        },
+        "message": "0xe8a6969000c34e3f10420cb8841dc359edb406a2aec436cf1dbf73516d71c45a",
+        "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743\",\"quoteHash\":\"0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"99000000\"}}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0xab64da3a551c46d8a2319cde1cb2a6d725fe81ff46b0fcf18ab36771ecb9f6f6",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743\",\"quoteHash\":\"0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a\",\"settler\":\"0x5656565656565656565656565656565656565656\",\"sourceAmount\":\"99000000\"}}",
+            "signature": "0x138bf74258976f632187d1e02fa446ef4a7a650c4377f2cd24f277d2582d891868114a606e075950099b6f4ef79b02866efbccf8d82d2098d5aab7da95bf0abc1b"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x73f939897e4b58d51556f5c67a32ea218425efc17632e0fc46b9f86665e362de",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x1\",\"verifyingContract\":\"0xE5e5E5E5e5e5E5E5E5E5e5E5e5e5e5E5e5e5e5e5\"},\"message\":{\"depositId\":\"0xd22de2495f69423b244f74ef69d4362ddfbfe0fb4bf5ee1cd80c3eaed50da743\",\"quoteHash\":\"0x791f8387d52fede5c59d991d369876c7b66df23ab712f84292499b7f018fd79a\",\"settler\":\"0x838Bb764befE99c94443f1726934dFfC1bD2355e\",\"sourceAmount\":\"98999999\"}}",
+            "signature": "0x2afee6c4eec55e8666266ad5da403b27d45cc422ece380ac31fe36c3c76407c92540b16f43652088de6f76ca175de878b625e2ac69c2573b605472748b9b10711c"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ],
+      "contractReserverOwner": "0x770d213C5f9EB8Ce105C43904155C41f4b8D0B49"
+    },
+    {
+      "name": "tron-depositor",
+      "route": "depositor",
+      "defaults": {
+        "chain_id": "tron:mainnet",
+        "escrow_contract": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+        "quote_selector": "TFH5wu7nGbGLdo2qCPn4see8bi2gKTAGh1",
+        "fulfillment_verifier": {
+          "account": "TGCAjMXComunWZEXCT1LPBdcYbDVuyexBv",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "TD5gsCwxykWsLN9aPrq2TAfNjByuZKYp4E",
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_tron_depositor",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-tron-depositor",
+        "source": {
+          "asset_identifier": "tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "account": "TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+        "quote_selector": "0x2d08e5fb0c4ebdfbb227e888e8c9305f8f7a9d39",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "TMxktrSANzxfM5uezPMqoT7GYCqSG893Hp",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-tron-depositor\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH\",\"quote_selector\":\"0x2d08e5fb0c4ebdfbb227e888e8c9305f8f7a9d39\",\"fulfillment_verifier\":{\"account\":\"0x4444444444444444444444444444444444444444\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..CbN2patu3lIeqEKQ3jfrDrXn990xxhaGWWrapmVjReJuUdgYeNvVuCYN4F7af8DrtK3a-22CFiOZ0qPn6PccBRw"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-tron-depositor",
+        "quote_request_id": "qr_sdk_tron_depositor",
+        "quote_id": "0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21",
+        "sender_auth": {
+          "message_scheme": "EVM_PERMIT2",
+          "signed_messages": [
+            {
+              "message": "0x9c4bd699c6da31ddc2644bc197ef09eae1e51e5a749a9b05daa5d31763aee078",
+              "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"99000000\"},\"spender\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"nonce\":\"68078116440675826694710395480988837103294135825667287914706077268076430185899\",\"deadline\":\"1780272301\",\"witness\":{\"depositRequestHash\":\"0xad57387566e1e3e766fec747d2c9f54ee7142160cc7a50c104471a5c834dd00f\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"reserver\":\"0x2d08e5fb0c4ebdfbb227e888e8c9305f8f7a9d39\",\"releaser\":\"0x4444444444444444444444444444444444444444\"}}}",
+              "signature": "0x39bb403154f6c0bda81622cc52ae46dbf2afa08bfa4a444cd26d196148b759d9587d28ee6b8b230c7e195e6a9fc6a997638325ce2ce51afc2018656f64bf01291c"
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0xd48b4bf320d7d8c705d26c924fa7feb3ee92648b4cde54aae97cabf2064640af",
+          "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6\",\"quoteHash\":\"0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"99000000\"}}",
+          "signature": "0x5ad523f28a2775436cc913f7dee002b32589b60b0c2e2faf5ecf4b815bc916332361ea45ac610a69f00e7b246444d8f4027203fa13d5106fbe84958b4c9a42851c"
+        }
+      },
+      "paymentId": "0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6",
+      "reserve": {
+        "expected": {
+          "network": "tron:mainnet",
+          "escrowContract": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+          "depositId": "0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6",
+          "quoteHash": "0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21",
+          "settler": "TMxktrSANzxfM5uezPMqoT7GYCqSG893Hp",
+          "sourceAmount": "99000000",
+          "reserver": "TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9"
+        },
+        "message": "0xd48b4bf320d7d8c705d26c924fa7feb3ee92648b4cde54aae97cabf2064640af",
+        "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6\",\"quoteHash\":\"0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"99000000\"}}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0xb204b4cb0e5feacd848f0212dbebcee08acf755f7543a7fee51b51d080cc9091",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6\",\"quoteHash\":\"0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21\",\"settler\":\"0x5656565656565656565656565656565656565656\",\"sourceAmount\":\"99000000\"}}",
+            "signature": "0x5fe9f33c44f9aa36e822d6807dd9bff6da9dfe88ba0a3d78267336609f5a765b39aab29de306fc5089fbf5334dc3d46b0d43b4a7e4d54430318d611bef3302a61b"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x02cd346ae5093d64c0e95c01f093c4fe390e166b330bf5968ff9f9ae196c302e",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x51ef75c7a766109e8ba62ff45a492c5243ae93d0ff175cb132d47686a24e13d6\",\"quoteHash\":\"0x89df8e724c1244b15efa00395ab104e52d116f709544a49caa27462582a65f21\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"98999999\"}}",
+            "signature": "0x137d8a02eaef5da32aec4d513798d50435aa7a21f9ab95fbdca8da08b3597b726fc2b92275db1c97685cd44f3fef16ed20b38d95e20d4a3b847117c8c65d28971b"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    },
+    {
+      "name": "tron-selector",
+      "route": "selector",
+      "defaults": {
+        "chain_id": "tron:mainnet",
+        "escrow_contract": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+        "quote_selector": "TFH5wu7nGbGLdo2qCPn4see8bi2gKTAGh1",
+        "fulfillment_verifier": {
+          "account": "TGCAjMXComunWZEXCT1LPBdcYbDVuyexBv",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "TD5gsCwxykWsLN9aPrq2TAfNjByuZKYp4E",
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_tron_selector",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-tron-selector",
+        "source": {
+          "asset_identifier": "tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+          "account": "TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+        "quote_selector": "0xe7e469afe81f94d7728d4429996de7bd907a4bc3",
+        "fulfillment_verifier": {
+          "account": "0x4444444444444444444444444444444444444444",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "account": "TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "TMxktrSANzxfM5uezPMqoT7GYCqSG893Hp",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-tron-selector\",\"source\":{\"asset_identifier\":\"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\",\"account\":\"TE5L4xf2DZ1FHVUNP7qFS45X82msebTFv9\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH\",\"quote_selector\":\"0xe7e469afe81f94d7728d4429996de7bd907a4bc3\",\"fulfillment_verifier\":{\"account\":\"0x4444444444444444444444444444444444444444\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..44V6u85rqPH7Le1O1EwF3f9wKLrn0yR8rrpgei8LmJgPuG1j0bPkMG5ay48zhRm3lrHbzag-2--pSjbAdZDYSxs"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-tron-selector",
+        "quote_request_id": "qr_sdk_tron_selector",
+        "quote_id": "0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3",
+        "sender_auth": {
+          "message_scheme": "EVM_PERMIT2",
+          "signed_messages": [
+            {
+              "message": "0x28dd4e408557e00cf19a762d5c83e519dc7d287e6c9c994b4034d974f741a40e",
+              "message_prehash": "{\"types\":{\"PermitWitnessTransferFrom\":[{\"name\":\"permitted\",\"type\":\"TokenPermissions\"},{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"nonce\",\"type\":\"uint256\"},{\"name\":\"deadline\",\"type\":\"uint256\"},{\"name\":\"witness\",\"type\":\"DepositWitness\"}],\"TokenPermissions\":[{\"name\":\"token\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"}],\"DepositWitness\":[{\"name\":\"depositRequestHash\",\"type\":\"bytes32\"},{\"name\":\"destination\",\"type\":\"string\"},{\"name\":\"reserver\",\"type\":\"address\"},{\"name\":\"releaser\",\"type\":\"address\"}]},\"primaryType\":\"PermitWitnessTransferFrom\",\"domain\":{\"name\":\"Permit2\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0x5fb997996f0ebf9fbe4013aa5cfa1991654a06d8\"},\"message\":{\"permitted\":{\"token\":\"0xa614f803b6fd780986a42c78ec9c7f77e6ded13c\",\"amount\":\"99000000\"},\"spender\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\",\"nonce\":\"84676700466022059393084763544008735694238718631725629070681948859212149081942\",\"deadline\":\"1780272301\",\"witness\":{\"depositRequestHash\":\"0x925c480e5c2e589054a247f3060f279e96838447256f8112f419f213b38e7979\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"reserver\":\"0xe7e469afe81f94d7728d4429996de7bd907a4bc3\",\"releaser\":\"0x4444444444444444444444444444444444444444\"}}}",
+              "signature": "0x29fbb6aca0e86ca854313b984270325cc63c9c5cdec059e09c16853836e9c0230484653d565dcb21f4e4599f9e67358ab3cfa9f9ee54b40579184b7bf8bb63d51b"
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0x39f58fcdd3c8de7f8c8b1cda5e0062ebe20ccfe2d9ece51b8e77ba6cb53fe201",
+          "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e\",\"quoteHash\":\"0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"99000000\"}}",
+          "signature": "0xc438dbd5bb4142874177ed91838b28f64b9f68d2f18f946222eedb3ea48f40fc09d553932d21f06c09cf531ae32d845ec77187baebab20c58018348d817d45671c"
+        }
+      },
+      "paymentId": "0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e",
+      "reserve": {
+        "expected": {
+          "network": "tron:mainnet",
+          "escrowContract": "TWvo9apiTq74uE5XQwnjt5zGgQ7vUayejH",
+          "depositId": "0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e",
+          "quoteHash": "0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3",
+          "settler": "TMxktrSANzxfM5uezPMqoT7GYCqSG893Hp",
+          "sourceAmount": "99000000",
+          "reserver": "TX7LimrfpzW1Cpp8mstgQaPUqu9UXr7oUn"
+        },
+        "message": "0x39f58fcdd3c8de7f8c8b1cda5e0062ebe20ccfe2d9ece51b8e77ba6cb53fe201",
+        "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e\",\"quoteHash\":\"0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"99000000\"}}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0x1329a1b7927c33e251290f48ad46180788de4278a61655259200d21be46c77be",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e\",\"quoteHash\":\"0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3\",\"settler\":\"0x5656565656565656565656565656565656565656\",\"sourceAmount\":\"99000000\"}}",
+            "signature": "0x05fc8604c84c48dfd8ed262cabd17803b4307358c9ab43255f0b614557d6b29e1fa718d23c01a502ba611f9c6f7c235861d46763b0424d30763f5295056395791c"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x060464e51e8f8c0fe97cf27ddb80947dae574f9d9de25c02eb48aa8e7561b8e7",
+            "message_prehash": "{\"types\":{\"ReserveWitness\":[{\"name\":\"depositId\",\"type\":\"bytes32\"},{\"name\":\"quoteHash\",\"type\":\"bytes32\"},{\"name\":\"settler\",\"type\":\"address\"},{\"name\":\"sourceAmount\",\"type\":\"uint256\"}]},\"primaryType\":\"ReserveWitness\",\"domain\":{\"name\":\"Escrow\",\"version\":\"3\",\"chainId\":\"0x2b6653dc\",\"verifyingContract\":\"0xe5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5\"},\"message\":{\"depositId\":\"0x16a2b3719a2dee75f1eec33a7406f557cb5e17269a163ffcc115a39cf335ad5e\",\"quoteHash\":\"0x2cdb9c16c784aa9fc76de7436809d35a5e66abfebabb6ad21b60734d24456eb3\",\"settler\":\"0x838bb764befe99c94443f1726934dffc1bd2355e\",\"sourceAmount\":\"98999999\"}}",
+            "signature": "0xce9633a3c40a7380d2821236549d21783c07933af6c139b70b83cb547671feac48e31510860a2a2f75cb06e3bc899017f8b522d80ef4209aef4b32328cdd8e661c"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    },
+    {
+      "name": "solana-depositor",
+      "route": "depositor",
+      "defaults": {
+        "chain_id": "solana:devnet",
+        "escrow_contract": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+        "quote_selector": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi1",
+        "fulfillment_verifier": {
+          "account": "5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "3JF3sEqM796hk5WFqA6EtmEwJQ9quALszsfJyvXNQKy3",
+        "svm_signature_cluster_id": "devnet",
+        "svm_signature_domain_version": 5,
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_solana_depositor",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-solana-depositor",
+        "source": {
+          "asset_identifier": "solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7",
+          "account": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+        "quote_selector": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa",
+        "fulfillment_verifier": {
+          "account": "5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7",
+            "account": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-solana-depositor\",\"source\":{\"asset_identifier\":\"solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7\",\"account\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt\",\"quote_selector\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\",\"fulfillment_verifier\":{\"account\":\"5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..6dykpuqcJjxx48KihgK4_XwLDgrxZCFNj2je9sDJ_LFsrLbsiXzeKINE40U6SSMleKvwldQjJA9DMXzyX3ElrBw"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-solana-depositor",
+        "quote_request_id": "qr_sdk_solana_depositor",
+        "quote_id": "0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56",
+        "sender_auth": {
+          "message_scheme": "SOLANA",
+          "signed_messages": [
+            {
+              "message": "0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b",
+              "message_prehash": "{\"deposit_request_hash\":\"0xa5e15d8ab657ddade3f467dbd3af87982189bb4b36ec366d2e1b64194ad63dec\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"depositor\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\",\"mint\":\"7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7\",\"amount\":\"99000000\",\"reserver\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\",\"releaser\":\"5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5\",\"nonce\":\"566935683102\",\"issued_at\":\"1780271998\",\"deadline\":\"1780272118\"}",
+              "signature": "0x70f37103ecd7e01d840e2ae1322a92a61ac232ab5bc29a7fdd8f91e16d2e7f4c977ae913db870546a7966a2e01292c56d0e66744c7f81d5e9a59042d2ba0f103",
+              "payload": {
+                "delegate_signer": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+              }
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0xcb0b33a0c6d78c9fb9ca95f5ec4ffc138a14b05f748b0ec24e4f28da5f9961a5",
+          "message_prehash": "{\"deposit_hash\":\"0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56\",\"source_amount\":\"99000000\"}",
+          "signature": "0xd573506e0eeefc11d62611b9c202191de28083d53ac8cae45dc4b992407688fc398a0c87ab81e60a87d052b40e7be26a5fc9f35f36d5ec197b9a939534b8db02"
+        }
+      },
+      "paymentId": "0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b",
+      "reserve": {
+        "expected": {
+          "network": "solana:devnet",
+          "escrowContract": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+          "depositId": "0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b",
+          "quoteHash": "0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56",
+          "settler": "FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U",
+          "sourceAmount": "99000000",
+          "reserver": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa",
+          "svmSignatureClusterId": "devnet",
+          "svmSignatureDomainVersion": 5
+        },
+        "message": "0xcb0b33a0c6d78c9fb9ca95f5ec4ffc138a14b05f748b0ec24e4f28da5f9961a5",
+        "message_prehash": "{\"deposit_hash\":\"0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56\",\"source_amount\":\"99000000\"}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0xe2789019e34ffe1c2602cf6a8cb699a7a3bacbee687e485df1f73ca4c85a4639",
+            "message_prehash": "{\"deposit_hash\":\"0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b\",\"recipient\":\"6p2RJu3sreYUznWeWh422HNbzf6JvU3X46KS1grXFejo\",\"quote_hash\":\"0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56\",\"source_amount\":\"99000000\"}",
+            "signature": "0x1e70107b342dadb5a6cb0be2db2cd04ed6c7a9736376253d9e82690309197795bce3a72eedcfb9a28f4348aacd88b215f499f47e77e2cba35a6bd4228df0910a"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0x4332867d0737158aefef9503a43a538a2e57ec376e149a8cb79203b82de485c0",
+            "message_prehash": "{\"deposit_hash\":\"0x5980351261d5e801a29a71b12f6c9870c6a9256599d47f4722e55d00265b4a6b\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x4aac3e845214a4b3df6aa23a4eeef5fda59ffc66bedcd9cde6160979b151eb56\",\"source_amount\":\"98999999\"}",
+            "signature": "0xc1669f5efededbfb2546ee359bc9290a702e5147c251d73eaa3db748ed930ecc15be181b1fd873ce7bcff7b7b0a40f26e92f907bd87c5029782e4dc8b8fb8802"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    },
+    {
+      "name": "solana-selector",
+      "route": "selector",
+      "defaults": {
+        "chain_id": "solana:devnet",
+        "escrow_contract": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+        "quote_selector": "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi1",
+        "fulfillment_verifier": {
+          "account": "5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "3JF3sEqM796hk5WFqA6EtmEwJQ9quALszsfJyvXNQKy3",
+        "svm_signature_cluster_id": "devnet",
+        "svm_signature_domain_version": 5,
+        "deposit_request_hash_versions": [
+          1,
+          2
+        ]
+      },
+      "depositRequestHashVersion": 2,
+      "quoteRequestId": "qr_sdk_solana_selector",
+      "quoteRequest": {
+        "version": "1.3",
+        "request_id": "qr-sdk-solana-selector",
+        "source": {
+          "asset_identifier": "solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7",
+          "account": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+        },
+        "destination": [
+          {
+            "asset_identifier": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          }
+        ],
+        "fulfillment_amount": "98000000",
+        "max_source_amount": "100000000",
+        "quote_deadline": "2026-06-01T00:00:03.000Z",
+        "fulfillment_deadline": "2026-06-01T00:05:00.000Z",
+        "escrow_contract_address": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+        "quote_selector": "3sJVyULHrssC52rB4rp9KHpLwzPcazegXEMUnzYKKo5n",
+        "fulfillment_verifier": {
+          "account": "5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5",
+          "endpoint": "https://verifier.example"
+        },
+        "fulfillment_proxy": "0x2222222222222222222222222222222222222222"
+      },
+      "quote": {
+        "quote_id": "0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b",
+        "awarded_payment_id": null,
+        "fulfillment_quote": {
+          "@context": [
+            "https://schemas.atum.network/declarations/FulfillmentQuote/v1/context.jsonld",
+            "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+          ],
+          "version": "1.0",
+          "source_amount": "99000000",
+          "award_deadline": "2026-06-01T00:01:00.000Z",
+          "source": {
+            "id": "solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7",
+            "account": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+          },
+          "destination": {
+            "id": "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "account": "0x7777777777777777777777777777777777777777"
+          },
+          "settler_address": "FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U",
+          "payment_request_json": "{\"version\":\"1.3\",\"request_id\":\"qr-sdk-solana-selector\",\"source\":{\"asset_identifier\":\"solana:devnet/spl:7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7\",\"account\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\"},\"destination\":[{\"asset_identifier\":\"eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\"account\":\"0x7777777777777777777777777777777777777777\"}],\"fulfillment_amount\":\"98000000\",\"max_source_amount\":\"100000000\",\"quote_deadline\":\"2026-06-01T00:00:03.000Z\",\"fulfillment_deadline\":\"2026-06-01T00:05:00.000Z\",\"escrow_contract_address\":\"GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt\",\"quote_selector\":\"3sJVyULHrssC52rB4rp9KHpLwzPcazegXEMUnzYKKo5n\",\"fulfillment_verifier\":{\"account\":\"5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5\",\"endpoint\":\"https://verifier.example\"},\"fulfillment_proxy\":\"0x2222222222222222222222222222222222222222\"}",
+          "verifiableCredential": [],
+          "proof": {
+            "type": "EcdsaSecp256k1RecoverySignature2020",
+            "created": "2026-06-01T00:00:00.000Z",
+            "verificationMethod": "did:pkh:eip155:1:0x838bb764befe99c94443f1726934dffc1bd2355e#blockchainAccountId",
+            "proofPurpose": "assertionMethod",
+            "jws": "eyJhbGciOiJFUzI1NkstUiIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..wr21WC5efUlot-JtgUvTB_uwOpMon2SDPEe-QI-aFLEaQT6YEtPfFA9ox65jEiEcTdB7QroBbqFB4XE46Pv7xxs"
+          }
+        }
+      },
+      "award": {
+        "request_id": "award-sdk-solana-selector",
+        "quote_request_id": "qr_sdk_solana_selector",
+        "quote_id": "0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b",
+        "sender_auth": {
+          "message_scheme": "SOLANA",
+          "signed_messages": [
+            {
+              "message": "0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6",
+              "message_prehash": "{\"deposit_request_hash\":\"0xfd0cf803f7cc8217704ef30e65b8979a95d0735a0ad6bc7268c4026a07c192dd\",\"destination\":\"eip155:8453/erc20:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913@0x7777777777777777777777777777777777777777\",\"depositor\":\"FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa\",\"mint\":\"7tj9biW3KRJ7EEWmVUGigHiouCTXhV2dzcyvwma7Cyu7\",\"amount\":\"99000000\",\"reserver\":\"3sJVyULHrssC52rB4rp9KHpLwzPcazegXEMUnzYKKo5n\",\"releaser\":\"5bV6jUfhDHCQVA1WfKBUnXUsboJgoKgkzkKcxr3joew5\",\"nonce\":\"81604378699\",\"issued_at\":\"1780271998\",\"deadline\":\"1780272118\"}",
+              "signature": "0x51a6bf4ce5e561644dda95a1c9375383a254877b8c73936368a9b63f3dfc8d626933b987787c584204f0c618cabb33f47817dc64fb9c9e741ab964a8ee56ff0f",
+              "payload": {
+                "delegate_signer": "FfYFBgDPgWF6xB3GFF5M3zTuDPRUcBAiRvpxfPer25Aa"
+              }
+            }
+          ]
+        },
+        "reserve_auth": {
+          "message": "0x8adc293250640584b5924d891cfb85f46e17ab06d6d73d3c92b94a3612272965",
+          "message_prehash": "{\"deposit_hash\":\"0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b\",\"source_amount\":\"99000000\"}",
+          "signature": "0xd8550ec36487401eccc98e127909ed8afc0f1f4dae63e24523fee7b982d54cf7a4ca45e2b81049aa036d30f12265533b3fde8eb88e82d1958a986e40dc4d3a0c"
+        }
+      },
+      "paymentId": "0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6",
+      "reserve": {
+        "expected": {
+          "network": "solana:devnet",
+          "escrowContract": "GURgmxeLRJ1swjHDtQhQdTjguNB6EZDmxSdGM3GC6Hrt",
+          "depositId": "0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6",
+          "quoteHash": "0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b",
+          "settler": "FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U",
+          "sourceAmount": "99000000",
+          "reserver": "3sJVyULHrssC52rB4rp9KHpLwzPcazegXEMUnzYKKo5n",
+          "svmSignatureClusterId": "devnet",
+          "svmSignatureDomainVersion": 5
+        },
+        "message": "0x8adc293250640584b5924d891cfb85f46e17ab06d6d73d3c92b94a3612272965",
+        "message_prehash": "{\"deposit_hash\":\"0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b\",\"source_amount\":\"99000000\"}"
+      },
+      "tampered": [
+        {
+          "field": "settler",
+          "reserve_auth": {
+            "message": "0x0ae1661fa53647eaba78ccc8eb7e52bdfb79975248c25499d83da99f35cdff59",
+            "message_prehash": "{\"deposit_hash\":\"0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6\",\"recipient\":\"6p2RJu3sreYUznWeWh422HNbzf6JvU3X46KS1grXFejo\",\"quote_hash\":\"0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b\",\"source_amount\":\"99000000\"}",
+            "signature": "0x80c23d16a04e4eb58dfcb8e8be0869eccc93cbc72fdd4945eb50d83c9a3d9d3e1550eac2f7a20883f6b43cc35431b3ae2274df31a6f5d79d5d745a005c8ec10d"
+          },
+          "reason": "settler_mismatch"
+        },
+        {
+          "field": "sourceAmount",
+          "reserve_auth": {
+            "message": "0xf40a6ce541c61f5cbc68cbc83c45d82eacc2b67e0bf8cae11bad54e8ed61e628",
+            "message_prehash": "{\"deposit_hash\":\"0xef6fc4df46a45bbab3e4983bf804c05d92b33f1a0dacebdcccca45c2675457c6\",\"recipient\":\"FdfP9gQEL2QJPLVZpYVhbXCbAg3UwZxxMeVgX98tzT2U\",\"quote_hash\":\"0x27b7c139088c7bbfe766c954b965e9b61cb779766574c6f6b3861f4c3488286b\",\"source_amount\":\"98999999\"}",
+            "signature": "0x4d1e4b54faf7054a95fed15c782e0636195df50041d8319a9c6efb7515890005345723db20492c7813b4033cca8ec18ca03d704625ab987c287c227ec27ede0c"
+          },
+          "reason": "source_amount_mismatch"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+    "rpc_url": "https://polygon-amoy.g.alchemy.com/v2/YOUR_API_KEY",
+    "escrow": "0xBEc3fbF58e4115e373670C2A6F12f4bF0601E488",
+    "token_address": "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582",
+    "token_decimals": 6,
+    "fee_percentage": 20000,
+    "min_fee": 0,
+    "max_fee": 25000000
+}

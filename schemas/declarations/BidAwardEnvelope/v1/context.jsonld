@@ -1,0 +1,85 @@
+{
+  "$comment": "BidAward authority: the Atum-signed authority envelope wrapping a quoteAwarder VC, mirroring FulfillmentQuoteEnvelope/v1 and PaymentRequestEnvelope/v1. The term definitions here are byte-identical to those two declaration contexts EXCEPT the envelope-type term (BidAwardEnvelope) — they differ only in that term name, which is the only thing that distinguishes the three envelope kinds once the declaration type is bound into the signed `type` array (see SignVPOptions.DeclarationType). `verifiableCredential` uses `@container: @graph` so each VC is its own RDF graph: URDNA2015 normalizes graphs order-independently AND deduplicates by node id, so reordering the verifiableCredential array yields the same signature and identical-id VCs collapse. MVP policy is set-based (RequiredVCTypes) + per-VC (IsIssuerTrusted), so order is immaterial; a future ordered-VC policy would swap `@graph` for `@list` here AND in the design doc (a different canonicalization contract).",
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "atum": "https://schemas.atum.network/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "sec": "https://w3id.org/security#",
+    "dc": "http://purl.org/dc/terms/",
+    "cred": "https://www.w3.org/2018/credentials#",
+
+    "BidAwardEnvelope": {
+      "@id": "atum:BidAwardEnvelope",
+      "@type": "@id"
+    },
+
+    "VerifiablePresentation": {
+      "@id": "cred:VerifiablePresentation",
+      "@type": "@id"
+    },
+
+    "VerifiableCredential": {
+      "@id": "cred:VerifiableCredential",
+      "@type": "@id"
+    },
+
+    "version": {
+      "@id": "atum:version",
+      "@type": "xsd:string"
+    },
+
+    "holder": {
+      "@id": "cred:holder",
+      "@type": "@id"
+    },
+
+    "verifiableCredential": {
+      "@id": "cred:verifiableCredential",
+      "@type": "@id",
+      "@container": "@graph"
+    },
+
+    "proof": {
+      "@id": "sec:proof",
+      "@type": "@id",
+      "@container": "@graph"
+    },
+
+    "jws": {
+      "@id": "sec:jws"
+    },
+    "proofValue": {
+      "@id": "sec:proofValue"
+    },
+    "proofPurpose": {
+      "@id": "sec:proofPurpose",
+      "@type": "@vocab"
+    },
+    "verificationMethod": {
+      "@id": "sec:verificationMethod",
+      "@type": "@id"
+    },
+    "created": {
+      "@id": "dc:created",
+      "@type": "xsd:dateTime"
+    },
+
+    "challenge": {
+      "@id": "sec:challenge"
+    },
+    "domain": {
+      "@id": "sec:domain"
+    },
+
+    "authentication": {
+      "@id": "sec:authentication",
+      "@type": "@id"
+    },
+    "assertionMethod": {
+      "@id": "sec:assertionMethod",
+      "@type": "@id"
+    }
+  }
+}

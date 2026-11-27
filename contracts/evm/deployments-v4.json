@@ -1,0 +1,182 @@
+{
+    "42220": {
+        "name": "Celo Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "42161": {
+        "name": "Arbitrum One",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "8453": {
+        "name": "Base Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "1": {
+        "name": "Ethereum Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "137": {
+        "name": "Polygon POS Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "80002": {
+        "name": "Polygon Amoy",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "421614": {
+        "name": "Arbitrum Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "11142220": {
+        "name": "Celo Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "11155111": {
+        "name": "Ethereum Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "84532": {
+        "name": "Base Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "10": {
+        "name": "Optimism Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "11155420": {
+        "name": "Optimism Sepolia",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "43114": {
+        "name": "Avalanche C-Chain",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "43113": {
+        "name": "Avalanche Fuji",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "42431": {
+        "name": "Tempo Moderato",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "4217": {
+        "name": "Tempo Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "5042002": {
+        "name": "Arc Testnet",
+        "mainnet": false,
+        "contracts": {
+            "Escrow": "0x0F875601504C9179562506AFa34b2D084268869b",
+            "FulfillmentProxy": "0x1F1F8FA642bc5F530ba37F1Db3a656E9eB8BaFeb",
+            "FulfillmentProxyPreview": "0xd1254EF0f2bc75AD577FE48fC5CC9c3ec13B0144",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    },
+    "5042": {
+        "name": "Arc Mainnet",
+        "mainnet": true,
+        "contracts": {
+            "Escrow": "0x815d450F443466d52D3c1fB7a57D74D463D1E6F0",
+            "FulfillmentProxy": "0xA8F40Ed7437BCB6bF264832369e8364b80B06c83",
+            "FulfillmentProxyPreview": "0x1FaF7640110Fb09BaD288dBEf5B4f676b0eC1932",
+            "Permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3"
+        }
+    }
+}

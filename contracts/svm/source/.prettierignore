@@ -1,0 +1,20 @@
+# mirrors .gitignore
+.anchor
+.DS_Store
+.keys/
+target
+**/*.rs.bk
+node_modules
+.yarn
+notes/
+test-ledger/
+test-validator.log
+AGENTS.md
+.claude/
+.codex/
+deployment-addresses.json
+deployment-artifact.json
+orchestration/
+dist
+build
+pnpm-lock.yaml

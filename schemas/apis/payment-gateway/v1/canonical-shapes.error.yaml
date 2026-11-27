@@ -1,0 +1,40 @@
+# The chain context carried on a failed payment is the same shape every Atum service
+# reports an on-chain failure with, so it is generated from that definition rather than
+# written here. The definition is schemas/apis/error/v1: where this file and that one
+# could ever disagree, that one is what the services actually emit.
+#
+# To change this shape, edit that definition and regenerate:
+#
+#     make -C schemas generate-canonical-shapes
+#
+# The generated block is committed, and the build verifies it still matches.
+#
+# Note what that means in the other direction. This makes the shared error definition a
+# PUBLIC shape for payments as well as for error responses: a field added to it lands on the
+# customer-facing payment API in the same change, and the Go alias below means it lands on the
+# wire whether or not anyone updates this file. That is the intended trade — one definition
+# instead of two copies that drift, which is the drift this manifest exists to end — but it
+# puts the judgement about what a customer may see on whoever edits error/v1, not here.
+# payment-gw pins the current field list in a test so growing that shape trips a review rather
+# than publishing quietly (TestBlockchainContextFieldsArePublishable).
+
+target: openapi.yaml
+source: ../../error/v1/schema.json
+
+shapes:
+  - name: PaymentBlockchainContext
+    from: $defs/BlockchainContext
+    reason: |
+      Only the wording differs: this contract says when a caller will see the field, which
+      the shared definition has no reason to state because it describes the shape rather
+      than the endpoint that returns it. Every field, and every constraint on it, comes
+      from the shared definition unchanged.
+    overlay:
+      description: |-
+        Where on chain a failed payment failed. Present only when the failure happened
+        on chain — an escrow revert, or a fulfillment that could not be delivered — so a
+        payment that failed before any transaction was sent carries no context here.
+      x-go-type: atumerror.BlockchainContext
+      x-go-type-import:
+        name: atumerror
+        path: github.com/atum-labs/protocol/schemas/apis/error/v1/bindings/go

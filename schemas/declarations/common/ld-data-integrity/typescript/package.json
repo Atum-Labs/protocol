@@ -1,0 +1,44 @@
+{
+  "name": "@atum-labs/ld-data-integrity",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TypeScript primitives for W3C Data Integrity 1.0 (canonicalize / hash / detached ES256K-R JWS / Ed25519Signature2020 multibase). Sibling of the Go data-integrity library; both halves MUST stay byte-equal on canonical n-quads or the cross-language signing round trip breaks.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist-cjs/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "dist-cjs"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/copy-context.mjs",
+    "build:esm": "tsc",
+    "build:cjs": "node scripts/build-cjs.mjs",
+    "build": "npm run build:esm && npm run build:cjs",
+    "verify-context": "node scripts/copy-context.mjs --check",
+    "pretest": "node scripts/copy-context.mjs && mkdir -p src/contexts && cp dist/contexts/*.jsonld src/contexts/",
+    "test": "vitest run",
+    "prepare": "pnpm run build"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "ethers": "^6.12.1",
+    "jsonld": "8.3.3",
+    "rdf-canonize": "3.4.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/jsonld": "^1.5.15",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.11"
+  }
+}

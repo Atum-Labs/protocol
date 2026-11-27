@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+# Glob rather than a list so the workspace loads while either crate is still absent.
+members = ["contracts/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+# Protocol 30 (required going forward). 30.0.0 stable is not yet released, so this is pinned
+# to the exact RC; it MUST move to stable 30.0.0 before an audited build. Bumping this is
+# an audit-scope change: the host's crypto and auth semantics are part of the contract's guarantees.
+soroban-sdk = "=30.0.0-rc.1"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+# Tests need symbols and debug assertions; keep the release profile for the wasm artefact only.
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true

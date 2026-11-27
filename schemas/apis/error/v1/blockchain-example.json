@@ -1,0 +1,15 @@
+{
+  "code": "TX_REVERTED",
+  "message": "Fulfillment transaction reverted: ERC20: transfer amount exceeds balance",
+  "domain": "SETTLER_AGENT",
+  "timestamp": "2024-01-15T10:35:22Z",
+  "request_id": "1234567890",
+  "blockchain_context": {
+    "chain_id": "eip155:42161",
+    "transaction_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "block_number": 156789012,
+    "contract_address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+    "revert_reason": "ERC20: transfer amount exceeds balance",
+    "gas_used": "45678"
+  }
+}

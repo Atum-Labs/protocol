@@ -1,0 +1,222 @@
+[
+  {
+    "name": "contract-wallet-owner-signature",
+    "description": "The settler is a contract wallet whose owner (Hardhat #1) signed the digest: a 65-byte signature that recovers to the owner, not to message.from. The wallet vouches for it, so the authorization is proved.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "owner", "owner": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", "trusted_caller": "0x036cbd53842c5426634e7929541ec2318f3dcf7e" },
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "approved-hash-wallet",
+    "description": "The settler is a contract wallet that accepts one opaque 96-byte signature, as contract-signature.json carries. Not recoverable offline; proved by the wallet's answer.",
+    "file": "contract-signature.json",
+    "has_code": true,
+    "wallet": { "kind": "approves", "signature": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab" },
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "empty-signature-approved-by-wallet",
+    "description": "An empty signature is the wallet's business: a wallet that approved the digest on chain answers for it, and the token would pass the same bytes to it.",
+    "file": "empty-signature.json",
+    "has_code": true,
+    "wallet": { "kind": "approves", "signature": "0x" },
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "eoa-settler",
+    "description": "The settler has no code, so its key must have signed; settler-signed.json is signed by it. One code read, no isValidSignature call.",
+    "file": "settler-signed.json",
+    "has_code": false,
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 0 }
+  },
+  {
+    "name": "wallet-owner-differs",
+    "description": "The wallet answers, but its owner is someone else, so it returns a value that is not the magic value.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "owner", "owner": "0x0000000000000000000000000000000000000001", "trusted_caller": "0x036cbd53842c5426634e7929541ec2318f3dcf7e" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-reverts",
+    "description": "The wallet reverts on the signature, as a Safe does on one it does not accept. A revert is the contract's answer, not an unreadable chain.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "reverts" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "reverted" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-trusts-another-caller",
+    "description": "The wallet only answers a caller it trusts, and the token is not that caller. The call must be made with msg.sender set to the token (the destination's verifyingContract), so this reverts.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "owner", "owner": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8", "trusted_caller": "0x0000000000000000000000000000000000000001" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "reverted" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-approves-another-signature",
+    "description": "The wallet approves a different signature than the document carries.",
+    "file": "short-signature.json",
+    "has_code": true,
+    "wallet": { "kind": "approves", "signature": "0xabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-nothing",
+    "description": "The call succeeds with no return data.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "returned 0x, not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-bare-selector",
+    "description": "The magic value without its padding to a word: four bytes, not the 32 the token compares.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "returned 0x1626ba7e, not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-right-aligned-selector",
+    "description": "The selector right-aligned in the word, which is bytes32(uint32), not the bytes4 the token compares.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x000000000000000000000000000000000000000000000000000000001626ba7e" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-true",
+    "description": "A wallet that answers like isApprovedSigner, with a bool.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-magic-word-with-a-nonzero-tail",
+    "description": "The magic selector followed by 27 zero bytes and 01: a 32-byte word whose first four bytes are the selector and which is not the magic word. A binding that compares only the leading four bytes accepts it; the token compares the whole word.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e00000000000000000000000000000000000000000000000000000001" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-magic-word-and-more",
+    "description": "A 64-byte answer whose first word is the magic word. The token requires at least 32 bytes and compares the first word (Circle's SignatureChecker and OpenZeppelin 4.9's both read result.length >= 32), so extra return data is accepted; a binding that demands exactly 32 bytes refuses it.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "wallet-returns-invalid-value",
+    "description": "The ERC-1271 failure value, 0xffffffff.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0xffffffff00000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "not the ERC-1271 magic value" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "code-read-fails",
+    "description": "The chain cannot be read, so the document is neither accepted nor refused as wrong: a distinct, retryable error.",
+    "file": "signature-not-from.json",
+    "has_code": { "error": "rpc: connection refused" },
+    "expect": { "valid": false, "kind": "unverifiable", "error_contains": "rpc: connection refused" },
+    "calls": { "has_code": 1, "is_valid_signature": 0 }
+  },
+  {
+    "name": "call-fails",
+    "description": "The signer has code but the isValidSignature call itself fails to run.",
+    "file": "signature-not-from.json",
+    "has_code": true,
+    "wallet": { "kind": "errors", "message": "rpc: connection refused" },
+    "expect": { "valid": false, "kind": "unverifiable", "error_contains": "rpc: connection refused" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "no-code-another-key-signed",
+    "description": "No code at the settler, so only its key can sign, and another key did.",
+    "file": "signature-not-from.json",
+    "has_code": false,
+    "expect": { "valid": false, "kind": "offline", "error_contains": "recovers to" },
+    "calls": { "has_code": 1, "is_valid_signature": 0 }
+  },
+  {
+    "name": "no-code-contract-shaped-signature",
+    "description": "No code at the settler and a signature that is not 65 bytes: nothing a key produced, and no contract to answer for it.",
+    "file": "contract-signature.json",
+    "has_code": false,
+    "expect": { "valid": false, "kind": "offline", "error_contains": "has no code" },
+    "calls": { "has_code": 1, "is_valid_signature": 0 }
+  },
+  {
+    "name": "no-code-empty-signature",
+    "description": "No code at the settler and an empty signature.",
+    "file": "empty-signature.json",
+    "has_code": false,
+    "expect": { "valid": false, "kind": "offline", "error_contains": "has no code" },
+    "calls": { "has_code": 1, "is_valid_signature": 0 }
+  },
+  {
+    "name": "eip7702-delegate-refuses-the-key-signature",
+    "description": "The settler's account carries an EIP-7702 delegation, which is code, and its own key signed the digest. A token that tests code first (Circle's SignatureChecker, USDC) sends the signature to the delegate, so a delegate that refuses it refuses the authorization even though the key signed, and reading the code first reaches that verdict. A token that tries the key first (OpenZeppelin 4.9's, PYUSD) would execute this authorization; this binding refuses it, the safe direction, and does not close that divergence.",
+    "file": "settler-signed.json",
+    "has_code": true,
+    "wallet": { "kind": "reverts" },
+    "expect": { "valid": false, "kind": "rejected", "error_contains": "reverted" },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "eip7702-delegate-approves",
+    "description": "The same delegated account whose delegate approves.",
+    "file": "settler-signed.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e00000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": true },
+    "calls": { "has_code": 1, "is_valid_signature": 1 }
+  },
+  {
+    "name": "offline-rule-fails-before-any-chain-read",
+    "description": "A document that fails an offline rule (expiry) costs no chain read, whatever the wallet would say.",
+    "file": "expiry-after-deadline.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e00000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": false, "kind": "offline", "error_contains": "after the fulfillment deadline" },
+    "calls": { "has_code": 0, "is_valid_signature": 0 }
+  },
+  {
+    "name": "signer-not-settler-before-any-chain-read",
+    "description": "An account the quote does not name is never asked about.",
+    "file": "signer-not-settler.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e00000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": false, "kind": "offline", "error_contains": "does not equal settler_address" },
+    "calls": { "has_code": 0, "is_valid_signature": 0 }
+  },
+  {
+    "name": "domain-not-destination-before-any-chain-read",
+    "description": "A document signed under another chain's domain is refused offline, before the chain is read.",
+    "file": "domain-chain-not-destination.json",
+    "has_code": true,
+    "wallet": { "kind": "returns", "return_data": "0x1626ba7e00000000000000000000000000000000000000000000000000000000" },
+    "expect": { "valid": false, "kind": "offline", "error_contains": "domain.chainId" },
+    "calls": { "has_code": 0, "is_valid_signature": 0 }
+  }
+]

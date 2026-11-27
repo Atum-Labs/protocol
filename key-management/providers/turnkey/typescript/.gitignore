@@ -1,0 +1,5 @@
+# Secrets the provisioning scripts write here by default (the pnpm aliases run from this package
+# root, so a default --out lands here, not under scripts/). NEVER commit these.
+*.apikey.json
+*.suborg.json
+.env

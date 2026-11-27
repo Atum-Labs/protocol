@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "source_amount": "1000000",
+  "award_deadline": "2024-01-15T11:00:00Z",
+  "destination": {
+    "id": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "account": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+  },
+  "source": {
+    "id": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "account": "0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72"
+  },
+  "payment_request_json": "{\"request_id\":\"req_123456789\",\"source\":{\"asset_identifier\":\"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"account\":\"0x742d35CC6634c0532925a3B8d8c5e48C4e6B4A72\"},\"destination\":[{\"asset_identifier\":\"solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\",\"account\":\"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\"}],\"source_amount\":\"1000000\"}",
+  "settler_address": "0x1234567890123456789012345678901234567890"
+}

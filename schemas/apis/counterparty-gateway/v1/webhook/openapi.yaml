@@ -1,0 +1,260 @@
+openapi: 3.0.3
+info:
+  title: Atum Counterparty Webhook API
+  description: |
+    Defines the webhook interface that beneficiary PSPs implement to receive
+    payment authorization requests from the Counterparty Gateway.
+
+    The Counterparty Gateway uses the generated client bindings to call PSP webhooks.
+    Beneficiary PSPs (including the reference implementation) use the generated server
+    bindings to implement the webhook handler.
+
+    PSPs MUST respond within the configured webhook timeout (default 20 seconds).
+    PSPs MUST handle duplicate deliveries idempotently using `payment_id`.
+  version: 1.0.0
+  contact:
+    name: Atum Labs
+servers:
+  - url: https://beneficiary-psp.example.com
+    description: Beneficiary PSP webhook server (example)
+
+paths:
+  /v1/authorize:
+    post:
+      summary: Authorize a payment
+      description: |
+        Called by the Counterparty Gateway on the beneficiary PSP's registered webhook URL.
+        The PSP evaluates the payment request and returns a signed authorization or decline.
+
+        Delivery guarantee: at-least-once. If the Counterparty Gateway crashes after
+        sending the webhook but before persisting the response, it will re-send on
+        recovery. PSPs MUST handle duplicates idempotently using `payment_id`.
+
+        Every request carries an `Idempotency-Key` HTTP header whose value is the
+        `payment_id`. It is stable across the original call, any retry, crash
+        recovery, and rolling-deploy overlap, so all deliveries of one payment
+        share a single key. PSPs SHOULD dedupe on this header (equivalently, on the
+        `payment_id` field); a PSP that performs a chargeable action per call MUST
+        dedupe to avoid double-charging on a re-delivery.
+      operationId: authorizePayment
+      tags:
+        - Authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '200':
+          description: |
+            Authorization decision (authorized or declined). Carries the inner
+            signed AuthorizationResponse and, when the PSP presents credentials,
+            the holder-signed AuthorizationResponseEnvelope (ARE).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationResult'
+        '400':
+          description: Bad request - malformed payment request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error at the beneficiary PSP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AuthorizationRequest:
+      type: object
+      description: |
+        A payment authorization request forwarded by the Counterparty Gateway to the
+        beneficiary PSP's webhook. Contains the full PaymentRequest and metadata.
+      required:
+        - payment_id
+        - counterparty_did
+        - payment_request
+      properties:
+        payment_id:
+          type: string
+          description: Unique payment identifier used as the idempotency key
+          example: "0x761989729fefb4b0cb8b3e6f787301a3878c91e8fba35ed362a079292879f34f"
+        counterparty_did:
+          type: string
+          description: The beneficiary's DID (e.g. did:pkh)
+          example: "did:pkh:eip155:1:0xdeadbeef"
+        payment_request:
+          type: object
+          description: |
+            The full PaymentRequest document to be authorized.
+            Passed through as raw JSON to preserve JSON-LD signatures.
+          additionalProperties: true
+          x-go-type: json.RawMessage
+
+    AuthorizationResult:
+      type: object
+      description: |
+        The beneficiary PSP's webhook 200 body. Carries the inner signed
+        AuthorizationResponse AND, when the PSP presents credentials, the
+        holder-signed AuthorizationResponseEnvelope (ARE). The two ride as
+        SEPARATE fields so the Counterparty Gateway relays them into distinct
+        AuthorizationResultEnvelope proto fields (authorization_response_json plus
+        presentation_json). Credentials live ONLY in the envelope, never the
+        inner response. The Counterparty Gateway also accepts a bare
+        AuthorizationResponse body (no `authorization_response` key) for
+        back-compat with PSPs that don't yet emit the wrapper.
+      required:
+        - authorization_response
+      properties:
+        authorization_response:
+          $ref: '#/components/schemas/AuthorizationResponse'
+        presentation:
+          type: object
+          additionalProperties: true
+          x-go-type: json.RawMessage
+          description: |
+            Holder-signed AuthorizationResponseEnvelope (W3C
+            VerifiablePresentation), raw JSON to preserve the holder signature.
+            proof.challenge is the inner AuthorizationResponse's content hash
+            (response_hash). proof.domain is the network-wide did:web. Omitted
+            when the PSP has no envelope to present (audit/permissive
+            back-compat). The full schema is the canonical source at
+            schemas/declarations/AuthorizationResponseEnvelope/v1/schema.json.
+
+    AuthorizationResponse:
+      type: object
+      description: |
+        The beneficiary PSP's signed authorization decision. The full JSON Schema,
+        including the @context, proof, and verifiableCredential structure used by
+        the W3C Data Integrity verifier, is the canonical source at
+        schemas/declarations/AuthorizationResponse/v1/schema.json. This OpenAPI
+        component carries an abbreviated shape for HTTP-level documentation and
+        client/server stub generation only. All business logic that signs or
+        verifies the response imports from the declaration's bindings package
+        (github.com/atum-labs/protocol/schemas/declarations/AuthorizationResponse/v1/bindings/go).
+      x-go-type: authorizationresponse.SchemaJson
+      x-go-type-import:
+        name: authorizationresponse
+        path: github.com/atum-labs/protocol/schemas/declarations/AuthorizationResponse/v1/bindings/go/generated
+      required:
+        - "@context"
+        - payment_id
+        - counterparty_did
+        - status
+      properties:
+        "@context":
+          type: array
+          items: { type: string }
+          description: |
+            JSON-LD context array. Must include the AuthorizationResponse context
+            URL and the W3C Data Integrity suite context URL the proof was signed
+            under.
+          example:
+            - "https://schemas.atum.network/declarations/AuthorizationResponse/v1/context.jsonld"
+            - "https://w3id.org/security/suites/secp256k1recovery-2020/v2"
+        payment_id:
+          type: string
+          description: Correlation key matching the request
+          example: "0x761989729fefb4b0cb8b3e6f787301a3878c91e8fba35ed362a079292879f34f"
+        counterparty_did:
+          type: string
+          description: The beneficiary's DID
+          example: "did:pkh:eip155:1:0xdeadbeef"
+        status:
+          type: string
+          description: |
+            Authorization decision. String (not boolean) to accommodate future values
+            like "pending_info" for step-up authorization.
+          enum:
+            - authorized
+            - declined
+          example: "authorized"
+        reason:
+          type: string
+          description: Human-readable reason for decline (omitted when authorized)
+          example: "Recipient account suspended"
+        proof:
+          type: object
+          description: |
+            W3C Data Integrity proof. See schemas/declarations/AuthorizationResponse/v1/schema.json
+            $defs/DataIntegrityProof for the full structure (type, created,
+            verificationMethod, proofPurpose, jws/proofValue).
+          additionalProperties: true
+        verifiableCredential:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: |
+            Optional W3C Verifiable Credentials. Empty in Phase 4. Populated when
+            Atum ID lands "Known to Atum as a PSP" credentials. See
+            schemas/declarations/AuthorizationResponse/v1/schema.json
+            $defs/VerifiableCredential for the full structure.
+
+    ErrorResponse:
+      type: object
+      description: >-
+        The body a beneficiary PSP returns on 4xx/5xx.
+
+
+        Atum acts on the HTTP status alone. A non-200 is recorded as a webhook
+        error and this body is read by nothing, so `code` does not have to come
+        from Atum's catalog and a PSP that returns a different body is not
+        treated any differently. The shape mirrors Atum's own public error body
+        so that a PSP already emitting that shape can reuse it.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Public error category in SCREAMING_SNAKE_CASE.
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          description: Curated, safe message shown to the caller.
+          example: "The request was malformed or missing required fields."
+        request_id:
+          type: string
+          description: Correlation id the caller quotes to support to find the internal record.
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Absent when the error is not
+            about a specific payment.
+          example: "0xc7108e200d11580e7e75185991084b42a535af588ba8267cd0d1e7df089e5c9c"
+        docs_url:
+          type: string
+          description: Docs page for this error code.
+        domain:
+          type: string
+          description: Originating service domain.
+        retry_classification:
+          type: string
+          description: >-
+            What the caller should do next. Absent means the condition has not been
+            classified, which is not the same as safe to retry.
+
+            Re-sending the same `request_id` is an idempotent replay and always safe.
+            This value is about submitting a new one, which starts a new operation. See
+            https://docs.atum.xyz/errors for the value set.
+          example: "RECONCILE_THEN_DECIDE"
+        request_id_reusable:
+          type: boolean
+          description: >-
+            Whether the caller may re-send this same request_id. True means no payment
+            was created for it, so the id is still free. False means a payment exists
+            for it, so the id is spent and re-sending only replays this outcome. Absent
+            means undetermined, which a caller should read as false. Separate from
+            retry_classification, which answers what the caller must change rather than
+            whether the id survived.
+          example: false
+
+tags:
+  - name: Authorization
+    description: Payment authorization webhook interface

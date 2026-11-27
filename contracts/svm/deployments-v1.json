@@ -1,0 +1,26 @@
+{
+  "EtWTRABZaYq6iMfeYKouRu166VU2xqa1": {
+    "name": "Solana Devnet",
+    "mainnet": false,
+    "contracts": {
+      "Escrow": "44DjKbs1uV3uq26HjJLY67EXuVvwCbBoSUC2tDBWbkrs",
+      "FulfillmentProxy": "77AqGeSh3GLFcBwSxdTnefgv92Cosi9o6NsK992TZsRe"
+    }
+  },
+  "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z": {
+    "name": "Solana Testnet",
+    "mainnet": false,
+    "contracts": {
+      "Escrow": "44DjKbs1uV3uq26HjJLY67EXuVvwCbBoSUC2tDBWbkrs",
+      "FulfillmentProxy": "77AqGeSh3GLFcBwSxdTnefgv92Cosi9o6NsK992TZsRe"
+    }
+  },
+  "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": {
+    "name": "Solana Mainnet",
+    "mainnet": true,
+    "contracts": {
+      "Escrow": "44DjKbs1uV3uq26HjJLY67EXuVvwCbBoSUC2tDBWbkrs",
+      "FulfillmentProxy": "77AqGeSh3GLFcBwSxdTnefgv92Cosi9o6NsK992TZsRe"
+    }
+  }
+}

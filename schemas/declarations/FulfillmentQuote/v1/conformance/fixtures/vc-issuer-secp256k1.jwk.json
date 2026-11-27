@@ -1,0 +1,15 @@
+{
+  "$comment": "Conformance fixture — issuer JWK for the secp256k1-{go,ts}-vc-proof.json fixtures. Mirrors the publicKeyJwk entry the production did:web resolver returns for the pinned Hardhat issuer key.",
+  "vmSet": [
+    {
+      "id": "did:web:atumlabs.xyz#key-1",
+      "publicKeyJwk": {
+        "crv": "secp256k1",
+        "kty": "EC",
+        "x": "gxhTW1QQXUp6rmDAj8RflocYG0_fxiW9GnU_pzl_7XU",
+        "y": "NUfxHKhpZkby86ywjjEBavrCPmMMXRH1n2H-9XsNKqU"
+      },
+      "type": "JsonWebKey2020"
+    }
+  ]
+}

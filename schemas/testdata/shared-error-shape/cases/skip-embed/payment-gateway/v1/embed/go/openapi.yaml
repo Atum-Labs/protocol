@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info: {title: generated copy, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [totally, different]
+      properties:
+        totally: {type: string}
+        different: {type: string}

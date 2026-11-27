@@ -1,0 +1,7 @@
+{
+  "_comment": "Cross-language golden for the content-addressed quote_hash = \"0x\"+hex(keccak256(SigningInput)) of each signed FulfillmentQuote fixture. The Go conformance_test.go (ComputeQuoteHash) and the TS conformance.test.ts (computeQuoteHash) both assert their output equals these values; if both match this file, they match each other. The normalizing keccak256 makes every cryptosuite a uniform 32-byte (66-char) value. quote_hash ignores the non-deterministic JWS/proofValue, so the -go-signed and -ts-signed fixtures of a given cryptosuite share content + proof metadata and therefore the same hash. Regenerate per conformance/README.md.",
+  "secp256k1-go-signed.json": "0xccc98a32874fbd80ed97a216ab13341add9a783ea641635edccfd35dca9dfe28",
+  "secp256k1-ts-signed.json": "0xccc98a32874fbd80ed97a216ab13341add9a783ea641635edccfd35dca9dfe28",
+  "ed25519-go-signed.json": "0xdc2d2df1f96d4224cec32e0ff4fc4f1a50a983396d1dc123f00a38d355c6517a",
+  "ed25519-ts-signed.json": "0xdc2d2df1f96d4224cec32e0ff4fc4f1a50a983396d1dc123f00a38d355c6517a"
+}

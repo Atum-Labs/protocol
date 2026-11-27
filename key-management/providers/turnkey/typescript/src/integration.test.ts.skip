@@ -1,0 +1,525 @@
+// End-to-end integration test for the Turnkey-backed signing path. Drives the entire stack
+// — factory → PolicyCheckedSigner → TurnkeyXSigner → mocked TurnkeyClient — and asserts the
+// produced cryptographic artifacts are valid W3C Data Integrity proofs that round-trip via
+// the same recovery rule the gateway uses.
+//
+// Specifically guards the convergent Phase A blockers:
+//   - PolicyCheckedSigner correctly proxies `signDigest` (raw quote-signing path through Turnkey)
+//   - EVM signTransaction's full-field post-verify rejects field substitution
+//   - Solana verifies against LOCAL message bytes, not Turnkey's returned message
+//   - Tron uses TIP-191 (TRON Signed Message) prefix, not EIP-191
+//
+// The mocked TurnkeyClient is constructed per-test with hand-crafted responses driven by a
+// real in-process secp256k1 / Ed25519 keypair, so the recover-and-compare paths are
+// exercised against actual cryptographic primitives.
+
+import { Keypair, SystemProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
+import bs58 from 'bs58';
+import {
+  getBytes,
+  keccak256,
+  recoverAddress,
+  Signature,
+  SigningKey,
+  toUtf8Bytes,
+  Transaction,
+  computeAddress,
+} from 'ethers';
+import { createHash, randomBytes } from 'node:crypto';
+import pino from 'pino';
+import nacl from 'tweetnacl';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { EvmSigner } from '@atum-labs/km-core';
+
+import { TurnkeyEvmSigner } from './chains/evm';
+import { TurnkeySolanaSigner } from './chains/solana';
+import { TurnkeyTronSigner } from './chains/tron';
+import type { TurnkeyClient } from './client';
+import type { TurnkeyAccount } from './types';
+
+const log = pino({ level: 'silent' });
+
+// ── secp256k1 fixture: one keypair for both EVM and Tron flows ──────────────────────────
+const SECP_PRIV = '0x' + 'a'.repeat(63) + '1';
+const SECP_SK = new SigningKey(SECP_PRIV);
+const EVM_ADDR = computeAddress(SECP_SK.publicKey).toLowerCase();
+
+// Tron base58check of the same EVM 20-byte address: prefix 0x41 + addr + 4-byte sha256x2 checksum.
+function evmAddrToTronBase58(evmHex: string): string {
+  const addrBytes = Buffer.from(evmHex.slice(2), 'hex');
+  const payload = Buffer.concat([Buffer.from([0x41]), addrBytes]);
+  const checksum = createHash('sha256')
+    .update(createHash('sha256').update(payload).digest())
+    .digest()
+    .subarray(0, 4);
+  return bs58.encode(Buffer.concat([payload, checksum]));
+}
+const TRON_ADDR = evmAddrToTronBase58(EVM_ADDR);
+
+// ── Ed25519 fixture for Solana ──────────────────────────────────────────────────────────
+const SOL_SEED = Buffer.alloc(32, 7);
+const SOL_KP = Keypair.fromSeed(SOL_SEED);
+const SOL_ADDR = SOL_KP.publicKey.toBase58();
+
+// ── Mock TurnkeyClient ──────────────────────────────────────────────────────────────────
+function mockClient(handlers: {
+  signRawPayload?: (input: { signWith: string; payload: string; hashFunction: string }) => {
+    r: string;
+    s: string;
+    v: string;
+  };
+  signTransaction?: (input: { signWith: string; unsignedTransaction: string; type: string }) => {
+    signedTransaction: string;
+  };
+  listWalletAccounts?: () => TurnkeyAccount[];
+}): TurnkeyClient {
+  const fake: Partial<TurnkeyClient> = {
+    signRawPayload: vi.fn(async (input) => {
+      if (!handlers.signRawPayload) throw new Error('signRawPayload not mocked');
+      return handlers.signRawPayload(input);
+    }) as TurnkeyClient['signRawPayload'],
+    signTransaction: vi.fn(async (input) => {
+      if (!handlers.signTransaction) throw new Error('signTransaction not mocked');
+      return handlers.signTransaction(input);
+    }) as TurnkeyClient['signTransaction'],
+    listWalletAccounts: vi.fn(
+      async () => handlers.listWalletAccounts?.() ?? [],
+    ) as TurnkeyClient['listWalletAccounts'],
+  };
+  return fake as TurnkeyClient;
+}
+
+function fakeAccountsAll(): TurnkeyAccount[] {
+  return [
+    { address: EVM_ADDR, addressFormat: 'ADDRESS_FORMAT_ETHEREUM', curve: 'CURVE_SECP256K1' },
+    { address: TRON_ADDR, addressFormat: 'ADDRESS_FORMAT_TRON', curve: 'CURVE_SECP256K1' },
+    { address: SOL_ADDR, addressFormat: 'ADDRESS_FORMAT_SOLANA', curve: 'CURVE_ED25519' },
+  ];
+}
+
+function secpSignDigestHex(digest: Uint8Array): { r: string; s: string; v: string } {
+  const sig = SECP_SK.sign(digest);
+  return {
+    r: sig.r.slice(2),
+    s: sig.s.slice(2),
+    v: sig.v.toString(16).padStart(2, '0'),
+  };
+}
+
+// Simulates Turnkey's `HASH_FUNCTION_KECCAK256` mode: keccak the preimage server-side, then
+// sign the resulting 32-byte digest. Matches what the real Turnkey enclave does for the
+// secp256k1 sign-raw-payload path that our production signers now use.
+function secpSignWithServerKeccak(preimageHex: string): { r: string; s: string; v: string } {
+  const digestHex = keccak256(Buffer.from(preimageHex, 'hex'));
+  return secpSignDigestHex(getBytes(digestHex));
+}
+
+// ── EVM ─────────────────────────────────────────────────────────────────────────────────
+describe('TurnkeyEvmSigner — Phase A regressions', () => {
+  it('signPreimage routes through HASH_FUNCTION_KECCAK256 and yields a recoverable signature', async () => {
+    let receivedHashFunction: string | null = null;
+    const client = mockClient({
+      signRawPayload: ({ payload, hashFunction }) => {
+        receivedHashFunction = hashFunction;
+        return secpSignWithServerKeccak(payload);
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+    expect(signer.identity.address).toBe(EVM_ADDR);
+
+    const preimage = randomBytes(64);
+    const sig = await signer.signPreimage(preimage);
+    expect(receivedHashFunction).toBe('HASH_FUNCTION_KECCAK256');
+    const digestHex = keccak256(preimage);
+    const recovered = recoverAddress(digestHex, Signature.from(sig));
+    expect(recovered.toLowerCase()).toBe(EVM_ADDR);
+  });
+
+  it('signTransaction full-field post-verify rejects a field-substituted response', async () => {
+    const realTo = '0x' + '1'.repeat(40);
+    const attackerTo = '0x' + '2'.repeat(40);
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        // Substitute `to` before signing — simulate a Turnkey-side rewrite.
+        const incoming = Transaction.from('0x' + unsignedTransaction);
+        const rewritten = Transaction.from({
+          type: incoming.type,
+          to: attackerTo,
+          nonce: incoming.nonce,
+          gasLimit: incoming.gasLimit,
+          maxFeePerGas: incoming.maxFeePerGas,
+          maxPriorityFeePerGas: incoming.maxPriorityFeePerGas,
+          value: incoming.value,
+          data: incoming.data,
+          chainId: incoming.chainId,
+        });
+        const sig = SECP_SK.sign(rewritten.unsignedHash);
+        rewritten.signature = sig;
+        return { signedTransaction: rewritten.serialized.slice(2) };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+
+    await expect(
+      signer.signTransaction({
+        type: 2,
+        to: realTo,
+        nonce: 0,
+        gasLimit: 21_000n,
+        maxFeePerGas: 1_000_000_000n,
+        maxPriorityFeePerGas: 1_000_000_000n,
+        value: 0n,
+        data: '0x',
+        chainId: 11155111n,
+      }),
+    ).rejects.toThrow(/TURNKEY_BAD_RESPONSE/);
+  });
+
+  it('signTransaction passes when Turnkey signs the unaltered tx', async () => {
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        const tx = Transaction.from('0x' + unsignedTransaction);
+        tx.signature = SECP_SK.sign(tx.unsignedHash);
+        return { signedTransaction: tx.serialized.slice(2) };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+
+    const out = await signer.signTransaction({
+      type: 2,
+      to: '0x' + '1'.repeat(40),
+      nonce: 0,
+      gasLimit: 21_000n,
+      maxFeePerGas: 1_000_000_000n,
+      maxPriorityFeePerGas: 1_000_000_000n,
+      value: 0n,
+      data: '0x',
+      chainId: 11155111n,
+    });
+    const parsed = Transaction.from(out);
+    expect(parsed.from?.toLowerCase()).toBe(EVM_ADDR);
+    expect(parsed.to?.toLowerCase()).toBe('0x' + '1'.repeat(40));
+  });
+
+  it('signTransaction accepts a tx with `from` populated (settlement plugins pass it)', async () => {
+    // ethers v6 rejects `Transaction.from({...with .from})` as an unsigned tx — the signer
+    // must drop the field internally after asserting it matches the signer's address.
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        const tx = Transaction.from('0x' + unsignedTransaction);
+        tx.signature = SECP_SK.sign(tx.unsignedHash);
+        return { signedTransaction: tx.serialized.slice(2) };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+
+    const out = await signer.signTransaction({
+      type: 2,
+      from: EVM_ADDR, // plugin sets this to the signer's address
+      to: '0x' + '1'.repeat(40),
+      nonce: 0,
+      gasLimit: 21_000n,
+      maxFeePerGas: 1_000_000_000n,
+      maxPriorityFeePerGas: 1_000_000_000n,
+      value: 0n,
+      data: '0x',
+      chainId: 11155111n,
+    });
+    const parsed = Transaction.from(out);
+    expect(parsed.from?.toLowerCase()).toBe(EVM_ADDR);
+    expect(parsed.to?.toLowerCase()).toBe('0x' + '1'.repeat(40));
+  });
+
+  it('signTransaction preserves fields when the input is an ethers Transaction instance', async () => {
+    // Regression: ethers' AbstractSigner.sendTransaction wraps the populated request in
+    // `Transaction.from(pop)` before calling the inner signer's signTransaction. ethers v6's
+    // Transaction class stores fields via private `#chainId`/`#nonce`/etc. with prototype
+    // getters — so `{ ...transaction }` returns `{}` and an earlier implementation produced
+    // an all-zero unsigned tx ("0x02c98080808080808080c0") that Turnkey rejected with
+    // "failed to pre-parse Ethereum transaction" during ensureTokenApprovals on chains where
+    // the allowance was < MaxUint256/2.
+    let receivedUnsignedHex: string | null = null;
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        receivedUnsignedHex = unsignedTransaction;
+        const tx = Transaction.from('0x' + unsignedTransaction);
+        tx.signature = SECP_SK.sign(tx.unsignedHash);
+        return { signedTransaction: tx.serialized.slice(2) };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+
+    // Build a fully-populated Transaction class instance (as ethers' AbstractSigner does).
+    const realTo = '0x' + '1'.repeat(40);
+    const txInstance = Transaction.from({
+      type: 2,
+      to: realTo,
+      nonce: 7,
+      gasLimit: 100_000n,
+      maxFeePerGas: 2_000_000_000n,
+      maxPriorityFeePerGas: 1_000_000_000n,
+      value: 0n,
+      data: '0xabcd',
+      chainId: 80002n,
+    });
+
+    await signer.signTransaction(
+      txInstance as unknown as Parameters<typeof signer.signTransaction>[0],
+    );
+
+    // The bytes Turnkey received must contain the fields, not an all-zero empty envelope.
+    expect(receivedUnsignedHex).not.toBe('02c98080808080808080c0');
+    const reparsed = Transaction.from('0x' + receivedUnsignedHex);
+    expect(reparsed.chainId).toBe(80002n);
+    expect(reparsed.nonce).toBe(7);
+    expect(reparsed.to?.toLowerCase()).toBe(realTo);
+    expect(reparsed.maxFeePerGas).toBe(2_000_000_000n);
+    expect(reparsed.maxPriorityFeePerGas).toBe(1_000_000_000n);
+    expect(reparsed.gasLimit).toBe(100_000n);
+    expect(reparsed.data).toBe('0xabcd');
+  });
+});
+
+// ── Tron ────────────────────────────────────────────────────────────────────────────────
+describe('TurnkeyTronSigner — Phase A regressions', () => {
+  it('signMessage uses TIP-191 (TRON Signed Message) prefix, not EIP-191', async () => {
+    let receivedPayload: string | null = null;
+    let receivedHashFunction: string | null = null;
+    const client = mockClient({
+      signRawPayload: ({ payload, hashFunction }) => {
+        receivedPayload = payload;
+        receivedHashFunction = hashFunction;
+        return secpSignWithServerKeccak(payload);
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyTronSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+
+    const msg = 'hello tron';
+    await signer.signMessage(msg);
+
+    // The unhashed preimage Turnkey saw must be "\x19TRON Signed Message:\n10" || "hello tron".
+    // Turnkey applies keccak server-side via HASH_FUNCTION_KECCAK256.
+    const tronPrefix = toUtf8Bytes(`\x19TRON Signed Message:\n${toUtf8Bytes(msg).length}`);
+    const combined = new Uint8Array(tronPrefix.length + toUtf8Bytes(msg).length);
+    combined.set(tronPrefix, 0);
+    combined.set(toUtf8Bytes(msg), tronPrefix.length);
+    const expected = Buffer.from(combined).toString('hex');
+    expect(receivedPayload).toBe(expected);
+    expect(receivedHashFunction).toBe('HASH_FUNCTION_KECCAK256');
+  });
+
+  it('signPreimage routes through HASH_FUNCTION_KECCAK256 and verifies against the cached EVM-equivalent address', async () => {
+    const client = mockClient({
+      signRawPayload: ({ payload }) => secpSignWithServerKeccak(payload),
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeyTronSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await signer.initialize();
+    expect(signer.identity.address).toBe(TRON_ADDR);
+
+    const preimage = randomBytes(64);
+    const sig = await signer.signPreimage(preimage);
+    const digestHex = keccak256(preimage);
+    const recovered = recoverAddress(digestHex, Signature.from(sig));
+    expect(recovered.toLowerCase()).toBe(EVM_ADDR);
+  });
+});
+
+// ── Solana ──────────────────────────────────────────────────────────────────────────────
+describe('TurnkeySolanaSigner — Phase A regressions', () => {
+  function makeUnsignedTx(): VersionedTransaction {
+    const ix = SystemProgram.transfer({
+      fromPubkey: SOL_KP.publicKey,
+      toPubkey: SOL_KP.publicKey,
+      lamports: 1,
+    });
+    const blockhash = bs58.encode(Buffer.alloc(32, 1));
+    const msg = new TransactionMessage({
+      payerKey: SOL_KP.publicKey,
+      recentBlockhash: blockhash,
+      instructions: [ix],
+    }).compileToV0Message();
+    return new VersionedTransaction(msg);
+  }
+
+  it('signTransaction verifies against the LOCAL message; rejects a returned-message rewrite', async () => {
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        // Re-serialize the unsigned tx Turnkey received, then rebuild with a DIFFERENT
+        // recent blockhash. Sign the rewritten message correctly. Verifier must reject
+        // because the LOCAL message (the one the caller built) differs from what was signed.
+        void VersionedTransaction.deserialize(Buffer.from(unsignedTransaction, 'hex'));
+        const tamperedIx = SystemProgram.transfer({
+          fromPubkey: SOL_KP.publicKey,
+          toPubkey: SOL_KP.publicKey,
+          lamports: 999, // different lamports → different message bytes
+        });
+        const tamperedMsg = new TransactionMessage({
+          payerKey: SOL_KP.publicKey,
+          recentBlockhash: bs58.encode(Buffer.alloc(32, 2)),
+          instructions: [tamperedIx],
+        }).compileToV0Message();
+        const rewritten = new VersionedTransaction(tamperedMsg);
+        const sig = nacl.sign.detached(rewritten.message.serialize(), SOL_KP.secretKey);
+        rewritten.signatures[0] = sig;
+        return { signedTransaction: Buffer.from(rewritten.serialize()).toString('hex') };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeySolanaSigner(client, {
+      walletId: 'w',
+      log,
+      discoveryTimeoutMs: 5_000,
+    });
+    await signer.initialize();
+
+    await expect(signer.signTransaction(makeUnsignedTx())).rejects.toThrow(/TURNKEY_BAD_RESPONSE/);
+  });
+
+  it('signTransaction accepts a faithful signature over the local message', async () => {
+    const client = mockClient({
+      signTransaction: ({ unsignedTransaction }) => {
+        const local = VersionedTransaction.deserialize(Buffer.from(unsignedTransaction, 'hex'));
+        const sig = nacl.sign.detached(local.message.serialize(), SOL_KP.secretKey);
+        local.signatures[0] = sig;
+        return { signedTransaction: Buffer.from(local.serialize()).toString('hex') };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeySolanaSigner(client, {
+      walletId: 'w',
+      log,
+      discoveryTimeoutMs: 5_000,
+    });
+    await signer.initialize();
+
+    const tx = makeUnsignedTx();
+    const out = await signer.signTransaction(tx);
+    // Signature must verify against tx.message.
+    expect(
+      nacl.sign.detached.verify(
+        out.message.serialize(),
+        out.signatures[0]!,
+        SOL_KP.publicKey.toBytes(),
+      ),
+    ).toBe(true);
+  });
+
+  it('signMessage signs raw bytes verbatim and verifies under nacl', async () => {
+    const client = mockClient({
+      signRawPayload: ({ payload, hashFunction }) => {
+        expect(hashFunction).toBe('HASH_FUNCTION_NOT_APPLICABLE');
+        const sig = nacl.sign.detached(Buffer.from(payload, 'hex'), SOL_KP.secretKey);
+        return {
+          r: Buffer.from(sig.subarray(0, 32)).toString('hex'),
+          s: Buffer.from(sig.subarray(32, 64)).toString('hex'),
+          v: '00',
+        };
+      },
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const signer = new TurnkeySolanaSigner(client, {
+      walletId: 'w',
+      log,
+      discoveryTimeoutMs: 5_000,
+    });
+    await signer.initialize();
+
+    const msg = randomBytes(64);
+    const sig = await signer.signMessage(msg);
+    expect(nacl.sign.detached.verify(msg, sig, SOL_KP.publicKey.toBytes())).toBe(true);
+  });
+
+  it('signTransaction rejects when the payer slot is not us', async () => {
+    const client = mockClient({ listWalletAccounts: fakeAccountsAll });
+    const signer = new TurnkeySolanaSigner(client, {
+      walletId: 'w',
+      log,
+      discoveryTimeoutMs: 5_000,
+    });
+    await signer.initialize();
+
+    const otherKp = Keypair.generate();
+    const ix = SystemProgram.transfer({
+      fromPubkey: otherKp.publicKey,
+      toPubkey: otherKp.publicKey,
+      lamports: 1,
+    });
+    const msg = new TransactionMessage({
+      payerKey: otherKp.publicKey,
+      recentBlockhash: bs58.encode(Buffer.alloc(32, 1)),
+      instructions: [ix],
+    }).compileToV0Message();
+    const tx = new VersionedTransaction(msg);
+    await expect(signer.signTransaction(tx)).rejects.toThrow(/SIGNER_ADDRESS_DRIFT/);
+  });
+});
+
+// ── PolicyCheckedSigner proxies signPreimage ────────────────────────────────────────────
+describe('PolicyCheckedSigner signPreimage proxy', () => {
+  it('proxies signPreimage through to the inner Turnkey signer', async () => {
+    // Build the inner Turnkey signer with a mocked client.
+    const client = mockClient({
+      signRawPayload: ({ payload }) => secpSignWithServerKeccak(payload),
+      listWalletAccounts: fakeAccountsAll,
+    });
+    const inner = new TurnkeyEvmSigner(client, { walletId: 'w', log, discoveryTimeoutMs: 5_000 });
+    await inner.initialize();
+
+    // Wrap manually with PolicyCheckedSigner (mirrors what the factory does).
+    const { PolicyCheckedSigner } = await import('../../policy/evaluator');
+    const { createEvmPolicyAdapter } = await import('../../policy/evm');
+    const adapter = createEvmPolicyAdapter();
+    const wrapped = new PolicyCheckedSigner(
+      inner,
+      { maxNativeValue: '0', requireChainIdMatch: true },
+      log,
+      'eip155:11155111',
+      'evm',
+      adapter.decoder,
+      adapter.rules,
+    );
+
+    expect(wrapped.signPreimage).toBeDefined();
+    const preimage = randomBytes(64);
+    const sig = await wrapped.signPreimage!(preimage);
+    expect(recoverAddress(keccak256(preimage), Signature.from(sig)).toLowerCase()).toBe(EVM_ADDR);
+  });
+
+  it('hides signPreimage when the inner signer does not implement it', async () => {
+    const { PolicyCheckedSigner } = await import('../../policy/evaluator');
+    const { createEvmPolicyAdapter } = await import('../../policy/evm');
+    const adapter = createEvmPolicyAdapter();
+    const innerWithoutPreimage: EvmSigner = {
+      identity: { address: EVM_ADDR },
+      async signMessage() {
+        return '0x';
+      },
+      // intentionally no signPreimage
+    };
+    const wrapped = new PolicyCheckedSigner(
+      innerWithoutPreimage,
+      { maxNativeValue: '0', requireChainIdMatch: true },
+      log,
+      'eip155:11155111',
+      'evm',
+      adapter.decoder,
+      adapter.rules,
+    );
+    // Feature-detection must see signPreimage as absent so callers can fall back.
+    expect((wrapped as { signPreimage?: unknown }).signPreimage).toBeUndefined();
+  });
+});

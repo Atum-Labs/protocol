@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/BidDecline/v1/schema.json",
+  "title": "BidDecline",
+  "description": "A settler's declared decision not to bid on a request, sent as BidDeclined.bid_decline_json on the settler session stream. The settler attests it with a holder-signed BidDeclineEnvelope whose proof.challenge is this object's content hash. Every field is a required string and an absent value is the empty string, so the declared JSON and the protobuf scalars it accompanies compare as plain strings. Consumers read every field they act on from this object.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "@context",
+    "payment_id",
+    "quote_request_id",
+    "reason_code",
+    "message",
+    "issued_at"
+  ],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "description": "JSON-LD context array. MUST include the BidDecline v1 context URL. The content hash replaces it with the canonical [BidDecline context, secp256k1recovery-2020/v2] pair, so its exact spelling does not change the hash.",
+      "contains": {
+        "const": "https://schemas.atum.network/declarations/BidDecline/v1/context.jsonld"
+      },
+      "items": {
+        "type": "string"
+      }
+    },
+    "payment_id": {
+      "type": "string",
+      "description": "The payment_id the declined request carried, or the empty string when it carried a quote_request_id instead. Part of the content hash, so a signed decline cannot be replayed onto another request."
+    },
+    "quote_request_id": {
+      "type": "string",
+      "description": "The quote_request_id the declined request carried, or the empty string when it carried a payment_id instead."
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "The decline reason as a catalog code from apis/decline/v1/catalog.json, which is the DeclineReason proto value name with its DECLINE_REASON_ prefix removed. The single declared reason: the BidDeclined reason_code scalar must equal it, and the reason enum is not compared. A pattern rather than a closed list, so a newer reason stays legible to an older reader."
+    },
+    "message": {
+      "type": "string",
+      "description": "The specific reason as free text, exactly as sent in the message scalar."
+    },
+    "issued_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "When the settler declared this decline, RFC 3339 in UTC with a Z suffix. Hashed as the literal string, so a producer must not reformat it after signing."
+    }
+  }
+}

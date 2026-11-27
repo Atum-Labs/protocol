@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info: {title: svc, version: 1.0.0}
+components:
+  schemas:
+    ErrorResponse:
+      allOf:
+        - $ref: '../../error/v1/openapi.yaml#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            trace_id: {type: string}

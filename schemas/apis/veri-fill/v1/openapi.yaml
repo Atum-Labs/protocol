@@ -1,0 +1,2596 @@
+openapi: 3.0.3
+info:
+  title: Veri-Fill API
+  description: |
+    Veri-Fill guards funds in the settlement vault: it verifies on-chain delivery and
+    signs a release after payout, or a refund when the payment was not delivered.
+  version: 1.0.0
+  contact:
+    name: Atum Labs
+servers:
+  - url: https://veri-fill.production-mainnet.atum.xyz
+    description: Mainnet
+  - url: https://veri-fill.production-testnet.atum.xyz
+    description: Testnet
+  - url: http://localhost:8088
+    description: Local development server
+paths:
+  /v1/fulfillment:
+    post:
+      summary: Verify a blockchain fulfillment
+      description: |
+        Verifies that a fulfillment on the destination chain delivered the terms of the
+        awarded fulfillment quote and generates an EIP-712 signature for escrow release.
+
+        The same route accepts either a fulfillment quote or a fulfillment authorization.
+        A quote is paired with `transaction_hash`, and veri-fill looks for a `Fulfilled`
+        event in that transaction. An authorization is the self-executed path and carries
+        the awarded quote as `fulfillment_quote_json`. The caller supplies the authorization
+        message, the `FulfillmentAuthorized` locator, and the transaction hash and log indexes
+        of `AuthorizationUsed` and the token `Transfer`. veri-fill reads those logs from the
+        receipts. It does not scan a block range.
+
+        ONE VERDICT PER PAYMENT. A payment is released or refunded, never both, and once
+        veri-fill has signed either witness for it, that is the payment's final verdict. A
+        release for a payment whose refund veri-fill already signed is refused with a 409
+        `VERDICT_ALREADY_FINAL` while the escrow still holds the deposit. Once the refund has landed,
+        the release is answered as for any payment with no deposit. A repeat of a release veri-fill
+        already signed is answered with that same witness (`signature`, `message_hash` and
+        `message_prehash` byte for byte), never with a new signature.
+      operationId: verifyFulfillment
+      tags:
+        - Fulfillment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyFulfillmentRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyFulfillmentResponse'
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: >-
+            `VERDICT_ALREADY_FINAL`: veri-fill already signed this payment's refund, and a
+            signed verdict is final, so no release will be signed for it. Terminal, with
+            `retry_classification: ALREADY_DONE`. It is returned only while the escrow still
+            holds the deposit, so the refund has not landed; it may or may not have been
+            submitted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: >-
+            Signing is temporarily paused, a dependency is unavailable, or another request
+            for this payment is being signed right now. No witness was returned, so the
+            request is safe to retry. A signature may have been produced and then withheld
+            because it could not be recorded; if it was in fact recorded, a retry is answered
+            with that same witness, and otherwise nothing of it was kept.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/refund:
+    post:
+      summary: Generate a refund signature
+      description: >-
+        Authorises a refund of an escrowed deposit, by reading the chain rather than by
+        taking the caller's word for it.
+
+
+        The request names the payment and proves which quote it was awarded under. veri-fill
+        reads the escrow on the source chain, requires the supplied quote's hash to equal the
+        one the deposit recorded, rebuilds the witness from the deposit's own events, and
+        looks for a delivery on the destination chain. Only then does it sign.
+
+
+        A refund is authorised by the ABSENCE of a delivery, which is why the answer can be
+        "not yet": absence means nothing until the delivery deadline has passed and the destination chain is final past it,
+        except an originator fulfill whose request carries a verified
+        `authorization_canceled`, which is refundable before the deadline (see
+        `RefundSignatureRequest`). The three shapes a caller must handle are a 200 carrying a
+        signature, a 200 carrying `verified: false` and a terminal code, and a 503 meaning ask
+        again later.
+
+
+        ONE VERDICT PER PAYMENT. Once veri-fill has signed either witness for a payment, that
+        is the payment's final verdict. A refund for a payment whose release veri-fill already
+        signed is refused with `FULFILLMENT_EXISTS` when the delivery that release was granted
+        on is still final on its destination chain, and with `RELEASE_ALREADY_SIGNED` when it
+        cannot be confirmed there now. A repeat of a refund veri-fill already signed is
+        answered with that same witness (`signature`, `message_hash` and `message_prehash`
+        byte for byte), never with a new signature.
+      operationId: generateRefundSignature
+      tags:
+        - Refund
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundSignatureRequest'
+      responses:
+        '200':
+          description: Refund signature generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundSignatureResponse'
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: >-
+            Signing is temporarily paused, a dependency is unavailable, another request for
+            this payment is being signed right now, or the answer is not yet knowable. No
+            witness was returned, so the request is safe to retry. A signature may have been
+            produced and then withheld because it could not be recorded; if it was in fact
+            recorded, a retry is answered with that same witness, and otherwise nothing of it
+            was kept.
+
+
+            THIS IS ALSO THE "NOT YET" ANSWER, and it is the common one. A payment still
+            inside its fulfillment deadline may yet be delivered, so no refund can be
+            authorised -- except an originator fulfill whose request carries a verified
+            `authorization_canceled`, which is refundable before the deadline (see
+            `RefundSignatureRequest`) -- and the honest answer is to ask again later rather
+            than a refusal. A consumer MUST NOT read a 503 as a terminal outcome: the four
+            terminal codes all arrive on a 200 alongside `verified: false`.
+
+
+            When the wait is knowable, `Retry-After` carries it. See that header below, and
+            prefer waiting it out over a fixed backoff.
+          headers:
+            Retry-After:
+              description: |
+                How many whole seconds to wait before asking again, when veri-fill can
+                estimate it.
+
+                Present when the answer is "not yet" and the moment it becomes knowable can
+                be worked out: the fulfillment deadline has not passed, or the destination
+                chain has not yet finalized far enough for an absence of delivery to mean
+                anything. A caller on a fixed backoff exhausts its attempts long before a
+                deadline hours away and then gives up on a funded escrow, so a caller SHOULD
+                sleep for this long rather than retry sooner.
+
+                Absent means retrying whenever you like is fine. It is never a refusal, and
+                it never appears on a terminal answer.
+
+                A HEADER RATHER THAN A BODY MEMBER, deliberately. The "not yet" answer is a
+                503 carrying the shared `ErrorResponse`, which is one public shape across
+                every service and has nowhere to put a route-specific instant. `Retry-After`
+                is the standard header for exactly this, so it needs no shape change and
+                existing HTTP clients already understand it.
+              schema:
+                type: integer
+                format: int32
+                minimum: 1
+              example: 780
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/public-keys/{chain_id}:
+    get:
+      summary: Get the signing address for a single chain
+      description: Returns the blockchain address derived from veri-fill's active signing private key for the given CAIP-2 chain. A standby key still signing deposit verdicts for deposits made under a rotated-out key is not listed.
+      operationId: getPublicKey
+      tags:
+        - Keys
+      parameters:
+        - name: chain_id
+          in: path
+          required: true
+          description: CAIP-2 chain identifier (case-insensitive).
+          schema:
+            type: string
+          example: "eip155:11142220"
+      responses:
+        '200':
+          description: Address resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKeyResponse'
+        '404':
+          description: Chain is not configured on this veri-fill instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Signing-backend failure while deriving the address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/public-keys:
+    get:
+      summary: Get signing addresses for all configured chains
+      description: Returns the derived addresses of the active key for every chain this veri-fill instance is configured to sign for. Standby keys are not listed. Chains whose derivation fails are omitted from the response.
+      operationId: getPublicKeys
+      tags:
+        - Keys
+      responses:
+        '200':
+          description: Resolved addresses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKeysResponse'
+
+  /v1/finality-config:
+    get:
+      summary: Get the per-chain finality configuration
+      description: |
+        Returns, per chain, how this service decides a payout is final before it signs a
+        release witness: the check it applies, the confirmation floor it enforces, and how
+        long finality takes in practice (`time_to_final_ms`). Size your release polling from
+        `time_to_final_ms`, not from the floor: on a chain judged by its finalized tag the
+        floor says nothing about the wait.
+      operationId: getFinalityConfig
+      tags:
+        - Finality
+      responses:
+        '200':
+          description: Per-chain finality configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalityConfigResponse'
+
+  /v1/escrows:
+    get:
+      summary: Get the escrow contracts this instance signs for
+      description: |
+        Returns, per chain this veri-fill instance serves, the escrow contracts it signs
+        release and refund witnesses for. A refund is only ever signed against these, so a
+        deposit into any other escrow can be released but never refunded. A settlement operator uses the
+        list to decline a payment naming an escrow absent here, and treats a chain missing
+        from the list the same way. Read-only projection of the service's chain configuration.
+      operationId: getEscrows
+      tags:
+        - Escrows
+      responses:
+        '200':
+          description: Per-chain escrow contracts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscrowsResponse'
+
+  /v1/signature-validity:
+    post:
+      summary: Check a depositor signature the way Permit2 will
+      description: |
+        Answers whether Permit2 would accept `signature` as `account`'s signature over `digest`
+        on `chain_id`. It applies Permit2's own rule (`SignatureVerification.verify`, identical in
+        the Tron port) to the chain state that rule reads:
+
+        1. The signature recovers to `account` with Permit2's spelling: 65 bytes `r || s || v`
+           with `v` 27 or 28, or the 64-byte EIP-2098 form. A high-s signature is accepted,
+           because Permit2 accepts it; `v` 0 or 1 is not. That is `verified` on the `eoa` path,
+           and the chain is not read.
+        2. Otherwise the account's code is read at the latest block. With no code Permit2 would
+           refuse, so the answer is `signer_mismatch` on the `eoa` path.
+        3. With code, including an EIP-7702 delegation designator, `isValidSignature(digest,
+           signature)` (ERC-1271) is called with `msg.sender` set to the chain's Permit2, taken
+           from this service's own configuration, because a contract may answer only the callers
+           it trusts. The magic value `0x1626ba7e` is `verified` on the `contract` path; any other
+           return data, or a revert, is `contract_signature_rejected`.
+
+        The rule is the sender-auth library's `VerifyDepositorSignature` (Go) and
+        `verifyDepositorSignature` (TypeScript), pinned by
+        `declarations/PaymentRequest/v1/conformance/depositor-signature-vectors.json`. Rule 1
+        differs from Permit2 for one kind of account: an EIP-7702 account that signs with its own
+        key is `verified` here, while Permit2 asks its delegate.
+
+        THE ANSWER IS ABOUT THE LATEST BLOCK, AND IS NEVER CACHED. A contract's answer depends on
+        its state: a module can be paused, a digest invalidated, an owner rotated, an account
+        deployed or delegated. Every request reads the chain again, and the chain can still
+        change before the deposit lands, so Permit2 stays the authority. A `verified` answer is a
+        prediction, not a guarantee.
+
+        `signer_mismatch`, `contract_signature_rejected` and `malformed` are refusals. Permit2
+        would make the first two. `malformed` is decided by the submitted values alone, which
+        break the payment request's own spelling (an address of the chain, and a digest and
+        signature in 0x-prefixed hex on every chain) or this route's length bound, so a caller
+        that admitted it would let a submitter skip this check by respelling or padding a
+        signature.
+        `signature_unverifiable` means a chain read failed and says nothing about the signature.
+        It is a 200, not a 5xx, so a caller can tell an answer of "unknown" from no answer. The
+        answer is unsigned: it is advice to one caller over an authenticated channel, not an
+        attestation.
+
+        RESTRICTED TO THE PAYMENT GATEWAY. This is not a participant endpoint. The payment
+        gateway calls it at ingress, for a payment whose depositor signature does not recover to
+        its source account, and no one else may. A request must carry an OpenID Connect ID token
+        for the gateway's service account: without one it is refused with 401, and with any other
+        identity with 403. A settler checks the same rule against its own chain access, with the
+        sender-auth library.
+      operationId: checkSignatureValidity
+      tags:
+        - Signatures
+      security:
+        - paymentGatewayIdToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignatureValidityRequest'
+      responses:
+        '200':
+          description: >-
+            The verdict, including `signature_unverifiable` when a chain read failed. A member
+            that is present but cannot be read as its type, or a `signature` longer than its
+            `maxLength`, is answered here with `malformed`, so every judgement of the values
+            comes from one rule set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureValidityResponse'
+        '400':
+          description: >-
+            Bad request: the body is not a JSON object carrying the four members as strings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No ID token was presented, or it did not verify.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The ID token verified but does not identify the payment gateway.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/reserve-signature-validity:
+    post:
+      summary: Check a reserve signature the way the escrow will
+      description: |
+        Answers whether the escrow `escrow` on `chain_id` would accept `signature` as
+        `account`'s signature over the reserve digest `digest`. It applies the escrow's own rule
+        (OpenZeppelin `SignatureChecker.isValidSignatureNow`, the rule `deposit` runs on the
+        reserve signature) to the chain state that rule reads:
+
+        1. The account's code is read at the latest block.
+        2. With no code, the signature must recover to `account` with OpenZeppelin's ECDSA
+           spelling: 65 bytes `r || s || v`, `v` 27 or 28, and a low `s`. A high-s signature,
+           the 64-byte EIP-2098 form and `v` 0 or 1 are refused, because the escrow refuses
+           them. That is `verified` or `signer_mismatch` on the `eoa` path.
+        3. With code, including an EIP-7702 delegation designator, `isValidSignature(digest,
+           signature)` (ERC-1271) is called with `msg.sender` set to `escrow`, because that is
+           the contract that calls it at deposit. The magic value `0x1626ba7e` is `verified` on
+           the `contract` path; any other return data, or a revert, is
+           `contract_signature_rejected`.
+
+        `escrow` must be an escrow this service is configured with for `chain_id`; any other
+        value is answered with `unsupported_chain` and the chain is not read. The address the
+        contract path calls from is therefore always one this service trusts, never one the
+        caller supplies.
+
+        As on `POST /v1/signature-validity`, the answer is about the latest block and is never
+        cached, and the reasons mean what they mean there. The escrow checks the signature again
+        at deposit, so a `verified` answer is a prediction, not a guarantee.
+
+        RESTRICTED TO THE PAYMENT GATEWAY, with the same ID token as
+        `POST /v1/signature-validity`: without one the request is refused with 401, and with any
+        other identity with 403.
+      operationId: checkReserveSignatureValidity
+      tags:
+        - Signatures
+      security:
+        - paymentGatewayIdToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReserveSignatureValidityRequest'
+      responses:
+        '200':
+          description: >-
+            The verdict, including `signature_unverifiable` when a chain read failed and
+            `unsupported_chain` when `escrow` is not one this service is configured with. A
+            member that is present but cannot be read as its type, or a `signature` longer than
+            its `maxLength`, is answered here with `malformed`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureValidityResponse'
+        '400':
+          description: >-
+            Bad request: the body is not a JSON object carrying the five members as strings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No ID token was presented, or it did not verify.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The ID token verified but does not identify the payment gateway.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the service and its connected blockchain observers
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    VerifyFulfillmentRequest:
+      type: object
+      description: |
+        A release request names the fulfill transaction and the awarded quote the payment
+        was settled under. A quote is required in every accepted request, sent
+        either as `fulfillment_quote` or inside `fulfillment_authorization` as
+        `fulfillment_quote_json`. Exactly one of the two is sent, and a request with neither
+        or both is refused. veri-fill enforces this rule, not the schema, so generated clients
+        type both fields as optional.
+
+        veri-fill takes the delivery terms (recipient, destination token and amount, and the
+        fulfillment deadline), the source and destination chains, the settler, the depositor,
+        the source token and the source amount from the verified quote and its embedded
+        payment request, and the escrow and fulfillment contracts from its own per-chain configuration. None of
+        them is accepted from the caller, so a caller cannot choose the delivery terms,
+        chains or contracts the release signature binds. On EVM and Tron sources the release
+        witness releaser is veri-fill's own signing address for the source chain.
+
+        veri-fill derives the payment id, and on EVM and Tron sources the reserver, from the
+        `sender_auth` the quote's embedded payment request carries, or from the caller's
+        `sender_auth` when it carries none. The release is refused unless the escrow's stored
+        deposit for that payment id matches, so the stored deposit decides.
+
+        The request body is capped at 64 KiB. That cap governs and is tighter than the
+        per-field `maxLength` limits below.
+      required:
+        - transaction_hash
+      properties:
+        transaction_hash:
+          type: string
+          description: |
+            The fulfill transaction on the destination chain: an EVM transaction
+            hash, a Tron transaction id, or a Solana signature. Required — the
+            verification service fetches the transaction receipt by this identifier
+            to confirm delivery. Encodings must be valid for the destination chain
+            the quote names.
+          pattern: '^(0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        sender_auth:
+          type: string
+          description: |
+            The payer's PaymentRequest SenderAuth object as JSON text. Required when the
+            quote's embedded payment request carries no `sender_auth`, and ignored when it
+            carries one.
+          maxLength: 65536
+        fulfillment_quote:
+          type: string
+          description: |
+            The awarded FulfillmentQuote this settlement is for, as the signed document
+            serialized to a string, including its embedded payment_request_json.
+
+            It is verified, not trusted. veri-fill checks the quote's signature, requires its
+            hash to equal the quoteHash the escrow recorded for this payment at deposit, and
+            derives the release witness commitments from it. That anchor is what lets the
+            quote supply the delivery terms, the fulfillment deadline, the source and
+            destination chains, the settler, the depositor, the source token and the source
+            amount without the caller being able to choose them. The escrow and fulfillment contracts come from
+            veri-fill's own per-chain configuration.
+
+            FORWARD THE VALUES UNCHANGED. The hash is taken over the URDNA2015-canonicalized
+            document, so key order and whitespace are removed before hashing and a JSON round
+            trip does not change it. What DOES change it is altering a value: a renormalized
+            timestamp, or re-serializing the embedded payment_request_json, which is a string
+            field and is hashed literally. Either yields a different hash and the request is
+            refused.
+
+            The refund request carries the same document as an object, which is the shape a
+            caller gets from the payment gateway. This field carries it as a string holding
+            that object.
+          maxLength: 65536
+          example: |
+            {"version":"1.0","source_amount":"100000","award_deadline":"2026-12-01T00:00:00.000Z",
+             "source":{"id":"eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48","account":"eip155:1:0x70997970C51812dc3A010C7d01b50e0d17dc79C8"},
+             "destination":{"id":"eip155:42161/erc20:0xaf88d065e77c8cc2239327c5edb3a432268e5831","account":"eip155:42161:0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"},
+             "settler_address":"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+             "payment_request_json":"{\"version\":\"1.0\",\"request_id\":\"req-1\",...}",
+             "proof":{"type":"DataIntegrityProof","cryptosuite":"ecdsa-secp256k1-recovery-2020","proofValue":"z..."}}
+        fulfillment_authorization:
+          $ref: '#/components/schemas/FulfillmentAuthorization'
+
+    FulfillmentAuthorization:
+      description: |-
+        Authorization for an originator to fulfill a payment request. The settler produces this declaration after authorizeFulfillment when the payment request's fulfill executor is "originator". A settler fulfill does not produce it.
+
+        The route body is that declaration plus authorization_used and token_transfer. It is not the identity-signed document. The settler wraps the declaration with @context, type, and proof, the same way a quote is signed, and this route does not accept that wrapper.
+
+        When fulfillment_authorization is present, the caller must not also send fulfillment_quote. The request's transaction_hash must equal authorization_used.transaction_hash.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - scheme
+        - authorization
+        - fulfillment_quote_json
+        - evidence
+        - authorization_used
+        - token_transfer
+      properties:
+        version:
+          type: string
+          description: Semver-shaped declaration version (MAJOR.MINOR). The major component is locked to this schema's parent directory (v1 → major must be 1).
+          pattern: ^1\.[0-9]+$
+          example: "1.0"
+        scheme:
+          type: string
+          description: 'Authorization scheme: EIP-3009 for an EVM destination, SOROBAN-AUTH for a Stellar one.'
+          enum:
+            - EIP-3009
+            - SOROBAN-AUTH
+        authorization:
+          description: Signed authorization. For scheme EIP-3009, message_prehash is the EIP-712 TransferWithAuthorization typed data as a JSON string ({domain, types, primaryType, message}, with uint256 values as decimal strings), message is its EIP-712 digest, signature is the settler's 65-byte signature over that digest, and payload is absent. message.validBefore is the payment request's fulfillment_deadline in whole unix seconds, and message.nonce is the fulfillment quote hash. For scheme SOROBAN-AUTH the Soroban fulfillment proxy treats the authorization hash as 32 opaque bytes; the signed form is not defined here yet and the bindings do not validate this scheme.
+          $ref: '#/components/schemas/SignedMessage'
+        fulfillment_quote_json:
+          type: string
+          description: Raw JSON of the fulfillment quote (schemas/declarations/FulfillmentQuote/v1/schema.json), including proof metadata so its canonical quote hash can be computed.
+          maxLength: 65536
+        evidence:
+          type: object
+          description: Pointer to the on-chain evidence of the fulfillment authorization.
+          additionalProperties: false
+          required:
+            - transaction_id
+            - log_index
+          properties:
+            transaction_id:
+              type: string
+              minLength: 1
+              description: Chain transaction identifier. EVM transactions are 0x-prefixed hex, Tron and Stellar transactions are hex without that prefix, and Solana transactions are base58.
+            log_index:
+              type: integer
+              minimum: 0
+              description: Receipt logIndex of the log inside that transaction's block.
+        authorization_used:
+          $ref: '#/components/schemas/OnchainLogLocator'
+        token_transfer:
+          $ref: '#/components/schemas/OnchainLogLocator'
+
+    SignedMessage:
+      type: object
+      description: |-
+        The EIP-3009 authorization carried on the fulfillment authorization.
+        message is the hash that was signed, and FulfillmentAuthorized.authorizationHash
+        must equal it. veri-fill does not recover the signature.
+      required:
+        - message
+        - signature
+      properties:
+        message:
+          type: string
+          description: |-
+            The data that was signed. Format depends on the blockchain:
+            - EVM: Hex-encoded message hash (with 0x prefix)
+            - Solana: Hex-encoded message hash (with 0x prefix)
+            - Tron: Hex-encoded message hash (possibly without 0x prefix)
+          pattern: '^0x[a-fA-F0-9]{64}$'
+        message_prehash:
+          type: string
+          description: 'Optional: If ''message'' contains a hash, this field contains the original data before it was hashed. Useful for verification and debugging.'
+        signature:
+          type: string
+          description: The cryptographic signature proving you authorized this message. Hex-encoded with a 0x prefix on every supported chain. The signer's own public key is base58 on Solana, but the signature itself is not.
+        payload:
+          type: object
+          description: Optional chain-specific payload containing additional signing context (e.g., delegate_signer for Solana). Preserved through the pipeline for downstream consumers.
+          additionalProperties: true
+
+    OnchainLogLocator:
+      type: object
+      description: |
+        Points at one log. `log_index` is the receipt `logIndex` (index in the block).
+      required:
+        - transaction_hash
+        - log_index
+      properties:
+        transaction_hash:
+          type: string
+          description: EVM transaction hash that emitted the log.
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        log_index:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Receipt logIndex of the log inside that transaction's block.
+          example: 8
+
+    VerifyFulfillmentResponse:
+      type: object
+      required:
+        - verified
+        - payment_id
+      properties:
+        verified:
+          type: boolean
+          description: Whether the fulfillment was successfully verified
+          example: true
+        payment_id:
+          type: string
+          description: |
+            The escrow deposit id veri-fill derived from the `sender_auth` the quote embeds,
+            else the caller's. It is the deposit the release signature is for.
+          example: "0x1234567890123456789012345678901234567890123456789012345678901234"
+        signature:
+          type: string
+          description: |
+            Cryptographic signature that authorizes the release of escrowed funds.
+            This can be submitted to the escrow contract to claim the funds.
+            Format: 0x-prefixed lowercase hex (132 characters) on `eip155:*` and `tron:*`,
+            hex without a prefix (128 characters) on `solana:*`.
+          pattern: '^0x[0-9a-f]{130}$|^[0-9a-f]{128}$'
+          example: "0x4a3b2c1d5e6f7890abcdef1234567890abcdef1234567890abcdef12345678904a3b2c1d5e6f7890abcdef1234567890abcdef1234567890abcdef12345678901c"
+        message_hash:
+          type: string
+          description: |
+            The hash of the message that was signed.
+            Used for signature verification. Format: Hex string without 0x prefix.
+          example: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        message_prehash:
+          type: string
+          description: |
+            The original message data before hashing, in JSON format.
+            Useful for understanding what was signed and debugging.
+          example: '{"types":{"EIP712Domain":[{"name":"name","type":"string"}],"ReserveWitness":[{"name":"depositId","type":"string"}]},"primaryType":"ReserveWitness","domain":{"name":"Escrow","version":"1","chainId":"1","verifyingContract":"0x..."},"message":{"depositId":"0x1234567890123456789012345678901234567890123456789012345678901234","settler":"0x...","deadline":"1735689600"}}'
+        verification_details:
+          $ref: '#/components/schemas/VerificationDetails'
+        verdict:
+          $ref: '#/components/schemas/FulfillmentVerdict'
+        error:
+          type: string
+          description: |
+            Error code if verification failed.
+
+            Bound to `verdict` when a verdict is present, and the binding is what keeps a
+            consumer written before the verdict existed safe. `FULFILLMENT_NOT_DELIVERED`
+            accompanies `outcome: not_delivered` and is the only value that reports a proven
+            negative.
+
+            `VERIFICATION_ERROR` is the undetermined case and the one a producer SHOULD emit
+            for it: no conclusion could be drawn, because the chain was unreadable or the
+            transaction is not yet visible. It is accompanied by NO verdict, and a consumer
+            MUST NOT treat it as terminal - the payment stays pending and is re-asked.
+
+            `VERIFICATION_FAILED` predates that split and means the same class of thing, so it
+            carries the same obligation on a consumer: it reports that verification could not be
+            completed, NOT that non-delivery was established, and it MUST NOT be read as a
+            proven negative. New producers SHOULD prefer `VERIFICATION_ERROR`, which says the
+            same thing without the older name's suggestion of a finding.
+
+            `DEADLINE_EXCEEDED` is the opposite of both: terminal, and accompanied by a
+            verdict whose `outcome` is `delivered` and a root `verified` of FALSE. It reports that
+            the recipient WAS paid and that the payment landed outside the quote's fulfillment
+            window, so no release signature is issued. That is the one case where a delivered verdict
+            travels with `verified: false`, and it is not a contradiction: see PRECEDENCE on the
+            verdict component. It is a policy answer and not a chain finding, which is why it
+            lives here and not in `outcome`: what made the delivery late is a fulfillment
+            deadline, which no chain records, so it cannot be attested. A consumer MUST NOT
+            read it as non-delivery, and MUST NOT refund on it without deciding who absorbs a
+            late delivery, because the recipient already has the funds. A verifier MAY refuse a
+            late delivery this way. This service does not: a release depends only on the
+            delivery, never on the deadline.
+
+            Neither undetermined code is a statement about the payment. Only
+            `FULFILLMENT_NOT_DELIVERED`, with its accompanying verdict, is. Enforced by the
+            request handler.
+
+            ADDING A VALUE HERE DOES NOT MAKE IT REACHABLE, and the order is not optional. A
+            value declared in this enum but emitted before its consumers are ready is worse than
+            one that does not exist, because it fails silently. Three things must land, in this
+            order, and the first two are outside this schema:
+
+              1. EVERY CONSUMER TOLERATES AN UNKNOWN VALUE. A consumer whose client is generated
+                 as a closed enum rejects the whole response on a value it was not compiled
+                 with, and a rejected parse presents as a transport failure rather than as a new
+                 code, so the payment burns its retry budget and ends in manual handling.
+              2. THE CONSUMER READS THE CODE. A consumer whose negative branch collapses every
+                 non-success to one internal state will accept the new value and discard it, so
+                 the behaviour does not change and no test fails.
+              3. ONLY THEN DOES A PRODUCER EMIT IT.
+
+            A value already listed here is at step 1 or 2, not step 3, and MUST NOT be treated as
+            live traffic by anyone reading this document.
+
+            THESE VALUES ARE NOT SHARED ERROR CATALOG CODES, and MUST NOT be added to it. This
+            member is a field of a 200 response body, so its values have no HTTP status and no
+            payer-facing message: they describe why no signature accompanies an answer, not why
+            a request failed. `VERIFICATION_FAILED` is a value of this enum only; the error catalog
+            has no code by that name. A consumer MUST resolve this member against this enum and
+            never against the catalog.
+          enum:
+            - INVALID_REQUEST
+            - UNSUPPORTED_CHAIN
+            - INVALID_AMOUNT
+            - VERIFICATION_ERROR
+            - VERIFICATION_FAILED
+            - FULFILLMENT_NOT_DELIVERED
+            - DEADLINE_EXCEEDED
+            - SIGNATURE_ERROR
+          example: "VERIFICATION_ERROR"
+        details:
+          type: string
+          description: Detailed error message if verification failed
+          example: "Fulfillment transaction not yet visible on chain"
+    
+    VerdictSignatureScheme:
+      type: string
+      description: |
+        The complete signing rule for `signature`, named rather than inferred so that an
+        unrecognised value fails closed at the signature check instead of falling into a
+        consumer's default branch. It names the whole rule and not merely the curve,
+        because the curve was never the ambiguous part: several mutually incompatible
+        secp256k1 message conventions exist in practice and all of them produce a
+        130-character signature.
+
+        The mapping is a closed bijection on the `chain_id` namespace - `eip155` to
+        `eip712-secp256k1`, `tron` to `tip191-secp256k1`, `solana` to `ed25519-raw` - and
+        a consumer MUST reject a verdict whose scheme does not match its namespace.
+
+        `eip712-secp256k1`: 65 bytes, `r || s || v`. Recover the signer over the EIP-712
+        digest `keccak256(0x19 || 0x01 || domainSeparator || hashStruct(message))` of the
+        typed data defined under SIGNING SCHEME on `FulfillmentVerdict` and
+        `DepositVerdict`. The domain type is
+
+          `EIP712Domain(string name,string version,uint256 chainId)`
+
+        with name `Atum Verdict`, version `1` and chainId the decimal reference of the
+        verdict's `chain_id`, and NO `verifyingContract`. A verdict is kept apart from the
+        escrow witnesses the same key signs by its domain name and its type hashes, which no
+        witness shares. A signing policy pins verdicts by `primary_type` together with
+        `domain.name == "Atum Verdict"`.
+
+        The typed data is signer input only. The verdict object is the canonical form: the
+        message spells an empty member as an explicit zero, and that zero never appears on
+        the wire. Typed data or a digest can be derived from any verdict, so a producer MUST
+        validate the verdict against every member's pattern and the outcome rule before
+        signing.
+
+        `tip191-secp256k1`: 65 bytes, `r || s || v`. Recover the signer over
+        `keccak256("\x19TRON Signed Message:\n" || decimal(byteLength(preimage)) ||
+        preimage)`. Note the length is in BYTES; the preimage is all-ASCII so a
+        code-unit length coincides, but only because every member's pattern is ASCII.
+
+        `ed25519-raw`: 64 bytes, verified over the preimage BYTES with no hashing step.
+
+        For both secp256k1 schemes: `s` MUST be low-s (`s <= n/2`) and a high-s
+        signature MUST be rejected. `v` MUST be normalized on the verify side - subtract
+        27 if the final byte is at least 27, then require 0 or 1 - because both the
+        `{0,1}` and `{27,28}` forms occur in practice from different signing backends and
+        both recover the same signer. Compare the recovered 20 BYTES to the bytes decoded
+        from the served address; do not compare address strings. Validate the served
+        address separately: for `eip155:*` accept all-lowercase, all-uppercase, or a
+        correctly checksummed EIP-55 string and reject a mixed-case string whose EIP-55
+        checksum is wrong, since that checksum is the only integrity protection on the
+        value the verifier fetched. For `tron:*` base58-decode the served address,
+        require exactly 25 bytes, verify that bytes 21 to 25 are the first four bytes of
+        `sha256(sha256(bytes 0 to 21))`, require byte 0 to be 0x41, and compare bytes 1
+        to 21 - plain base58 yields 25 bytes, not 21, so "strip the 0x41" must not be
+        read as "take everything after byte 0".
+
+        For `ed25519-raw`: base58-decode the served address and require EXACTLY 32 bytes
+        before verifying, because a short public key makes some implementations panic
+        rather than return false. The signature MUST be canonical per RFC 8032 section
+        5.1.7 - reading `signature[32:64]` as a little-endian integer `S`, reject unless
+        `S < L` where `L = 2^252 + 27742317777372353535851937790883648493` - and the
+        public key MUST be rejected if small-order or non-canonically encoded. This check
+        is normative and MUST be performed explicitly: widely used Solana libraries omit
+        it while other implementations enforce it, so the same verdict, key and signature
+        verify in one and fail in the other, and any valid signature can be malleated
+        into a second distinct signature over the same verdict.
+
+        Domain separation for `ed25519-raw` rests entirely on the preimage's first line,
+        because unlike the two secp256k1 schemes it adds no prefix or typed-data domain of
+        its own. That is sufficient against any payload that cannot begin with those bytes,
+        and a key this service holds for a chain also signs escrow witnesses for that chain
+        when it is the source. A signer MUST therefore never raw-sign a
+        payload whose leading bytes are any `atum-verdict/<kind>/<version>` line followed by
+        LF for any purpose other than an attestation of that kind.
+      enum:
+        - eip712-secp256k1
+        - tip191-secp256k1
+        - ed25519-raw
+      x-enum-varnames:
+        - VerdictSignatureSchemeEip712Secp256k1
+        - VerdictSignatureSchemeTip191Secp256k1
+        - VerdictSignatureSchemeEd25519Raw
+      example: "eip712-secp256k1"
+
+    DepositVerdict:
+      type: object
+      description: |
+        A signed attestation of what this service observed about a payment's escrow deposit
+        on the SOURCE chain, so a consumer can act on the signature instead of repeating the
+        chain read.
+
+        The counterpart to `FulfillmentVerdict` and NOT a variant of it. That object attests
+        the destination chain: its `chain_id` names the destination, selects the destination
+        key, and its block members describe a destination block. The escrow lives on the
+        source chain, and in a cross-chain-family corridor the two chains do not even share a
+        signature scheme. One object cannot attest a fact about one chain while its block and
+        its key name another, so this is a separate attestation with its own chain member,
+        its own block, its own outcome set and its own signing tag.
+
+        Also distinct from the escrow refund witness that may accompany it. That witness is
+        consumed by the escrow contract, binds escrow members, carries neither a block nor a
+        transaction, and its typehash is fixed by deployed contracts. This object attests an
+        observation and is consumed offchain only. Two signatures over two structs, and
+        neither substitutes for the other.
+
+        ABSENCE IS NOT AN OUTCOME. A response with no `deposit_verdict` says nothing about
+        the deposit. A consumer MUST NOT read a missing verdict as `not_held`, and MUST fall
+        back to the root members of the response carrying it.
+
+        PRECEDENCE, AND ONLY ONCE VERIFIED. A verdict is attacker-supplied data until its
+        signature checks out, so presence alone confers nothing. A consumer MUST complete
+        every step of HOW A THIRD PARTY VERIFIES below, and a verdict that fails any step
+        MUST be treated as ABSENT rather than as a negative finding.
+
+        SIGNING SCHEME (normative). `signature` covers the members of this object, and what
+        it is computed over is DERIVED from them and never carried on the wire. The form
+        follows the chain family, as `signature_scheme` names it.
+
+        On `eip155:*` (`eip712-secp256k1`) it is EIP-712 typed data, with the domain given on
+        `VerdictSignatureScheme` and the primary type
+
+          `DepositVerdict(string domain,bytes32 paymentId,string chainId,address escrowAddress,string outcome,uint256 blockNumber,bytes32 blockHash,string finalityPolicy,bytes32 transactionHash)`
+
+        Each field carries the member of the same meaning verbatim: `chainId` is the whole
+        CAIP-2 `chain_id` string and `blockNumber` the decimal `block_number`. An empty
+        `transaction_hash` is encoded as the zero bytes32. That is unambiguous because the
+        member is populated exactly when `outcome` is `held`, and a producer never spells
+        the zero value explicitly. A consumer MUST reject an eip155 verdict whose
+        `transaction_hash` spells the zero hash, since it signs the same digest as an empty
+        one.
+
+        On `tron:*` and `solana:*` it is a preimage on the same framing as
+        `FulfillmentVerdict`: UTF-8, one LF (0x0A) terminating every line including the last,
+        no 0x0D, `<n>` the length in bytes of the value that follows in base-10 with no
+        leading zeros, and `<n>:` present even when the value is empty. See that object for
+        why the framing is injective and why every value is printable ASCII.
+
+        The preimage is exactly TEN lines, in this fixed order and no other:
+
+          1. the literal `atum-verdict/deposit/1`
+          2. `domain=<n>:<domain>`
+          3. `payment_id=<n>:<payment_id>`
+          4. `chain_id=<n>:<chain_id>`
+          5. `escrow_address=<n>:<escrow_address>`
+          6. `outcome=<n>:<outcome>`
+          7. `block_number=<n>:<block_number>`
+          8. `block_hash=<n>:<block_hash>`
+          9. `finality_policy=<n>:<finality_policy>`
+         10. `transaction_hash=<n>:<transaction_hash>`
+
+        Both forms name the attestation kind, the typed data by its primary type and the
+        preimage by its first line, which is what stops a signature over a fulfillment
+        verdict satisfying a verifier of this one. Both kinds can be signed by the same key
+        wherever a chain is both source and destination, and the kind is the only thing
+        separating their signing domains.
+
+        HOW A THIRD PARTY VERIFIES, in order, failing closed at the first step that does not
+        hold:
+
+          1. `domain` is `did:web:` followed by the lowercased host, without a port, of the
+             fulfillment verifier endpoint the payment names, and not merely a well-formed one.
+          2. `payment_id` is the payment being asked about. A signature proves what was
+             attested, never which question it answers, so a genuine verdict for another
+             payment passes every remaining step.
+          3. `chain_id` is the SOURCE chain of the payment being asked about, not the
+             destination chain and not whatever the verdict was handed carrying.
+          4. `escrow_address` is the escrow the payment's deposit was made into. Without this
+             step a `not_held` verdict read against the wrong contract is indistinguishable
+             from a correct one.
+          5. `signature_scheme` is the one scheme that chain admits, and `signature` has the
+             length that scheme requires.
+          6. `signature` recovers to the payment's `fulfillment_verifier.account`, the escrow
+             releaser its deposit names. After a key rotation that may be a key the fulfillment
+             verifier endpoint no longer publishes.
+          7. Only then read `outcome`, and switch on it rather than negating it.
+
+        Anyone with chain access can falsify the claim afterwards without trusting this
+        service: call the escrow's deposit getter for `payment_id` at `block_number`, and
+        check that the chain still reports `block_hash` at that height. A verdict describing
+        a block that is no longer canonical is void, and a void verdict is not a finding.
+      required:
+        - domain
+        - payment_id
+        - chain_id
+        - escrow_address
+        - outcome
+        - block_number
+        - block_hash
+        - finality_policy
+        - transaction_hash
+        - signature_scheme
+        - signature
+      properties:
+        domain:
+          type: string
+          description: |
+            The verifier's identity: `did:web:` followed by the lowercased host, without a port,
+            of the fulfillment verifier endpoint the payment names. Signed so a verdict cannot
+            be replayed under another verifier's name, and checked FIRST because every later
+            step derives its authority from it.
+          pattern: '^did:web:[a-z0-9][a-z0-9.-]{0,252}$'
+          example: "did:web:atum.network"
+        payment_id:
+          type: string
+          description: |
+            The payment this verdict is about, which on the escrow is the deposit's own
+            identifier. Lowercase 0x-prefixed 32-byte hex, NARROWER than the request member
+            of the same name, so normalising to this form is a producer obligation.
+
+            A consumer MUST compare this against the payment it asked about and reject a
+            mismatch. Accepting one would let a verdict about one payment settle another.
+          pattern: '^0x[0-9a-f]{64}$'
+          example: "0x1234567890123456789012345678901234567890123456789012345678901234"
+        chain_id:
+          type: string
+          description: |
+            The SOURCE chain the observation was made on, in CAIP-2 format, and the chain
+            whose signing address verifies `signature`. This is the chain the escrow is
+            deployed on, which in a cross-chain payment is NOT the chain a fulfillment
+            verdict for the same payment names.
+
+            The namespace is lowercase. THE REFERENCE IS CASE-SENSITIVE AND IS SIGNED
+            VERBATIM, on the same rule as `FulfillmentVerdict.chain_id`: a producer emits the
+            canonical spelling and a consumer MUST NOT alter it.
+          pattern: '^[a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$'
+          example: "eip155:1"
+        escrow_address:
+          type: string
+          description: |
+            The escrow contract whose state was read, on the chain in `chain_id`. Present
+            because a deposit's existence is a fact about one contract and not about a chain:
+            a chain may carry more than one escrow deployment, and a `not_held` verdict
+            without this member cannot be told apart from one read against the wrong address.
+
+            One encoding per family, narrower than the address pattern used elsewhere in this
+            contract because this member is signed: `eip155:*` is lowercase 20-byte hex with
+            0x and NEVER the EIP-55 mixed-case form; `tron:*` is base58check beginning `T`;
+            `solana:*` is a base58 account, which for the escrow is its program address.
+          pattern: '^0x[0-9a-f]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$|^[1-9A-HJ-NP-Za-km-z]{32,44}$'
+          example: "0x742d35cc6634c0532925a3b844bc9e7595f0beb4"
+        outcome:
+          type: string
+          description: |
+            What the verifier concluded about the deposit, and the claim the signature commits
+            to. Three answers, on the same reasoning as `FulfillmentVerdict.outcome`.
+
+            `held` - the deposit was present at the attested block, so escrowed funds existed
+            for this payment at that block. It says nothing about any later block: a consumer
+            MUST NOT read it as funds escrowed now. On a refund refusal the attested block is
+            the one the deposit transaction was mined in.
+
+            `not_held` - at the attested block, which is final, no deposit was present.
+            Terminal. It does NOT say why, and MUST NOT be read as any particular history:
+            the escrow's getter returns the same answer for a deposit that never existed, one
+            already released and one already refunded, because both settlement paths delete
+            the record before transferring. Telling those apart needs a log read rather than
+            a state read and is not attested here. This matters because one of them means the
+            recipient was already paid, so a consumer MUST NOT treat `not_held` as permission
+            to pay anyone.
+
+            `undetermined` - the chain was read successfully to the attested block, which is
+            final, and the deposit's state could not be established. NOT terminal: the
+            payment stays pending and is asked again.
+
+            NOT EVERY UNKNOWN IS A VERDICT. When the chain could not be read at all there is
+            no block to anchor a claim to, so no verdict is issued and the case is reported
+            unsigned through the root `error`.
+
+            A consumer MUST switch on the value and MUST NOT branch on `outcome != "held"`,
+            which would turn a non-terminal answer into a terminal one. A value this enum does
+            not list MUST be treated as no verdict, which is also the correct handling of
+            `undetermined`, so a consumer built against a narrower form degrades safely.
+          enum:
+            - held
+            - not_held
+            - undetermined
+          x-enum-varnames:
+            - DepositVerdictOutcomeHeld
+            - DepositVerdictOutcomeNotHeld
+            - DepositVerdictOutcomeUndetermined
+          example: "not_held"
+        block_number:
+          type: string
+          description: |
+            Height of the source-chain block the deposit's state was read at, as a base-10
+            string, and on `solana:*` the slot rather than the block height. It MUST be final
+            for every outcome, because a claim anchored to a block a reorg can undo is not
+            attestable, and a `not_held` read at a non-final block is exactly how a deposit
+            that exists is reported missing.
+
+            A STRING, not a JSON number, for the same reason as
+            `FulfillmentVerdict.block_number`: `type: integer` also matches `1.23456789e8`,
+            which a JavaScript parser renders as an integer while a Go int64 decode rejects
+            the whole response, and a string has one spelling on the wire and it is the
+            spelling that is signed.
+          pattern: '^(0|[1-9][0-9]{0,18})$'
+          example: "21500000"
+        block_hash:
+          type: string
+          description: |
+            Hash of the block at `block_number`, in the source chain's native encoding:
+            lowercase 0x-prefixed hex on `eip155:*` and `tron:*`, base58 on `solana:*`. Hex is
+            0x-prefixed on EVERY chain including `tron:*`, so that one value has one spelling
+            and therefore one preimage.
+
+            Present so the observation pins one specific block rather than a height a reorg
+            can repoint. A consumer performs no chain read, but this is what lets anyone with
+            chain access falsify the claim afterwards.
+          pattern: '^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$'
+          example: "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+        finality_policy:
+          type: string
+          description: |
+            The finality rule the producer enforced before signing, so the STRENGTH of this
+            attestation travels with it instead of having to be looked up and then guessed at.
+
+            Signed, and required, because the alternative is what this member replaces: two
+            verdicts with identical members, one evaluated a single confirmation deep and one
+            twenty, indistinguishable forever. The published floor moves (see
+            GET /v1/finality-config, whose values are raised per chain over time), and the floor in
+            force at some past signing time is not recoverable afterwards, so a consumer holding an
+            old verdict had no way to judge what it was worth.
+
+            ONE OF TWO FORMS, matching how the chain family actually reaches finality and mirroring
+            the two mutually exclusive members of `ChainFinalityConfig`:
+
+              * `confirmations:<n>` on block-depth chains (`eip155:*`, `tron:*`), where `<n>` is a
+                base-10 depth, with no leading zeros, that the block had reached when the verdict
+                was signed, counted inclusively. It is always a LOWER BOUND, never an exact figure.
+                `confirmations:0` is legal and means the producer required none, which a consumer
+                SHOULD treat as the weakest possible claim rather than as a missing value.
+              * `commitment:<level>` on commitment-based chains (`solana:*`), where `<level>` is the
+                read commitment confirmed at.
+
+            A depth is deliberately NOT used for `solana:*`, and a commitment NOT for the others: a
+            count has no meaning where finality is a commitment level, and forcing one shape on both
+            is what makes a single required member unfillable on a family.
+
+            A consumer MUST NOT reject a verdict merely because this value is weaker than its own
+            bar. The verdict is still an honest report of what was observed. What the consumer MUST
+            do is apply its own additional depth before acting, rather than reading a signed
+            attestation as agreement with its risk appetite.
+          pattern: '^(confirmations:(0|[1-9][0-9]{0,9})|commitment:(confirmed|finalized))$'
+          example: "confirmations:12"
+        transaction_hash:
+          type: string
+          description: |
+            The source-chain transaction that created the deposit, found by a targeted query
+            on `payment_id` rather than by scanning a block range. It is what lets an
+            originator check the deposit half of a payment independently, which a state read
+            alone cannot give them.
+
+            THE EMPTY STRING FOR EVERY OUTCOME EXCEPT `held`, where there is no deposit to
+            name. Required and always serialized even then, so the signed form has one
+            shape; enforced by the request handler, since OpenAPI 3.0.3 cannot make one
+            member conditional on another's value.
+
+            For `not_held` this member is empty even though some transaction did remove the
+            deposit. Naming that transaction would be a claim about which settlement path ran,
+            which the state read does not establish, and this object does not attest what it
+            did not observe.
+
+            A consumer MUST gate on `outcome` before reading this member and MUST NOT
+            propagate an empty value into any payer-facing transaction reference. An empty
+            hash presented as a receipt is indistinguishable from a real one nobody recorded,
+            and a nullish guard does not catch it.
+          pattern: '^$|^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$'
+          example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        signature_scheme:
+          $ref: '#/components/schemas/VerdictSignatureScheme'
+        signature:
+          type: string
+          description: |
+            Signature over the typed data or preimage derived per `signature_scheme`, by the
+            payment's `fulfillment_verifier.account`, the escrow releaser its deposit names,
+            as lowercase hex WITHOUT a 0x prefix: 130 characters for the two
+            secp256k1 schemes and 128 for `ed25519-raw`. The length is part of the scheme's
+            contract, so a consumer MUST check it before attempting recovery.
+          pattern: '^[0-9a-f]{128}$|^[0-9a-f]{130}$'
+          example: "461a4ccffafea42dd965e80752e2703e53b74ca36813db2529ff32794063d98f46b7655fbb62c08ae4bd8e6234ccb9115b93bf5d1d6d8254afd89c4767d00e891b"
+
+    FulfillmentVerdict:
+      type: object
+      description: |
+        A signed attestation of what this service observed on the destination chain, so a
+        consumer can act on the signature instead of repeating the chain read.
+
+        Distinct from the escrow signature alongside it. The response root's `signature` is
+        an EIP-712 release witness consumed by the escrow contract on the SOURCE chain; it
+        binds escrow members, carries neither a block nor a transaction, and its typehash is
+        fixed by deployed contracts. This object attests DESTINATION-chain observations and
+        is consumed offchain only. Two signatures over two structs, by two different keys in
+        a cross-chain-family corridor, and neither substitutes for the other.
+
+        Also distinct from the fulfillment confirmation a settler reports about its own
+        transaction. That is a self-report by the party that sent it; this is a third-party
+        attestation by the verifier. Same nouns, different trust level - do not treat one as
+        the other.
+
+        THEIR MEMBER ENCODINGS DIVERGE ON PURPOSE, and the divergence is recorded here so it
+        is not read as drift. That report is consumed as data and may spell a value however
+        its own schema allows; every member here is length-prefixed into signed bytes, so each
+        admits exactly ONE spelling and a producer normalises to it. Reconciling the two to a
+        shared encoding would either widen this object, giving a member several legal
+        preimages, or narrow a report that has no signature to protect. A consumer holding both
+        MUST normalise the report to this object's forms before comparing them, and MUST NOT
+        conclude a mismatch from a difference in spelling alone.
+
+        WHAT A NEGATIVE DOES NOT ESTABLISH. A `not_delivered` outcome claims two things: that
+        no matching delivery had happened at `block_number`, and that one landing afterwards
+        could no longer count. The verifier observes the first. It cannot observe the second,
+        because what closes the window is a fulfillment deadline and NO CHAIN RECORDS ONE: it
+        is absent from the escrow, from the release witness, from the refund witness and from
+        the stored deposit, and reaches the verifier inside the awarded quote.
+
+        This object therefore carries NO expiry and NO deadline, and that is deliberate rather
+        than an omission. Signing the deadline would present a quote term as a chain
+        observation, which is the one thing every member here forbids, and two payments with
+        different deadlines would obtain two different signed answers over identical chain
+        state. An expiry would put a clock back into a contract whose whole point is that only
+        a verdict moves a payment to a terminal state.
+
+        What follows for a consumer: A NEGATIVE IS A STATEMENT ABOUT `block_number` AND ABOUT
+        NOTHING LATER. It stays true about that block forever and MUST NOT be read as true of
+        any later point, so a consumer needing a statement about a later point asks again. And
+        because the window cannot be attested, a producer that cannot establish it has closed
+        MUST emit `undetermined` instead: a wrong `not_delivered` is terminal, a wrong
+        `undetermined` costs one more ask.
+
+        WHAT THIS OBJECT DELIBERATELY DOES NOT CARRY, so that a reader does not take the
+        absences for oversights:
+
+          * A CONFIRMATION DEPTH. `block_number` and `block_hash` already let anyone with chain
+            access establish depth for themselves, and the check the producer applied, a depth
+            or the chain's finalized tag, is published per chain by GET /v1/finality-config
+            rather than restated here. It also has no meaning on `solana:*`, where finality is a
+            commitment level and not a count, so a required member would be unfillable on one
+            of the three families.
+          * A BLOCK TIMESTAMP. It would only be actionable next to a signed deadline to compare
+            it against, and per the note above there is none. On its own it invites exactly the
+            comparison against an unattested deadline that this object refuses to make.
+          * A SOURCE-CHAIN FACT OF ANY KIND. Those belong to `DepositVerdict`, whose chain
+            member, block members and signing key are all source-scoped. See that object.
+
+        OPTIONAL, AND ONLY EVER COMPLETE. A response without a verdict is well-formed and
+        means no attestation is available: the service does not evaluate verdicts, or it
+        could not reach a signable conclusion. ABSENCE IS NOT AN OUTCOME. A consumer MUST
+        NOT read it as delivered, as not-delivered, or as a failure of the payment, and MUST
+        fall back to the root `verified` and `error` members.
+
+        A verdict is signed only for a conclusion drawn from chain state, and the line that
+        decides whether a verdict exists at all is whether a block can be named. Read the
+        chain successfully and the answer is attestable even when it is not terminal, which
+        is why `outcome` carries `undetermined` alongside the two terminal values: the
+        verifier looked, at a named final block, and the window is still open. Fail to read
+        the chain and there is no block to anchor anything to, so no verdict is issued and
+        the case goes out unsigned through the root `error` as `VERIFICATION_ERROR`. A
+        consumer MUST NOT treat either of those as terminal: the payment stays pending and is
+        re-asked. NEITHER a client polling budget expiring, NOR an HTTP 5xx, NOR a network
+        error is a finding about the payment either, and a consumer MUST NOT derive one from
+        any of them.
+
+        Do not read the presence of a verdict as a terminal answer, nor its absence as a
+        negative one. Both mistakes are available and the members below are written to make
+        neither easy.
+
+        PRECEDENCE, AND ONLY ONCE VERIFIED. A verdict is attacker-supplied data until its
+        signature checks out, so presence alone confers nothing. A consumer MUST first complete
+        every step of HOW A THIRD PARTY VERIFIES below; a verdict that fails any step MUST be
+        treated as ABSENT, per ABSENCE IS NOT AN OUTCOME above, and never as a negative
+        finding. Once verified, a consumer MUST treat the verdict as authoritative over the root
+        `verified` and `error`, which predate it and cannot express a signed claim. On the
+        release response a verified verdict and the root members agree, in one direction:
+        `verified: true` implies `outcome: delivered`, and `outcome: not_delivered` exactly
+        when `error` is `FULFILLMENT_NOT_DELIVERED`. The refund response pairs them the other
+        way round, because there `verified: true` means a refund was signed: see
+        `RefundSignatureResponse.error`.
+
+        DELIVERED DOES NOT IMPLY `verified`. `verified` reports whether a release signature was
+        issued, not whether the delivery happened, and `DEADLINE_EXCEEDED` is exactly where the two
+        part: the recipient was paid, so `outcome` is `delivered`, and the delivery fell outside the
+        quote's fulfillment window, so `verified` is FALSE and no `signature` accompanies it. A
+        consumer MUST NOT treat that pairing as a contradiction, and MUST NOT read the false
+        `verified` as non-delivery. Enforced by the request handler; OpenAPI 3.0.3 expresses no
+        cross-member constraint. This service never refuses a delivery for being late, so it
+        does not produce that pairing.
+
+        EVERY MEMBER IS REQUIRED AND MUST BE SERIALIZED, including when the value is the
+        empty string. A producer MUST NOT suppress a member via `omitempty` or an
+        equivalent, and a consumer MUST reject a verdict in which any member is absent or
+        null BEFORE deriving what was signed. An absent member is not an empty member: a
+        renderer that interpolates a missing value produces a preimage containing that
+        language's word for undefined, which is a silent verification failure on the
+        commonest path rather than a loud one.
+
+        SIGNING SCHEME (normative). `signature` covers the members of this object, and what
+        it is computed over is DERIVED from them. It is NOT carried on the wire: a consumer
+        that verified a signature against bytes it was handed would have verified nothing,
+        because an attacker could pair those bytes with unrelated typed members. The form
+        follows the chain family, as `signature_scheme` names it.
+
+        On `eip155:*` (`eip712-secp256k1`) it is EIP-712 typed data, with the domain given on
+        `VerdictSignatureScheme` and the primary type
+
+          `FulfillmentVerdict(string domain,bytes32 paymentId,string chainId,string outcome,uint256 blockNumber,bytes32 blockHash,string finalityPolicy,bytes32 transactionHash,address fulfiller)`
+
+        Each field carries the member of the same meaning verbatim: `chainId` is the whole
+        CAIP-2 `chain_id` string and `blockNumber` the decimal `block_number`. An empty
+        `transaction_hash` is encoded as the zero bytes32 and an empty `fulfiller` as the
+        zero address. That is unambiguous because both members are populated exactly when
+        `outcome` is `delivered`, and a producer never spells a zero value explicitly. A
+        consumer MUST reject an eip155 verdict whose `transaction_hash` or `fulfiller`
+        spells the zero value, since it signs the same digest as an empty one. The primary
+        type names the attestation kind, so typed data for one kind never hashes to the
+        digest of another.
+
+        On `tron:*` and `solana:*` it is a preimage. The preimage is UTF-8 and consists of
+        exactly TEN lines, each terminated by one LF (0x0A) including the tenth, so it
+        contains exactly ten 0x0A bytes and its final byte is 0x0A. 0x0D is never emitted.
+        The order is fixed and no other line may appear:
+
+          1. the literal `atum-verdict/fulfillment/1`
+          2. `domain=<n>:<domain>`
+          3. `payment_id=<n>:<payment_id>`
+          4. `chain_id=<n>:<chain_id>`
+          5. `outcome=<n>:<outcome>`
+          6. `block_number=<n>:<block_number>`
+          7. `block_hash=<n>:<block_hash>`
+          8. `finality_policy=<n>:<finality_policy>`
+          9. `transaction_hash=<n>:<transaction_hash>`
+         10. `fulfiller=<n>:<fulfiller>`
+
+        `<n>` is the LENGTH IN BYTES of the value that follows, in base-10 with no leading
+        zeros, and `<n>:` is present even when the value is empty, which renders as `=0:`
+        followed by nothing.
+
+        THE PREIMAGE'S FIRST LINE NAMES THE ATTESTATION KIND, not merely the format version,
+        and that is load-bearing rather than descriptive. A key this service holds for a chain
+        can sign every kind of attestation for that chain. Two kinds sharing a first line would
+        share a signing domain, and where their member lists agreed a signature over one would
+        satisfy a verifier of the other. A producer
+        MUST emit this exact first line and a consumer MUST reject a preimage that does not
+        begin with it, rather than accepting any line that merely looks like a verdict tag.
+
+        The framing is what makes the rendering injective, and it is worth being precise about
+        why. The nine keys are fixed and in fixed order, so no key label is caller-chosen, and
+        each `<n>` is digits-only and therefore self-delimited by the first `:` after the key.
+        A value may consequently contain a `:` or begin with digits without being absorbed into
+        a neighbour. Under a bare `key=value` framing, by contrast, a value carrying an LF can
+        reproduce a following line, and two verdicts differing in `chain_id` can render to
+        identical bytes so that one signature authenticates both. The byte rejections below
+        would also stop that particular pair, since it needs an LF on both sides; the framing
+        is what removes the class rather than the instance, and it does so whether or not any
+        validator runs. That matters because the patterns in this schema are documentary -
+        neither the Go nor the TypeScript bindings validate them at runtime.
+
+        Values are used exactly as they appear on the wire, byte for byte, with no case
+        folding, re-encoding or address normalization. Each member below admits exactly one
+        encoding per chain family for that reason: a consumer that normalizes a value before
+        deriving the typed data or preimage will fail to verify. `signature` and
+        `signature_scheme` are the envelope and are signed under neither form.
+
+        EVERY MEMBER IS PRINTABLE ASCII, 0x20 to 0x7E inclusive, and a producer or consumer
+        MUST reject any value carrying a byte outside that range before rendering. This is not
+        tidiness: `<n>` counts BYTES, which Go's `len` gives directly but which a naive
+        JavaScript renderer using `.length` does not, since that counts UTF-16 code units. A
+        single non-ASCII byte therefore makes two good-faith implementations sign different
+        preimages for the same verdict, and a homoglyph in a hostname is a realistic
+        misconfiguration rather than a contrived input. Restricting the range removes the
+        divergence instead of asking every implementation to remember it. The framing bytes
+        0x0A and 0x3D MUST likewise be rejected.
+
+        Do NOT delegate these checks to regex anchoring: `$` in Python's `re` and in PCRE
+        matches before a trailing newline, so `re.match` and `preg_match` accept a value ending
+        in LF that the pattern is written to forbid. Use `re.fullmatch`, `\A...\z`, or an
+        explicit byte scan.
+
+        HOW A THIRD PARTY VERIFIES, with no chain access, in order, failing closed at the
+        first step that does not hold:
+          1. Reject the verdict unless every member is present and matches its pattern.
+          2. Reject unless `payment_id` is the payment this consumer expects. A SIGNATURE
+             PROVES WHAT WAS ATTESTED, NEVER WHICH QUESTION IT ANSWERS: without this step a
+             genuine verdict about another payment passes every remaining step, and one
+             payment's delivery marks another complete.
+          3. Reject unless `chain_id` is the destination chain this consumer asked about.
+             Without this step the verdict chooses its own trust anchor, because step 7
+             fetches a key for whatever chain the verdict names.
+          4. Reject unless `signature_scheme` matches the namespace of `chain_id`, and
+             unless the length of `signature` matches `signature_scheme`.
+          5. Reject unless `domain` equals `did:web:` followed by the lowercased host, without a
+             port, of the fulfillment verifier endpoint the payment names. `domain` is a claim
+             by the signer, not a fact - it is checked against the payment, never trusted as
+             read. Without this step a verdict issued by one deployment verifies as a verdict
+             from another whenever they derive from a shared signing backend.
+          6. Derive what was signed from the members of THIS object: the typed data for
+             `eip712-secp256k1`, the preimage for the other schemes.
+          7. key = GET /v1/public-keys/{chain_id} -> PublicKeyResponse.address, asked of the
+             fulfillment verifier endpoint the payment names.
+          8. Verify per `signature_scheme`, and treat an unrecognised scheme as a rejection
+             rather than falling through to a default.
+
+        THE PAYMENT NAMES ITS VERIFIER. A consumer trusts the verifier the payment names and
+        keeps no list of its own. Deciding which verifiers are trusted belongs to the settlement operator:
+        a settlement operator MUST NOT submit a quote for a payment naming a verifier it does not trust.
+
+        STEPS 2 AND 3 COMPARE AGAINST THE FORM THIS SCHEMA REQUIRES, NOT AGAINST THE VALUES THE
+        CONSUMER HOLDS. Both members are narrower here than the values a consumer holds:
+        `payment_id` than the payment id the consumer holds, and `chain_id` than the
+        destination chain as the quote spells it. Each is signed verbatim, length-prefixed
+        into the preimage or hashed into the typed data, and a value with several legal
+        spellings has several legal signed forms. A consumer that compared these verbatim
+        against the values it holds would reject every valid verdict where those values use
+        another legal spelling. Normalize the value asked about to the form named on each
+        member, then compare.
+
+        Nothing in this object may be used in place of step 7. It deliberately carries no
+        signer address and no digest, because a member supplying its own trust anchor
+        verifies against itself and would accept a verdict signed by any key at all.
+      required:
+        - domain
+        - payment_id
+        - chain_id
+        - outcome
+        - block_number
+        - block_hash
+        - finality_policy
+        - transaction_hash
+        - fulfiller
+        - signature_scheme
+        - signature
+      properties:
+        domain:
+          type: string
+          description: |
+            The deployment that issued this verdict, as a `did:web` identifier, bound into
+            the signed form so a verdict cannot cross between deployments that share a
+            signing backend. A producer MUST set it to `did:web:` followed by the lowercased
+            host, without a port, of the endpoint payments name to reach it, and a consumer
+            MUST compare it to the same value derived from the payment and reject a
+            mismatch.
+
+            Mechanically the same rule as the `domain` member of a signed envelope proof
+            elsewhere in this protocol, and semantically its INVERSE: there `domain` names the
+            intended verifier and here it names the issuer. Because of that inversion the value
+            space is deliberately kept distinct from the envelopes' network-wide domain, so a
+            captured verdict and a captured envelope can never be read against each other.
+          pattern: '^did:web:[a-z0-9][a-z0-9.-]{0,252}$'
+          example: "did:web:verifier.atum.network"
+        payment_id:
+          type: string
+          description: |
+            The escrow deposit this verdict is about, as LOWERCASE 0x-PREFIXED 32-BYTE HEX
+            and no other spelling, because this value is signed verbatim, and a member with
+            several legal spellings has several legal signed forms.
+
+            NORMALISING TO THAT FORM IS A PRODUCER OBLIGATION, NOT A CONSUMER'S. A consumer
+            performing step 2 normalizes the payment id it holds for its deposit to this form
+            and compares against that.
+          pattern: '^0x[0-9a-f]{64}$'
+          example: "0x1234567890123456789012345678901234567890123456789012345678901234"
+        chain_id:
+          type: string
+          description: |
+            The destination chain the observation was made on, in CAIP-2 format, and the
+            chain whose signing address verifies `signature`. Step 3 rejects a verdict whose
+            `chain_id` is not the chain the consumer asked about, and it compares against the
+            canonical spelling below rather than against the quote's bytes.
+
+            The namespace is lowercase. THE REFERENCE IS CASE-SENSITIVE AND IS SIGNED
+            VERBATIM: a producer emits the canonical spelling for the chain and a consumer
+            MUST NOT alter it. For `eip155:*` that is the decimal chain id with no leading
+            zeros and never a hex form; for `tron:*` the lowercase cluster name; for
+            `solana:*` the exact mixed-case base58 genesis-hash prefix, whose case is
+            load-bearing because it is encoded into on-chain state. Note that
+            GET /v1/public-keys/{chain_id} resolves case-insensitively and so gives a
+            verifier no signal about which spelling was signed - the spelling in this member
+            is the only authority. When using this value as a path segment, percent-encode `:`
+            as `%3A` if the client does not do so already.
+          pattern: '^[a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$'
+          example: "eip155:42161"
+        outcome:
+          type: string
+          description: |
+            What the verifier concluded, and the claim the signature commits to. A verdict
+            answers one question - did the expected delivery happen - and there are three
+            honest answers to it, so all three are values here rather than two values and a
+            silence.
+
+            `delivered` - the fulfillment was found at the attested block and matched every
+            expected parameter.
+
+            `not_delivered` - at the attested block, which is final, the expected delivery
+            had not happened AND could no longer count if it landed afterwards. Terminal.
+
+            `undetermined` - the chain was read successfully to the attested block, which is
+            final, and no matching delivery was found, but a delivery landing after it could
+            still count. NOT terminal: the payment stays pending and is asked again. This is
+            a positive statement about a named block and is signed for that reason, unlike
+            the case below.
+
+            WHAT SEPARATES THE LAST TWO IS WHETHER THE WINDOW HAS CLOSED, and that rests on
+            a fulfillment deadline which no chain records - see WHAT A NEGATIVE DOES NOT
+            ESTABLISH above. A producer that cannot establish the window has closed MUST emit
+            `undetermined` rather than `not_delivered`, because a wrong `not_delivered` is
+            terminal and a wrong `undetermined` only costs another ask.
+
+            NOT EVERY UNKNOWN IS A VERDICT. When the chain could not be read at all there is
+            no block to anchor a claim to, so no verdict is issued and the case is reported
+            unsigned through the root `error`. `undetermined` is the opposite situation: the
+            read succeeded and the block is named, which is what makes it attestable.
+
+            A consumer MUST switch on the value and MUST NOT branch on
+            `outcome != "delivered"`, which would turn both non-terminal answers into a
+            failure. A value this enum does not list MUST be treated as no verdict, and the
+            payment left pending - which is also the correct handling of `undetermined`
+            itself, so a consumer built against an earlier two-value form degrades safely
+            rather than wrongly.
+
+            THIS SET MAY GROW, and a consumer MUST be written to survive that. What bounds it
+            is not a count but a rule: a value appears here only if it is a conclusion the
+            verifier DREW FROM CHAIN STATE at the block this verdict names. A judgement that
+            needs anything else - a policy, a clock, a value the caller supplied - is reported
+            through the response root instead, unsigned, because signing it would attest as an
+            observation something that was never observed. That is why a late delivery is
+            `delivered` here and late somewhere else, and it is the test to apply to any value
+            proposed for this member.
+          enum:
+            - delivered
+            - not_delivered
+            - undetermined
+          x-enum-varnames:
+            - FulfillmentVerdictOutcomeDelivered
+            - FulfillmentVerdictOutcomeNotDelivered
+            - FulfillmentVerdictOutcomeUndetermined
+          example: "delivered"
+        block_number:
+          type: string
+          description: |
+            Height of the block the verdict was evaluated at, as a base-10 string: for
+            `delivered` the block containing `transaction_hash`, for `not_delivered` and
+            `undetermined` the highest block scanned, and on `solana:*` the slot rather than
+            the block height. It MUST be final in every case, including `undetermined`,
+            because a claim anchored to a block a reorg can undo is not attestable.
+            This is the point in chain history the attestation is anchored to.
+
+            FINAL MEANS FINAL BY THE PRODUCER'S PUBLISHED POLICY AT SIGNING TIME, not by any
+            absolute standard, and that policy CAN CHANGE. The per-chain confirmation floor is
+            served by GET /v1/finality-config, and on some chains it has been as low as a single
+            confirmation. TWO VERDICTS WITH IDENTICAL MEMBERS MAY THEREFORE CARRY DIFFERENT
+            STRENGTH: nothing in the signed bytes records the floor that was in force, so a
+            consumer cannot tell from the verdict alone whether it was evaluated one confirmation
+            deep or twenty, and the floor in force at some past signing time is not recoverable
+            after it moves.
+
+            What that does NOT undermine is falsifiability. `block_hash` still pins one specific
+            block, so a verdict whose block left the canonical chain is detectable by anyone with
+            chain access, whatever floor produced it. The residual exposure is a verdict that was
+            honestly signed against a shallow floor and is now relied on as though it were deep. A
+            consumer whose own risk bar exceeds the published floor MUST apply its own depth on top
+            rather than treat this member as sufficient.
+
+            A STRING, not a JSON number, because this member is signed. JSON Schema
+            `type: integer` also matches `123456789.0` and `1.23456789e8`, which a JavaScript
+            parser renders as `123456789` while a Go int64 decode rejects the whole response
+            outright, and values above 2^53-1 lose precision in any IEEE-754 parser. A
+            string has exactly one spelling on the wire and it is the spelling that is
+            signed.
+          pattern: '^(0|[1-9][0-9]{0,18})$'
+          example: "21500000"
+        block_hash:
+          type: string
+          description: |
+            Hash of the block at `block_number`, in the destination chain's native encoding:
+            lowercase 0x-prefixed hex on `eip155:*` and `tron:*`, base58 on `solana:*`. Hex
+            is 0x-prefixed on EVERY chain including `tron:*`, where the bare form is
+            conventional, so that one value has one spelling and therefore one signed form.
+
+            Present so the observation pins one specific block rather than a height a reorg
+            can repoint. A consumer performs no chain read, but this is what lets anyone
+            with chain access falsify the claim afterwards: if the chain reports a different
+            hash at this height, this verdict described a block that is no longer canonical,
+            and the verdict is void. A void `delivered` verdict does NOT become
+            `not_delivered` - the absence of a valid verdict is never a finding.
+          pattern: '^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        finality_policy:
+          type: string
+          description: |
+            The finality rule the producer enforced before signing, so the STRENGTH of this
+            attestation travels with it instead of having to be looked up and then guessed at.
+
+            Signed, and required, because the alternative is what this member replaces: two
+            verdicts with identical members, one evaluated a single confirmation deep and one
+            twenty, indistinguishable forever. The published floor moves (see
+            GET /v1/finality-config, whose values are raised per chain over time), and the floor in
+            force at some past signing time is not recoverable afterwards, so a consumer holding an
+            old verdict had no way to judge what it was worth.
+
+            ONE OF TWO FORMS, matching how the chain family actually reaches finality and mirroring
+            the two mutually exclusive members of `ChainFinalityConfig`:
+
+              * `confirmations:<n>` on block-depth chains (`eip155:*`, `tron:*`), where `<n>` is a
+                base-10 depth, with no leading zeros, that the block had reached when the verdict
+                was signed, counted inclusively. It is always a LOWER BOUND, never an exact figure:
+                a producer that enforces a confirmation floor states that floor, and one that gates
+                on the chain's finalized block tag states the depth it observed below a head read
+                before the block was checked. `confirmations:0` is legal and means the producer
+                required none, which a consumer SHOULD treat as the weakest possible claim rather
+                than as a missing value.
+              * `commitment:<level>` on commitment-based chains (`solana:*`), where `<level>` is the
+                read commitment confirmed at.
+
+            A depth is deliberately NOT used for `solana:*`, and a commitment NOT for the others: a
+            count has no meaning where finality is a commitment level, and forcing one shape on both
+            is what makes a single required member unfillable on a family.
+
+            A consumer MUST NOT reject a verdict merely because this value is weaker than its own
+            bar. The verdict is still an honest report of what was observed. What the consumer MUST
+            do is apply its own additional depth before acting, rather than reading a signed
+            attestation as agreement with its risk appetite.
+          pattern: '^(confirmations:(0|[1-9][0-9]{0,9})|commitment:(confirmed|finalized))$'
+          example: "confirmations:12"
+        transaction_hash:
+          type: string
+          description: |
+            The fulfill transaction that was verified, on the chain in `chain_id`: a
+            lowercase 0x-prefixed EVM transaction hash, a 0x-prefixed Tron transaction id,
+            or a base58 Solana signature. On the release response it is the same transaction the
+            request named, now attested rather than merely accepted as input. On the refund
+            response no transaction is requested, and it is the one the destination scan found.
+            Either way it is what lets an originator check the claim independently. It is not an
+            echo: see the normalization note below.
+
+            NARROWER THAN THE REQUEST MEMBER OF THE SAME NAME, which also accepts mixed-case
+            hex and the bare 64-character Tron form. Echoing a request value verbatim can
+            therefore produce a verdict that fails its own pattern, so normalising to the single
+            form above is a producer obligation, not a consumer's.
+
+            THE EMPTY STRING FOR EVERY OUTCOME EXCEPT `delivered`, where there is no
+            transaction to name. Required and always serialized even then, so the signed
+            form has one shape; enforced by the request handler, since OpenAPI 3.0.3 cannot
+            make one member conditional on another's value.
+
+            A consumer MUST gate on `outcome` before reading this member and MUST NOT
+            propagate an empty value into any payer-facing transaction reference. An empty
+            hash presented as a receipt is indistinguishable from a delivered one that
+            nobody recorded, and a nullish guard does not catch it.
+          pattern: '^$|^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        fulfiller:
+          type: string
+          description: |
+            The destination-chain address that executed the fulfillment, taken from the
+            fulfillment event that was matched at `block_number`.
+
+            A PRODUCER MUST SOURCE THIS FROM THE OBSERVED EVENT AND MUST NOT ECHO ANY REQUEST
+            MEMBER INTO IT. That is the one thing this object exists not to do: every other
+            member here is an observation, and a value copied from the caller and then signed
+            would be an assertion wearing an attestation's signature. A producer that cannot
+            read the executing address from the event MUST NOT emit a `delivered` verdict.
+
+            IT MAY LEGITIMATELY DIFFER FROM THE SETTLER THE QUOTE NAMES, so a consumer MUST
+            NOT reject a verdict on that ground alone. The fulfillment entrypoint is
+            permissionless, so whoever paid the recipient is recorded here whether or not it is
+            the settler the payment expected. A delivery by an unexpected address is still a
+            delivery: the recipient has the funds, and who sent them is a matter for settlement
+            accounting rather than for whether the payment happened.
+
+            It is also NOT the source-chain settler address stored in the deposit's
+            reserveWitness, and the two differ in cross-chain-family
+            corridors. Named `fulfiller` rather than `settler` because this contract already
+            uses that word for both.
+
+            One encoding per family, narrower than the address pattern used elsewhere in
+            this contract because this member is signed: `eip155:*` is lowercase 20-byte hex
+            with 0x and NEVER the EIP-55 mixed-case form; `tron:*` is base58check beginning
+            `T` and never the 20-byte EVM-equivalent hex or the 21-byte 0x41 form, both of
+            which this protocol's address library otherwise accepts as the same account;
+            `solana:*` is a base58 account.
+
+            THE EMPTY STRING FOR EVERY OUTCOME EXCEPT `delivered`, on the same rule as
+            `transaction_hash`.
+          pattern: '^$|^0x[0-9a-f]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$|^[1-9A-HJ-NP-Za-km-z]{32,44}$'
+          example: "0x742d35cc6634c0532925a3b844bc9e7595f0beb4"
+        signature_scheme:
+          $ref: '#/components/schemas/VerdictSignatureScheme'
+        signature:
+          type: string
+          description: |
+            Signature over the typed data or preimage derived per `signature_scheme`, by the
+            key that GET /v1/public-keys/{chain_id} serves for this verdict's `chain_id` - the
+            destination chain, the one the verdict makes claims about, not the source chain
+            whose key signs the escrow release witness in the same response.
+
+            Lowercase hex WITHOUT an 0x prefix, unlike the escrow `signature` on the enclosing
+            response for `eip155:*` and `tron:*`. The length MUST agree with `signature_scheme`:
+            130 characters for the two secp256k1 schemes, 128 for `ed25519-raw`. A length
+            inconsistent with the declared scheme MUST be rejected. That agreement is not
+            expressible as a pattern here, since a pattern cannot see a sibling member.
+          pattern: '^[0-9a-f]{128}$|^[0-9a-f]{130}$'
+          example: "461a4ccffafea42dd965e80752e2703e53b74ca36813db2529ff32794063d98f46b7655fbb62c08ae4bd8e6234ccb9115b93bf5d1d6d8254afd89c4767d00e891b"
+
+    VerificationDetails:
+      type: object
+      description: Detailed information about the verification process
+      properties:
+        transaction_found:
+          type: boolean
+          description: Whether the transaction was found on chain
+        block_confirmed:
+          type: boolean
+          description: Whether the block is confirmed
+        event_found:
+          type: boolean
+          description: Whether the expected event was found
+        amount_matches:
+          type: boolean
+          description: Whether the amount matches expectations
+        recipient_matches:
+          type: boolean
+          description: Whether the recipient matches expectations
+        token_matches:
+          type: boolean
+          description: Whether the token matches expectations
+        settler_matches:
+          type: boolean
+          description: Whether the settler matches expectations
+
+    RefundSignatureRequest:
+      type: object
+      description: |
+        A refund request names the payment and proves which quote it was awarded under.
+        Everything else veri-fill needs it reads for itself.
+
+        WHY SO FEW FIELDS. The witness members the escrow checks -- depositor, token,
+        amount, feeAmount, reserver, releaser, settler and the two commitments -- are all
+        recorded on chain by the deposit. veri-fill reads them from the Deposited and
+        DepositCommitments events and rebuilds the ActiveDeposit tuple, then requires its
+        keccak256 to equal what the escrow stored. That is the same check Escrow._refund
+        applies, so a witness that passes here cannot revert InvalidWitnessValues.
+
+        Taking those members from the caller instead would mean signing values nobody had
+        verified, and it made the endpoint unusable by an originator, who knows none of
+        them. The escrow address is read from veri-fill's own per-chain configuration for
+        the same reason: it is the EIP-712 verifyingContract, so a caller who could choose
+        it could choose which contract the signature works against.
+
+        CANCEL EVIDENCE, for an originator fulfill only. When the quote's payment request
+        names the originator as the fulfill executor, delivery is the settler's EIP-3009
+        authorization on the destination token, nonce the quote hash. Without
+        `authorization_canceled`, veri-fill refunds only after `fulfillment_deadline`, when the
+        token's `authorizationState` shows the authorization was never used or canceled; a
+        canceled one reads the same as a used one and is refused. With it, veri-fill reads that
+        one receipt and requires the log at `log_index` to be the destination token's
+        `AuthorizationCanceled(authorizer, nonce)` for the quote's settler and quote hash, in a
+        successful, finalized transaction. A cancel means the authorization can never be used,
+        so the refund is then signed at any time, before or after the deadline. A locator that
+        does not resolve to that log is refused; it cannot make veri-fill sign anything it would
+        otherwise decline. veri-fill never scans for the event. It is ignored for a settler
+        fulfill, and without `fulfillment_quote`, since the settler and quote hash it is matched
+        against come from the quote.
+
+        THE QUOTE OR THE PAYER'S REQUEST. A request sends `fulfillment_quote`,
+        `payment_request_json`, or both, and a request with neither is refused. veri-fill
+        enforces this rule, not the schema, so generated clients type both fields as
+        optional, as on the release request.
+      required:
+        - payment_id
+      properties:
+        payment_id:
+          type: string
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          description: |
+            The escrow deposit identifier, as a 0x-prefixed 32-byte hex string. This is the
+            escrow's `depositId`, so it is what `getDepositHash` is keyed on.
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        fulfillment_quote:
+          type: object
+          # Required, or openapi-typescript reads "object with no declared properties" as
+          # Record<string, never> and the generated binding accepts only {}. Leaves the Go
+          # type on json.RawMessage.
+          additionalProperties: true
+          x-go-type: json.RawMessage
+          # Optional since payment_request_json, but kept a json.RawMessage (nil when absent)
+          # rather than a pointer, so Go callers of the field keep compiling.
+          x-go-type-skip-optional-pointer: true
+          description: |
+            The settler-signed FulfillmentQuote for this payment, as the signed document
+            itself. Same shape and semantics as the `fulfillment_quote` returned by
+            the payment gateway's award and status responses, so a caller forwards that value
+            straight through.
+
+            FORWARD THE VALUES UNCHANGED. quote_hash is derived by canonicalizing this
+            document, so re-ordering keys or re-indenting is harmless -- canonicalization
+            removes both. What is NOT harmless is changing any VALUE: renormalizing a
+            timestamp (`...T00:00:00.000Z` to `...T00:00:00Z`) or re-serializing the
+            embedded `payment_request_json`, which is a string field and is hashed
+            literally. Either yields a different hash and the request is refused.
+
+            It is verified against the chain, not trusted: veri-fill computes its hash and
+            requires that to equal the quoteHash the escrow recorded for this payment at
+            deposit. That anchor is what lets the quote supply the deadlines and the
+            corridor without the caller being able to choose them.
+
+            A settler has it from the award it acted on. An originator has it from the quote
+            batch it awarded from, or from the payment gateway's synchronous payment response.
+
+            GET /v1/payments/{paymentId}/status can also return it, but the gateway ships with
+            that field gated off, so an originator flow that depends on the status endpoint
+            depends on that deployment opting in first.
+
+            Required unless `payment_request_json` is sent, and always for an originator
+            fulfill: its refund needs the quote's `settler_address`, which signed the
+            authorization. veri-fill also reads an explicit null as absent, though the
+            schema does not declare the field nullable.
+        payment_request_json:
+          type: string
+          minLength: 1
+          description: |
+            The payment request the payer signed, as its raw JSON text. A string, not an
+            object, for the same reason as FulfillmentQuote.payment_request_json: it is read
+            as received, so nothing re-serializes it on the way.
+
+            It is read only when the deposit commits depositRequestHash v2 and the hash of
+            this request's terms equals it, and only when its destination also matches the
+            deposit's destination commitment. The quote hash is then read from the deposit,
+            and only the members v2 commits are read from this copy. When `fulfillment_quote`
+            is also sent, a copy that does not match is ignored and the refund proceeds from
+            the quote as before, so a v1 deposit sent with both is never refused for it. Only a
+            request carrying `payment_request_json` alone, without a match, is refused.
+
+            This lets a refund proceed for a settler fulfill when the settler withholds or
+            corrupts its quote, and serves an unreserved Solana deposit, whose quote hash is
+            zero and which has no quote to send. An originator fulfill still needs
+            `fulfillment_quote` (see above).
+        deposit_transaction_hash:
+          type: string
+          # Same shape as transaction_hash above: 0x hex, a bare Tron txid, or a Solana
+          # signature. The request carries no chain id, so the family cannot be narrowed here.
+          pattern: '^(0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$'
+          description: |
+            OPTIONAL locator for the transaction that created the deposit. A hint, never a
+            fact: supplying it lets veri-fill read one receipt instead of scanning a block
+            range, and a wrong value simply finds no matching deposit and is refused. It
+            cannot make veri-fill sign anything it would otherwise decline.
+          example: "0xabc123def456789012345678901234567890123456789012345678901234abcd"
+        reserve_location:
+          # OPTIONAL. Where the settler's own reserve of this deposit landed; see
+          # ReserveLocation.
+          $ref: '#/components/schemas/ReserveLocation'
+        authorization_canceled:
+          # OPTIONAL. Evidence of the destination token's AuthorizationCanceled for an
+          # originator fulfill; see CANCEL EVIDENCE in this schema's description.
+          $ref: '#/components/schemas/OnchainLogLocator'
+        settlement_report:
+          # OPTIONAL. The awarded settler's signed give-up; see SettlementReport.
+          $ref: '#/components/schemas/SettlementReport'
+    ReserveLocation:
+      type: object
+      description: |
+        OPTIONAL. Where the reserve of this payment's deposit landed: for a direct deposit, the
+        settler's own reserve, which it sends from the reserve it recorded. It is not what
+        `deposit_transaction_hash` locates: that is the transaction that created the deposit
+        (for a direct deposit, the payer's own). The three members travel together.
+
+        A HINT, NEVER A FACT. Absent or wrong, the gate answers what it would have without it
+        once its node has reached `block_number`. It cannot make veri-fill sign anything it would
+        otherwise decline.
+
+        HOW IT IS READ. veri-fill does not rely on the transaction or on a log index, because
+        a settler may batch reserves and one transaction can then hold several
+        `DepositReserved` logs. It asks its own node for the logs at `block_hash`, filtered by
+        the Escrow it has configured for that chain, by topic0
+        `DepositReserved(bytes32 indexed depositId, bytes32 quoteHash, address settler, uint256 amount, uint256 feeAmount)`
+        and by this payment's deposit id as the indexed `depositId`, so other reserves in the
+        same batch cannot be mistaken for this one.
+
+        A log for this deposit id at `block_hash` is the reserve whichever transaction emitted it,
+        so `transaction_hash` is not part of the match. `reserve()` has no caller check (it is
+        authorised by the reserver's signature), so someone else can submit the settler's signed
+        reserve first and the settler's own transaction then reverts; the deposit is reserved all
+        the same. veri-fill records a `transaction_hash` that differs from the log's, ignoring
+        case and the `0x` prefix, and does not act on it.
+
+        veri-fill reads the location only when the escrow's stored hash still reads this deposit
+        as unreserved, which is after the settled-history checks (never deposited, released,
+        refunded), so a failing read of the location cannot hold a payment that history already
+        settles.
+
+        - If the node's head is below `block_number`, the node has not caught up with the
+          reserve, and the refund answers 503 (retry) rather than a refusal.
+        - If the head is at or above `block_number`, veri-fill also reads the block at that
+          number. It ignores the hint when the node positively reports a different hash
+          there (a reorg or a wrong hash), or reports that same hash there and the log query at
+          `block_hash`, answered for that same block, returns no log for this deposit id (a
+          wrong id). An error, or an unknown block or hash, is not evidence that the block or
+          the log is absent, and neither is a `[]` that cannot be tied to the block the node
+          confirmed: the refund answers 503 (retry).
+        - A `block_number` too far above the node's head is ignored. veri-fill sets that cap.
+        - A `block_number` far below the node's head is ignored as well. The hint exists for a
+          node that lags just after the reserve, and a node that is long past the block is not
+          lagging, so a block it can no longer serve does not hold the refund at 503. veri-fill
+          sets that distance too.
+        - Send it only when the source chain is `eip155:*`. `block_hash` is an EVM hash, so a
+          location of another family fails validation. veri-fill ignores a well-formed one on a
+          source chain that is not `eip155:*`.
+      required:
+        - transaction_hash
+        - block_number
+        - block_hash
+      properties:
+        transaction_hash:
+          type: string
+          # Same shape as deposit_transaction_hash, so the two validators agree. The request
+          # carries no chain id, so the family cannot be narrowed here; only an eip155 reserve is
+          # meaningful (see the description).
+          pattern: '^(0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$'
+          description: The transaction that carried the reserve.
+          example: "0xabc123def456789012345678901234567890123456789012345678901234abcd"
+        block_number:
+          type: string
+          description: |
+            Height of the block that holds `transaction_hash`, as a base-10 string.
+
+            A STRING, not a JSON number, for the same reason as `FulfillmentVerdict.block_number`.
+          pattern: '^(0|[1-9][0-9]{0,18})$'
+          example: "21500000"
+        block_hash:
+          type: string
+          description: Hash of the block at `block_number`, 0x-prefixed hex.
+          pattern: '^0x[a-fA-F0-9]{64}$'
+          example: "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+    SettlementReport:
+      type: object
+      description: |
+        The awarded settler's signed statement that it gave up on fulfilling this payment: a
+        SettlementResult declaration with phase FULFILLMENT and outcome ERROR, and the
+        SettlementResultEnvelope holder VP whose proof.challenge is that declaration's content
+        hash. Both members are the verbatim strings the settler sends on the settler session
+        stream, so any holder of the report forwards them unchanged.
+
+        A verified report removes the fulfillment deadline wait and the destination scan, so the
+        refund is signed as soon as the deposit is live and anchored to the quote. veri-fill
+        accepts it when the VP verifies for this environment's domain, the holder is the signer of
+        `fulfillment_quote`, and the declared quote_hash (and, outside Solana, payment_id) match
+        this request. It is ignored when the quote names the originator as the fulfill executor.
+
+        AN UNVERIFIABLE REPORT IS NEVER A REFUSAL. A report that fails any check is treated
+        exactly as an absent one, so the request is answered by the normal deadline path.
+      required:
+        - settlement_result_json
+        - presentation
+      properties:
+        settlement_result_json:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: The SettlementResult declaration JSON, exactly as signed.
+        presentation:
+          type: string
+          minLength: 1
+          maxLength: 16384
+          description: The SettlementResultEnvelope holder VP JSON, exactly as signed.
+    RefundSignatureResponse:
+      type: object
+      required:
+        - verified
+        - payment_id
+      properties:
+        verified:
+          type: boolean
+          description: Whether the refund signature was successfully generated
+          example: true
+        payment_id:
+          type: string
+          description: Hash of deposit data. Uniquely matches the given deposit
+          example: "0x1234567890123456789012345678901234567890123456789012345678901234"
+        signature:
+          type: string
+          description: |
+            Cryptographic signature that authorizes the refund of escrowed funds.
+            This can be submitted to the escrow contract to claim the refund.
+            Format: 0x-prefixed lowercase hex (132 characters) on `eip155:*` and `tron:*`,
+            hex without a prefix (128 characters) on `solana:*`.
+          pattern: '^0x[0-9a-f]{130}$|^[0-9a-f]{128}$'
+          example: "0x4a3b2c1d5e6f7890abcdef1234567890abcdef1234567890abcdef12345678904a3b2c1d5e6f7890abcdef1234567890abcdef1234567890abcdef12345678901c"
+        message_hash:
+          type: string
+          description: |
+            The hash of the message that was signed.
+            Used for signature verification. Format: Hex string without 0x prefix.
+          example: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        message_prehash:
+          type: string
+          description: |
+            The original message data before hashing, in JSON format.
+            Useful for understanding what was signed and debugging.
+          example: '{"types":{"EIP712Domain":[{"name":"name","type":"string"}],"RefundWitness":[{"name":"depositId","type":"string"}]},"primaryType":"RefundWitness","domain":{"name":"Escrow","version":"1","chainId":"1","verifyingContract":"0x..."},"message":{"depositId":"0x1234567890123456789012345678901234567890123456789012345678901234","deadline":"1735689600"}}'
+        deposit_verdict:
+          $ref: '#/components/schemas/DepositVerdict'
+        fulfillment_verdict:
+          $ref: '#/components/schemas/FulfillmentVerdict'
+        refund_transaction_hash:
+          type: string
+          description: |
+            The source-chain transaction that refunded the deposit: lowercase 0x-prefixed hex
+            on `eip155:*` and `tron:*`, a base58 signature on `solana:*`. Hex is 0x-prefixed on
+            every chain including `tron:*`, so that one value has one spelling.
+
+            Present only with `DEPOSIT_ALREADY_REFUNDED`, and only when the refund was read
+            from the escrow's own `Refunded` event, or `RefundedMany` on `eip155:*` and
+            `tron:*`. Absent on every other answer, including a `DEPOSIT_ALREADY_REFUNDED`
+            named by a destination scan, which observes no refund transaction. It is unsigned:
+            a consumer that needs proof reads it on the source chain and confirms a `Refunded`
+            or `RefundedMany` event emitted by the escrow itself that names this deposit. The
+            transaction touching the escrow is not enough, since one `RefundedMany` covers many
+            deposits and another program can write a `Refunded`-shaped log line.
+          pattern: '^0x[0-9a-f]{64}$|^[1-9A-HJ-NP-Za-km-z]{32,88}$'
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        error:
+          type: string
+          description: |
+            Error code if signature generation failed.
+
+            Bound to `deposit_verdict` and `fulfillment_verdict` when either is present. All
+            four refusal codes below are TERMINAL as refusals: none is a reason to retry. The
+            code itself is not final: a later ask can report a different one of the four as the
+            deposit settles or its history moves out of reach.
+
+            `fulfillment_verdict` attests the DESTINATION chain and is signed by the key
+            served for its `chain_id`, never the source key behind the root `signature`. On
+            this route its pairing is the inverse of the release response:
+
+            - `outcome: not_delivered` accompanies `verified: true` and the refund
+              `signature`, and names the final destination block the absence was proven to.
+            - `outcome: delivered` accompanies `FULFILLMENT_EXISTS`, and accompanies
+              `DEPOSIT_ALREADY_RELEASED` whenever a destination scan found the delivery, however
+              the release itself was established. The same code also appears WITHOUT a verdict
+              when no scan found one. A delivered verdict does not imply the delivery was on time. The release
+              route never refuses a delivery for being late, so on `FULFILLMENT_EXISTS`, where
+              the escrow still holds the deposit, the delivery named here is not stranded by its
+              timing.
+            - It is absent on every other answer, and on destinations this service cannot
+              attest yet (today only `eip155:*` destinations carry one). ABSENCE IS NOT AN
+              OUTCOME: a consumer MUST NOT read a missing verdict as either finding.
+
+            A consumer MUST run every step of HOW A THIRD PARTY VERIFIES on
+            `FulfillmentVerdict`, binding it to the payment and to the destination chain its
+            own quote names, before acting on it.
+
+            `deposit_verdict` accompanies `FULFILLMENT_EXISTS` and `DEPOSIT_ALREADY_RELEASED`
+            when the deposit was found, with `outcome: held` anchored at the block its
+            transaction was mined in. Today only `eip155:*` sources carry one. The deposit is found
+            from `deposit_transaction_hash`, or from the escrow's own deposit events near the
+            chain head. It is signed by the payment's `fulfillment_verifier.account`, the escrow
+            releaser on the SOURCE chain. It is what lets a
+            consumer that never saw the deposit record it, and it is absent on every other
+            answer.
+
+            `FULFILLMENT_EXISTS` reports that the payment WAS delivered on its destination
+            chain, so a refund would pay twice. The escrow may still hold the deposit, which
+            is exactly what a delivered-but-not-yet-released payment looks like, so a
+            consumer MUST NOT infer from a live deposit that a refund is owed. It is also the
+            answer when veri-fill already signed this payment's release and the delivery that
+            release was granted on is still final on its destination chain.
+
+            `RELEASE_ALREADY_SIGNED` reports that veri-fill already signed this payment's
+            release, and that the delivery it was granted on could NOT be confirmed on its
+            destination chain now: it was not found final there, or that chain cannot be
+            re-read by this service. A signed verdict is final, so no refund will be signed,
+            and veri-fill pages a person on it. It does NOT say the payment was delivered, and
+            it does not say where the deposit is: the release may or may not have been
+            submitted yet.
+
+            `DEPOSIT_ALREADY_REFUNDED` and `DEPOSIT_ALREADY_RELEASED` report a settled
+            history read from the escrow's own events, on `eip155:*`, `tron:*` and `solana:*`
+            sources alike. When the escrow no longer holds the deposit, veri-fill first anchors
+            the deposit: from `deposit_transaction_hash`, or from the escrow's deposit events in
+            the most recent blocks on `eip155:*` and `tron:*`, or from the deposit account's
+            transaction history on `solana:*`. On `eip155:*` and `tron:*` a deposit recorded
+            under another quote is refused before any settlement is read; on `solana:*` the
+            quote is checked against the settlement event's own when the event carries one.
+            The escrow's `Refunded` and `Released` events, and `RefundedMany` and
+            `ReleasedMany` on `eip155:*` and `tron:*`, are then scanned from the deposit
+            onwards, however far back it lies. With no deposit anchored, the same recent
+            blocks are still searched for a settlement of this payment, and a single
+            settlement found there carries no quote to check, so neither code proves the
+            caller's quote matched. A refund read this way carries its transaction in
+            `refund_transaction_hash`.
+
+            Both codes, and `INVALID_REQUEST`, are answered as soon as they are known, before
+            the fulfillment deadline as well as after it. A history that cannot be read yet,
+            because a read failed or the scan did not finish, answers 503, never a refusal.
+
+            When the escrow's events cannot say and the deposit is anchored on an `eip155:*`
+            or `tron:*` source, the answer after the deadline comes from a scan of the
+            destination chain instead: `..._RELEASED` when it finds a delivery,
+            `..._REFUNDED` when it finds none in the finalized history. A scan answer is a
+            reading of the destination, not of the escrow: a delivery that has not finalized
+            yet reads as none, and a delivery that landed after a refund reads as released.
+            `..._RELEASED` means the recipient was paid.
+
+            BOTH ARE BEST-EFFORT, AND THEIR ABSENCE PROVES NOTHING. A consumer MUST NOT assume
+            a released payment always reports as released. Unless the destination chain
+            resolves it as above, two gaps produce `DEPOSIT_NOT_HELD` for a payment that did in
+            fact settle:
+
+            - Without `deposit_transaction_hash`, an `eip155:*` or `tron:*` deposit is found
+              only within a fixed number of blocks back from the head, which is a different
+              amount of TIME on every chain. A payment deposited and settled before that reach
+              is not found.
+            - A batched settlement is read for at most 1024 entries, so a payment further into
+              a larger batch is not found by its event. With its deposit anchored this answers
+              503. After the deadline the destination scan above names it on `eip155:*` and
+              `tron:*` when it can read the destination, and otherwise it stays 503.
+
+            This is deliberate rather than provisional: a weaker label is always safe here
+            and a wrong one is not, so the lookup reports what it can prove and falls back
+            otherwise. Build on the presence of these codes as a refusal, never on their
+            absence, and never on the label being final.
+
+            `DEPOSIT_NOT_HELD` reports that there is nothing here to refund and the history
+            could NOT be established: the fulfillment deadline has passed, every read completed,
+            and neither a deposit nor a settlement of this payment was found within the reach
+            above. A deposit veri-fill has found never answers it. It covers a deposit that never
+            existed and one deposited and settled outside the reach. Before the deadline the same
+            finding answers 503. It is terminal and is NOT a statement that the payment failed. A
+            consumer MUST NOT read it as any particular history. It is the COMMON fallback
+            for the cases above, not a rare one.
+
+            No refund signature accompanies any of these, and a response carrying one MUST
+            NOT also carry `signature`.
+
+            ENUM GROWTH IS EXPECTED HERE. A consumer MUST tolerate a value it does not know
+            and MUST treat an unrecognised code as terminal, because every code in this set
+            is. A consumer that rejects the response outright on an unknown value turns a
+            terminal answer into a retry loop that ends in a failed refund.
+          enum:
+            - INVALID_REQUEST
+            - UNSUPPORTED_CHAIN
+            - DEPOSIT_NOT_HELD
+            - DEPOSIT_ALREADY_REFUNDED
+            - DEPOSIT_ALREADY_RELEASED
+            - FULFILLMENT_EXISTS
+            - RELEASE_ALREADY_SIGNED
+            - SIGNATURE_ERROR
+          example: "INVALID_REQUEST"
+        details:
+          type: string
+          description: Detailed error message if signature generation failed
+          example: "Invalid payment_id format"
+
+    PublicKeyResponse:
+      type: object
+      required:
+        - chain_id
+        - address
+      properties:
+        chain_id:
+          type: string
+          description: CAIP-2 chain identifier this address belongs to.
+          example: "eip155:11142220"
+        address:
+          type: string
+          description: |
+            Blockchain address derived from the signing private key. Encoding
+            depends on chain family:
+            - `eip155:*` → EIP-55 mixed-case hex with `0x` prefix.
+            - `tron:*`   → base58check starting with `T`.
+            - `solana:*` → base58 raw pubkey (32 bytes).
+          example: "0x742d35CC6634c0532925a3B844bC9e7595F0BeB4"
+
+    PublicKeysResponse:
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          type: array
+          description: |
+            One entry per chain that successfully resolved. Chains whose key
+            lookup or derivation failed are omitted from this list — callers
+            should treat missing chains as "not available right now."
+          items:
+            $ref: '#/components/schemas/PublicKeyResponse'
+
+    ErrorResponse:
+      type: object
+      description: >-
+        Safe, outward-facing error derived from an internal error through the
+        shared error catalog (schemas/apis/error/v1). The error shape these
+        endpoints return for a handled failure.
+
+
+        A panic is caught by gin's Recovery, which sends 500 with an empty body,
+        so a 500 is not guaranteed to carry this shape.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Public, machine-readable error code in SCREAMING_SNAKE_CASE.
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          example: "CHAIN_NOT_SUPPORTED"
+        message:
+          type: string
+          description: Curated, safe, human-readable message.
+          example: "The requested chain is not supported."
+        request_id:
+          type: string
+          description: Correlation id for locating the internal error record.
+          example: "req_123456789"
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Absent when the error is not
+            about a specific payment.
+          example: "0xc7108e200d11580e7e75185991084b42a535af588ba8267cd0d1e7df089e5c9c"
+        docs_url:
+          type: string
+          format: uri
+          description: Link to the documentation page for this public code.
+        domain:
+          type: string
+          description: Originating service domain.
+          example: "VERIFICATION_SERVICE"
+        retry_classification:
+          type: string
+          description: >-
+            What the caller should do next. Absent means the condition has not been
+            classified, which is not the same as safe to retry.
+
+            Re-sending the same `request_id` is an idempotent replay and always safe.
+            This value is about submitting a new one, which starts a new operation. See
+            https://docs.atum.xyz/errors for the value set.
+          example: "RECONCILE_THEN_DECIDE"
+        request_id_reusable:
+          type: boolean
+          description: >-
+            Whether the caller may re-send this same request_id. True means no payment
+            was created for it, so the id is still free. False means a payment exists
+            for it, so the id is spent and re-sending only replays this outcome. Absent
+            means undetermined, which a caller should read as false. Separate from
+            retry_classification, which answers what the caller must change rather than
+            whether the id survived.
+          example: false
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+        - chains
+      properties:
+        status:
+          type: string
+          description: Overall health status
+          enum:
+            - healthy
+            - degraded
+            - unhealthy
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Current timestamp in RFC3339 format
+          example: "2024-01-01T12:00:00Z"
+        version:
+          type: string
+          description: Service version
+          example: "1.0.0"
+        chains:
+          type: object
+          description: Health status for each configured chain
+          additionalProperties:
+            type: string
+            enum:
+              - healthy
+              - unhealthy
+          example:
+            "eip155:1": "healthy"
+            "eip155:42161": "healthy"
+            "eip155:10": "unhealthy"
+
+    FinalityConfigResponse:
+      type: object
+      description: Per-chain finality configuration served by veri-fill.
+      required:
+        - chains
+      properties:
+        chains:
+          type: array
+          description: One entry per chain this veri-fill instance is configured to verify.
+          items:
+            $ref: '#/components/schemas/ChainFinalityConfig'
+
+    EscrowsResponse:
+      type: object
+      description: Per-chain escrow contracts served by veri-fill.
+      required:
+        - chains
+      properties:
+        chains:
+          type: array
+          description: One entry per chain this veri-fill instance serves and has an escrow configured for.
+          items:
+            $ref: '#/components/schemas/ChainEscrows'
+
+    ChainEscrows:
+      type: object
+      description: The escrow contracts veri-fill signs release and refund witnesses for on one chain.
+      required:
+        - chain_id
+        - escrow_addresses
+      properties:
+        chain_id:
+          type: string
+          description: |
+            The chain, using CAIP-2 format, spelled exactly as veri-fill matches a payment's
+            source chain when it signs a refund (e.g. "eip155:42161", "tron:mainnet",
+            "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp").
+        escrow_addresses:
+          type: array
+          description: |
+            The escrow contracts on this chain, spelled as configured: EVM hex, Tron base58, or a
+            Solana base58 program id. Compare them in each chain's canonical form.
+          items:
+            type: string
+
+    ChainFinalityConfig:
+      type: object
+      description: |
+        Finality parameters for one chain. Block-depth chains (`eip155:*`, `tron:*`) carry
+        `min_confirmations` and may carry `finality` and `time_to_final_ms`; Tron also carries
+        `soft_blocks_at_tip`. Commitment-based chains (`solana:*`) carry `commitment` and may
+        carry `time_to_final_ms`. At most one of `min_confirmations` / `commitment` is present.
+      required:
+        - chain_id
+      properties:
+        chain_id:
+          type: string
+          description: |
+            The chain these parameters apply to, using CAIP-2 format.
+            CAIP-2 is a standard way to identify blockchains: {namespace}:{reference}
+            (e.g. "eip155:42161", "tron:mainnet", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp").
+        finality:
+          type: string
+          description: |
+            The check applied before signing a release (EVM/Tron). An open set: accept a
+            value you do not know and size your wait from `time_to_final_ms`.
+
+              * `depth`: the payout block has at least `min_confirmations` confirmations,
+                counted inclusively.
+              * `finalized`: the payout block is at or below the chain's `finalized` tag and
+                has at least `min_confirmations` confirmations.
+
+            Absent on commitment-based chains (Solana), where `commitment` is the check. On a
+            block-depth chain that omits it, assume `depth`.
+          example: finalized
+        min_confirmations:
+          type: integer
+          format: int64
+          description: |
+            Confirmation floor enforced before signing (EVM/Tron), counted inclusively: a
+            block at the head has one. With `finality: finalized` the tag is required as
+            well. Omitted for commitment-based chains (Solana).
+        commitment:
+          type: string
+          description: |
+            Solana read commitment the verifier confirms at before signing.
+            Omitted for block-depth chains (EVM/Tron).
+          enum:
+            - confirmed
+            - finalized
+        block_time_ms:
+          type: integer
+          format: int64
+          description: Approximate block/slot interval in milliseconds; advisory, for poll pacing.
+        time_to_final_ms:
+          type: integer
+          format: int64
+          description: |
+            How long a mined transaction typically takes to become final under this chain's
+            check, in milliseconds. An estimate, not a guarantee: size your release polling
+            from it and keep a margin. May be absent. Only when `finality` is absent or `depth`
+            can it then be estimated as `min_confirmations` times `block_time_ms`; under
+            `finalized` that product says nothing about the wait.
+          example: 1260000
+        soft_blocks_at_tip:
+          type: integer
+          format: int64
+          description: Blocks at the tip with elevated reorg risk (Tron); a buffer above min_confirmations.
+
+    SignatureValidityRequest:
+      type: object
+      description: |
+        One depositor signature to check: the payment's source chain and account, and
+        `signed_messages[0]` of its `sender_auth`, the message Permit2 checks. The Permit2 the
+        contract path calls from is not a member: it comes from this service's configuration,
+        never from the caller.
+      required:
+        - chain_id
+        - account
+        - digest
+        - signature
+      properties:
+        chain_id:
+          type: string
+          description: |
+            The source chain, using CAIP-2 format: `eip155:<decimal chain id>` or
+            `tron:<cluster>`. Any other namespace, or a chain this instance does not serve, is
+            answered with `unsupported_chain`.
+          example: "eip155:42161"
+        account:
+          type: string
+          description: |
+            The depositor, the permit owner Permit2 checks the signature for: the payment's
+            `source.account`. EVM hex on `eip155:*`, and on `tron:*` base58check or hex, with or
+            without the 0x41 prefix byte.
+          example: "0x5afe00000000000000000000000000000000c0de"
+        digest:
+          type: string
+          description: The 32-byte digest the depositor signed, `signed_messages[0].message`.
+          pattern: '^0x[0-9a-fA-F]{64}$'
+          example: "0x143abd003825e8e8af0671290b4aba3461a06de60edf06c4a9e8371fcaa84e3a"
+        signature:
+          type: string
+          description: |
+            `signed_messages[0].signature`, passed to `isValidSignature` exactly as sent. A
+            contract account's signature is opaque: a multi-owner Safe's is 65 bytes per owner,
+            and one approved on chain is empty (`0x`). At most 65536 characters, the `0x`
+            included, which is 32767 bytes; a longer one is answered `malformed`.
+          pattern: '^0x([0-9a-fA-F]{2})*$'
+          maxLength: 65536
+          example: "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b7632b07c3b76b33cba09acc0825e6f7ad29538aedd6923372c04531a33e9f71273497b96f51c9104c0c2cc1d452c192df0bde05888253031d88767f0d98e239d1c"
+
+    ReserveSignatureValidityRequest:
+      type: object
+      description: |
+        One reserve signature to check: the reserver, the reserve digest it signed, the
+        signature, and the escrow that will verify it at deposit.
+      required:
+        - chain_id
+        - account
+        - digest
+        - signature
+        - escrow
+      properties:
+        chain_id:
+          type: string
+          description: |
+            The source chain, using CAIP-2 format: `eip155:<decimal chain id>` or
+            `tron:<cluster>`. Any other namespace, or a chain this instance does not serve, is
+            answered with `unsupported_chain`.
+          example: "eip155:42161"
+        account:
+          type: string
+          description: |
+            The reserver the deposit authorization names, whose signature the escrow checks. EVM
+            hex on `eip155:*`, and on `tron:*` base58check or hex, with or without the 0x41
+            prefix byte.
+          example: "0x5afe00000000000000000000000000000000c0de"
+        digest:
+          type: string
+          description: The 32-byte reserve digest the reserver signed, `reserve_auth.message`.
+          pattern: '^0x[0-9a-fA-F]{64}$'
+          example: "0x9f2c5a4d0e8b7a61c3f4e2d1b0a9988776655443322110ffeeddccbbaa998877"
+        signature:
+          type: string
+          description: |
+            `reserve_auth.signature`, passed to `isValidSignature` exactly as sent. At most
+            65536 characters, the `0x` included; a longer one is answered `malformed`.
+          pattern: '^0x([0-9a-fA-F]{2})*$'
+          maxLength: 65536
+          example: "0x857b68c462be067564fb05ab0720207ac96b82f1549d67d67859a728fcdf2c6a37369da59932990b69632103e3b9c7d292e3f74c9ff7cb73e044435b93657a491b"
+        escrow:
+          type: string
+          description: |
+            The escrow the reserve digest is bound to (its EIP-712 or TIP-712
+            `verifyingContract`), in any address spelling the chain accepts. It selects one of the
+            escrows this service is configured with for `chain_id`: any other address is answered
+            with `unsupported_chain`, and a value that is not an address with `malformed`.
+          example: "0x8f3e6b2a1c0d9e7f5a4b3c2d1e0f9a8b7c6d5e4f"
+
+    SignatureValidityResponse:
+      type: object
+      description: |
+        The verdict on one signature: a depositor signature (`POST /v1/signature-validity`) or a
+        reserve signature (`POST /v1/reserve-signature-validity`).
+      required:
+        - valid
+        - path
+        - reason
+      properties:
+        valid:
+          type: boolean
+          description: True exactly when `reason` is `verified`.
+          example: true
+        path:
+          $ref: '#/components/schemas/SignatureValidityPath'
+        reason:
+          $ref: '#/components/schemas/SignatureValidityReason'
+        block_number:
+          type: string
+          description: |
+            Height of the block of the last chain read the verdict used, as a base-10 string:
+            the `isValidSignature` call when one was made, otherwise the code read. The two
+            reads are separate and each is at the latest block, so the code read can be earlier.
+            Absent when the chain was not read (the signature recovers to the account,
+            `unsupported_chain`, `malformed`) and when the reader could not report the block. It
+            records what the answer is about, and is not a promise that the answer still holds.
+
+            A STRING, not a JSON number, for the same reason as `FulfillmentVerdict.block_number`.
+          pattern: '^(0|[1-9][0-9]{0,18})$'
+          example: "412345678"
+
+    SignatureValidityPath:
+      type: string
+      description: |
+        The branch the verdict was reached on, in the verifying contract's rule: Permit2 for a
+        depositor signature, the escrow for a reserve signature. `eoa`: the signer is recovered
+        from the signature. `contract`: the account has code, and the verifying contract asks
+        its `isValidSignature`. `none`: no branch was reached, because the request could not be
+        evaluated or the account's code could not be read.
+      enum:
+        - eoa
+        - contract
+        - none
+      x-enum-varnames:
+        - SignatureValidityPathEoa
+        - SignatureValidityPathContract
+        - SignatureValidityPathNone
+      example: "contract"
+
+    SignatureValidityReason:
+      type: string
+      description: |
+        Why the signature is, or is not, valid. Only `verified` is valid. The verifying contract
+        is Permit2 for a depositor signature and the escrow for a reserve signature.
+
+        `verified`: the signature recovers to the account, or the account's `isValidSignature`
+        returned the magic value when called from the verifying contract.
+        `signer_mismatch`: the account has no code, and the signature does not recover to it with
+        the verifying contract's spelling. The verifying contract would refuse it.
+        `contract_signature_rejected`: the account has code, and `isValidSignature` reverted or
+        returned anything but the magic value. The verifying contract would refuse it.
+        `signature_unverifiable`: a chain read the rule needs failed. Nothing is known about the
+        signature.
+        `unsupported_chain`: `chain_id` is not an `eip155` or `tron` chain this instance serves,
+        no Permit2 is configured for it, or a reserve check names an escrow it is not configured
+        with.
+        `malformed`: a member cannot be read as its type, or `signature` is longer than its
+        `maxLength`.
+
+        A consumer MUST refuse on `signer_mismatch`, `contract_signature_rejected` and
+        `malformed`. The verifying contract refuses the first two. A `malformed` value breaks the
+        spelling the signed message requires or the route's length bound, and is chosen by the
+        submitter alone, so admitting it would let a submitter skip this check by respelling or
+        padding a signature. `signature_unverifiable`, `unsupported_chain`, and any value this
+        enum does not list are not refusals, so a consumer built against this set degrades safely
+        if it grows.
+      enum:
+        - verified
+        - signer_mismatch
+        - contract_signature_rejected
+        - signature_unverifiable
+        - unsupported_chain
+        - malformed
+      x-enum-varnames:
+        - SignatureValidityReasonVerified
+        - SignatureValidityReasonSignerMismatch
+        - SignatureValidityReasonContractSignatureRejected
+        - SignatureValidityReasonSignatureUnverifiable
+        - SignatureValidityReasonUnsupportedChain
+        - SignatureValidityReasonMalformed
+      example: "verified"
+
+  securitySchemes:
+    paymentGatewayIdToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        An OpenID Connect ID token identifying the payment gateway's service account, whose
+        audience is this service. Only `POST /v1/signature-validity` and
+        `POST /v1/reserve-signature-validity` require it; every other route takes no
+        credentials.
+
+tags:
+  - name: Fulfillment
+    description: Fulfillment verification operations
+  - name: Refund
+    description: Refund signature generation operations
+  - name: Keys
+    description: Signing-key public address discovery
+  - name: Finality
+    description: Per-chain finality configuration
+  - name: Escrows
+    description: Escrow contracts this verifier signs for
+  - name: Signatures
+    description: Depositor signature checks, for the payment gateway only
+  - name: Health
+    description: Service health monitoring

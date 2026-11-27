@@ -1,0 +1,15 @@
+{
+  "@context": [
+    "https://schemas.atum.network/declarations/SettlementResult/v1/context.jsonld"
+  ],
+  "payment_id": "0x1234abcd5678ef901234abcd5678ef901234abcd5678ef901234abcd5678ef90",
+  "quote_request_id": "",
+  "quote_hash": "0x9f2c4a1e7b3d5c8a0e6f2b4d8c1a3e5f7092b4d6c8e0a2f4b6d8e0c2a4f6b8d0",
+  "phase": "DEPOSIT",
+  "outcome": "SUCCESS",
+  "transaction_hash": "0x5e1f3a7c9b2d4e6f8a0c2e4a6c8e0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e",
+  "chain_id": "eip155:8453",
+  "block_number": "21587334",
+  "error_json": "",
+  "issued_at": "2026-10-13T12:00:00.000Z"
+}

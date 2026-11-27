@@ -1,0 +1,113 @@
+{
+  "_comment": "FROZEN cross-side parity vectors (EVM). Both reserve_parity_test.go (Go) and reserve-parity.test.ts (TS) assert against this file; do not edit by hand. Regenerate via: REGEN_PARITY=1 go test ./... -run TestRegenerateReserveParityVectors",
+  "reserve": [
+    {
+      "name": "anchor/examples-0",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac",
+      "settler": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "expectedDigest": "0xcf8d951f801282d378804b4afd2ea9973e63395d4d21caa775658ca38c5c09df"
+    },
+    {
+      "name": "anchor/examples-1",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0x419d1a281d76364f19f4141f885f05041e7c8fba624fa727fe087fa48af2cb1c",
+      "settler": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "expectedDigest": "0x581d3e3540d76eb5531dc4d3a989acc8750a948494c283f284ea978dd1a2a93e"
+    },
+    {
+      "name": "zero-paymentId",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "settler": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "expectedDigest": "0xc38acf3b331d97ff38040b2d30b7fa09516e9309bf48c11e1b529a7160822b69"
+    },
+    {
+      "name": "max-paymentId",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "settler": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "expectedDigest": "0x9988dba0b646e8ca3fd368dc945c89c8361f71dc623ad1d2480b2f852698e963"
+    },
+    {
+      "name": "zero-settler",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac",
+      "settler": "0x0000000000000000000000000000000000000000",
+      "expectedDigest": "0x2215ecbfde8e3eea3ebe16fe6aad87305857f4232642fa0f2c8696ae75601cfc"
+    },
+    {
+      "name": "settler-equals-escrow",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac",
+      "settler": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "expectedDigest": "0xa50db92e02330faa19331e445a0e55d8c9792f3aa397928e9e5c52e457ba20e3"
+    },
+    {
+      "name": "lowercase-settler",
+      "chainID": 1,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac",
+      "settler": "0x1e85c6266c9edf9e6ba293d780dcdde76dc7acf7",
+      "expectedDigest": "0xcf8d951f801282d378804b4afd2ea9973e63395d4d21caa775658ca38c5c09df"
+    },
+    {
+      "name": "chainId-137",
+      "chainID": 137,
+      "escrow": "0x41AD713827f11837f06C065e9cd0Bb56CE1e06a0",
+      "paymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac",
+      "settler": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "expectedDigest": "0xf22c3238e73cc867ff19f7a12b57126502214823ec52109078687db6098d1f87"
+    }
+  ],
+  "paymentId": [
+    {
+      "name": "anchor/examples-paymentId-0",
+      "depositor": "0x1Ffc33f5E217b1CF95e713DB49Fcd86C8195666C",
+      "signature": "0x380efd4e333d316a9f99e2d31c872459f9675e95eb6d12f8c9e11694ca49df0142254b2a658464302955fb29375b73cdcbf38be80164d0f1a58b247b2650ca131b",
+      "nonce": "1",
+      "expectedPaymentId": "0xbbbf298f926ddc48a92871e25e7e223ba104de64fc827650963e8ec89e37d8ac"
+    },
+    {
+      "name": "zero-nonce",
+      "depositor": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "signature": "0xdeadbeef",
+      "nonce": "0",
+      "expectedPaymentId": "0x9b14579f208e98892ea1180a40d4eecf7de647dca8b8d011c1596a76770d8fc4"
+    },
+    {
+      "name": "small-nonce",
+      "depositor": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "signature": "0xdeadbeef",
+      "nonce": "1",
+      "expectedPaymentId": "0xbc623b0d5f363e6a374f96fb97696fd6ccbb0d80a80f6b227b57928d8d13ede4"
+    },
+    {
+      "name": "sig-65-byte",
+      "depositor": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "42",
+      "expectedPaymentId": "0xd14d6569a71cc8c32381f63f401516f7997b5aa5b08868cec283f887d580bff7"
+    },
+    {
+      "name": "large-nonce",
+      "depositor": "0x1E85c6266C9EDf9e6BA293d780DcdDE76dC7Acf7",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "340282366920938463463374607431768211455",
+      "expectedPaymentId": "0x1cef39db5170c954efb23b5dea13b87b2533b06cf0d25a5d1121dc610077fa8e"
+    },
+    {
+      "name": "zero-depositor",
+      "depositor": "0x0000000000000000000000000000000000000000",
+      "signature": "0x111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222221b",
+      "nonce": "7",
+      "expectedPaymentId": "0x65cbc3e54dfe71b76645bc0d960166a415dd74d47c3f79c10972d7af49ac33e6"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@atum-labs/solana-escrow-encoding",
+  "version": "0.1.0",
+  "description": "TypeScript bindings for Solana escrow message hash generation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sync-idl": "bash scripts/sync-idl.sh",
+    "check-idl": "bash scripts/check-idl.sh",
+    "gen:error-tables": "node scripts/gen-error-tables.mjs",
+    "check:error-tables": "node scripts/gen-error-tables.mjs --check",
+    "check:deployed-events": "node scripts/check-deployed-events.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.4.0",
+    "bs58": "^5.0.0"
+  },
+  "devDependencies": {
+    "@noble/curves": "^1.9.7",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "files": [
+    "dist",
+    "src",
+    "idl-history"
+  ],
+  "license": "Apache-2.0"
+}

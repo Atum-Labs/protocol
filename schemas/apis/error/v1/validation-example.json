@@ -1,0 +1,12 @@
+{
+  "code": "UNSUPPORTED_DESTINATION_CHAIN",
+  "message": "Chain eip155:999 is not supported",
+  "domain": "PAYMENT_GATEWAY",
+  "timestamp": "2024-01-15T10:35:22Z",
+  "request_id": "1234567890",
+  "details": {
+    "provided_chain": "eip155:999",
+    "supported_chains": ["eip155:1", "eip155:42161", "eip155:137"],
+    "request_field": "destination_chain_id"
+  }
+}

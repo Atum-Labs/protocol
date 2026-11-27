@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  title: Atum Counterparty Gateway Registration API
+  description: |
+    Endpoints exposed by the Counterparty Gateway for beneficiary PSP onboarding
+    and service health monitoring.
+
+    Beneficiary PSPs call these endpoints to register their webhook URLs, mapping
+    their DID to the URL where they want to receive authorization requests.
+  version: 1.0.0
+  contact:
+    name: Atum Labs
+servers:
+  - url: http://localhost:8092
+    description: Local development server (Counterparty Gateway)
+
+paths:
+  /v1/registrations:
+    post:
+      summary: Register a beneficiary PSP webhook URL
+      description: |
+        Maps a DID to a webhook URL where the beneficiary PSP wants to receive
+        authorization requests. Registration is idempotent: re-registering the same
+        DID with the same URL is a no-op, re-registering with a different URL updates
+        the mapping.
+      operationId: registerWebhook
+      tags:
+        - Registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '201':
+          description: New registration created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '200':
+          description: Existing registration unchanged or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResponse'
+        '400':
+          description: |
+            The request was rejected. Every rejection this endpoint produces returns
+            `INVALID_REQUEST`, so the body does not distinguish malformed JSON from an
+            invalid DID from a non-HTTPS webhook URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            The registration could not be stored. Returns `INTERNAL_ERROR`.
+
+            A panic anywhere in the request is caught by shared middleware that responds
+            `{"error": "Internal server error occurred"}` instead, so a 500 body is not
+            guaranteed to match this schema.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns the health status of the Counterparty Gateway.
+        Verifies that backing dependencies are ready.
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    RegistrationRequest:
+      type: object
+      description: Maps a DID to a webhook URL for receiving authorization requests
+      required:
+        - did
+        - webhook_url
+      properties:
+        did:
+          type: string
+          description: The beneficiary PSP's DID (e.g. did:pkh)
+          example: "did:pkh:eip155:1:0xdeadbeef"
+        webhook_url:
+          type: string
+          format: uri
+          description: HTTPS URL where authorization requests should be POSTed
+          example: "https://beneficiary-psp.example.com/atum/authorization"
+
+    RegistrationResponse:
+      type: object
+      required:
+        - did
+        - webhook_url
+      properties:
+        did:
+          type: string
+          description: The registered DID
+          example: "did:pkh:eip155:1:0xdeadbeef"
+        webhook_url:
+          type: string
+          description: The registered webhook URL
+          example: "https://beneficiary-psp.example.com/atum/authorization"
+        created_at:
+          type: string
+          format: date-time
+          description: When the registration was first created
+        updated_at:
+          type: string
+          format: date-time
+          description: When the registration was last updated
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Service health status
+          enum:
+            - ok
+            - unhealthy
+          example: "ok"
+        error:
+          type: string
+          description: Error details when unhealthy
+
+    ErrorResponse:
+      type: object
+      description: >-
+        Safe, outward-facing error. Derived from an internal error through the shared
+        error catalog (schemas/apis/error/v1). The only error shape these endpoints
+        return. `message` is curated by the catalog and carries no request-specific
+        detail. Branch on `code`, and do not parse `message` or assume it is stable for
+        a given `code`.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Public, machine-readable error category in SCREAMING_SNAKE_CASE.
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          description: >-
+            Curated, safe, human-readable message from the catalog. Not request-specific,
+            and more than one may map to the same `code`.
+          maxLength: 500
+          example: "The request was malformed or missing required fields."
+        request_id:
+          type: string
+          description: Correlation id to quote to support to locate the internal error record.
+          example: "req_123456789"
+        payment_id:
+          type: string
+          description: >-
+            The payment this error was raised against. Absent when the error is not about
+            a specific payment, which is every error from these endpoints.
+        docs_url:
+          type: string
+          format: uri
+          description: Link to the documentation page for this public code.
+        domain:
+          type: string
+          description: Originating service domain.
+          example: "COUNTERPARTY_GATEWAY"
+        retry_classification:
+          type: string
+          description: >-
+            What the caller should do next. Absent means the condition has not been
+            classified, which is not the same as safe to retry.
+
+            Re-sending the same `request_id` is an idempotent replay and always safe.
+            This value is about submitting a new one, which starts a new operation. See
+            https://docs.atum.xyz/errors for the value set.
+          example: "RECONCILE_THEN_DECIDE"
+        request_id_reusable:
+          type: boolean
+          description: >-
+            Whether the caller may re-send this same request_id. True means no payment
+            was created for it, so the id is still free. False means a payment exists
+            for it, so the id is spent and re-sending only replays this outcome. Absent
+            means undetermined, which a caller should read as false. Separate from
+            retry_classification, which answers what the caller must change rather than
+            whether the id survived.
+          example: false
+
+tags:
+  - name: Registration
+    description: Beneficiary PSP webhook registration
+  - name: Health
+    description: Service health monitoring

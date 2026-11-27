@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/apis/fulfillment-confirmation/v1/schema.json",
+  "title": "FulfillmentConfirmation",
+  "description": "Confirmation details after a payment has been successfully delivered. Contains proof of delivery and transaction details for both source and destination chains.",
+  "type": "object",
+  "required": ["payment_id", "request_id", "source_chain_id", "destination_chain_id", "source_tx_hash", "destination_tx_hash"],
+  "additionalProperties": false,
+  "properties": {
+    "payment_id": {
+      "type": "string",
+      "description": "Unique identifier for this payment transaction. Use this to track the payment across all systems."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Your original request ID that was provided when creating the payment. Helps match confirmations to your internal systems."
+    },
+    "fulfillment_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the fulfillment was completed"
+    },
+    "source_chain_id": {
+      "type": "string",
+      "description": "The blockchain where funds were locked in escrow, using CAIP-2 format. CAIP-2 is a standard way to identify blockchains: {namespace}:{reference}. Examples: 'eip155:1' for Ethereum mainnet, 'eip155:42161' for Arbitrum, 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp' for Solana, 'tron:mainnet' for Tron",
+      "pattern": "^[a-z0-9]+:[a-zA-Z0-9_-]+$"
+    },
+    "destination_chain_id": {
+      "type": "string",
+      "description": "The blockchain where the payment was delivered, using CAIP-2 format. CAIP-2 is a standard way to identify blockchains: {namespace}:{reference}. Examples: 'eip155:1' for Ethereum mainnet, 'eip155:42161' for Arbitrum, 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp' for Solana, 'tron:mainnet' for Tron", 
+      "pattern": "^[a-z0-9]+:[a-zA-Z0-9_-]+$"
+    },
+    "source_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash of the escrow reservation on the source chain",
+      "pattern": "^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$"
+    },
+    "destination_tx_hash": {
+      "type": "string",
+      "description": "Transaction hash of the fulfillment on the destination chain",
+      "pattern": "^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{32,88})$"
+    },
+    "source_block_number": {
+      "type": "integer",
+      "description": "Block number where the source transaction was confirmed",
+      "minimum": 0
+    },
+    "destination_block_number": {
+      "type": "integer",
+      "description": "Block number where the destination transaction was confirmed",
+      "minimum": 0
+    }
+  }
+}

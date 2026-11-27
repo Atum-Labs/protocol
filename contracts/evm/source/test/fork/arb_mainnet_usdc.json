@@ -1,0 +1,9 @@
+{
+    "rpc_url": "https://arb-mainnet.g.alchemy.com/v2/YOUR_API_KEY",
+    "escrow": "0xBEc3fbF58e4115e373670C2A6F12f4bF0601E488",
+    "token_address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "token_decimals": 6,
+    "fee_percentage": 20000,
+    "min_fee": 0,
+    "max_fee": 25000000
+}

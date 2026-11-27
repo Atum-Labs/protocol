@@ -1,0 +1,21 @@
+{
+  "name": "@atum-labs/publish-guard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared pre-publish guard, third-party notices generator, and entry-header stamper for this repo's publishable npm packages.",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "bin": {
+    "publish-guard": "./bin/publish-guard.mjs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "$comment": "Every declared field maps to its own IRI as an xsd:string literal, so two fields cannot swap without changing the content hash. Defines no proof, credential or presentation terms: the declaration is never signed directly, only attested by a SettlementResultEnvelope.",
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "atum": "https://schemas.atum.network/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "SettlementResult": {
+      "@id": "atum:SettlementResult",
+      "@type": "@id"
+    },
+
+    "payment_id": {
+      "@id": "atum:paymentId",
+      "@type": "xsd:string"
+    },
+
+    "quote_request_id": {
+      "@id": "atum:quoteRequestId",
+      "@type": "xsd:string"
+    },
+
+    "quote_hash": {
+      "@id": "atum:quoteHash",
+      "@type": "xsd:string"
+    },
+
+    "phase": {
+      "@id": "atum:settlementPhase",
+      "@type": "xsd:string"
+    },
+
+    "outcome": {
+      "@id": "atum:settlementStepOutcome",
+      "@type": "xsd:string"
+    },
+
+    "transaction_hash": {
+      "@id": "atum:transactionHash",
+      "@type": "xsd:string"
+    },
+
+    "chain_id": {
+      "@id": "atum:chainId",
+      "@type": "xsd:string"
+    },
+
+    "block_number": {
+      "@id": "atum:blockNumber",
+      "@type": "xsd:string"
+    },
+
+    "error_json": {
+      "@id": "atum:errorJson",
+      "@type": "xsd:string"
+    },
+
+    "issued_at": {
+      "@id": "atum:issuedAt",
+      "@type": "xsd:string"
+    }
+  }
+}

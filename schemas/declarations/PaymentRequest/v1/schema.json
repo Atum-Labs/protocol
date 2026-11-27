@@ -1,0 +1,542 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.atum.network/declarations/PaymentRequest/v1/schema.json",
+  "title": "PaymentRequest",
+  "description": "Structured payment request with sender authorization and W3C Verifiable Credentials",
+  "type": "object",
+  "required": [
+    "version",
+    "request_id",
+    "source",
+    "destination",
+    "fulfillment_amount",
+    "quote_deadline",
+    "fulfillment_deadline",
+    "fulfillment_verifier",
+    "escrow_contract_address"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver-shaped declaration version (MAJOR.MINOR). The major component is locked to this schema's parent directory (v1 \u2192 major must be 1). Producers MUST emit the canonical value exported by the bindings' Version constant; the canonical bumps on each additive minor evolution.",
+      "pattern": "^1\\.[0-9]+$",
+      "examples": [
+        "1.0"
+      ]
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Unique identifier for this payment request (used for idempotency)"
+    },
+    "source": {
+      "$ref": "#/$defs/OwnedAsset"
+    },
+    "destination": {
+      "type": "array",
+      "description": "Array of destination assets (at least one required, at most 16). The ceiling bounds the fan-out one request can buy: every consumer iterates this list.",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/OwnedAsset"
+      }
+    },
+    "fulfillment_amount": {
+      "type": "string",
+      "description": "The exact amount to be fulfilled (in the smallest unit, e.g., wei for ETH, cents for USD).",
+      "minLength": 1,
+      "pattern": "^[0-9]+$"
+    },
+    "max_source_amount": {
+      "type": "string",
+      "description": "The maximum amount willing to be spent from the source (in the smallest unit).",
+      "minLength": 1,
+      "pattern": "^[0-9]+$"
+    },
+    "quote_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The deadline for receiving price quotes from settlement providers. After this point in time, no new quotes will be accepted. Keep this window short: a settler holds its quoted price for a limited period of its own choosing and selection happens only once the window has closed, so a deadline set beyond that hold leaves no quote still awardable and the request is declined with QUOTE_WINDOW_TOO_LONG. That hold is set by each settler and is not part of this contract, so treat 60 seconds as a practical upper bound. The window also has a lower bound: a settler that cannot finish the work it does before quoting, such as sourcing the payout asset through a swap, by this deadline declines with QUOTE_WINDOW_TOO_SHORT. Once the payment has failed, reissue it with a longer quote_deadline. That work time also varies by settler, so there is no fixed minimum. A settler waiting on another service cannot tell slow from down, so if the longer window is declined with a reason whose retry_classification is not NOT_RETRYABLE_FIX_REQUEST, the cause is on the settler's side, not in the request. Both bounds are counted from when a settler receives the request, not from when it was built. A direct deposit signed at depositRequestHash v2 commits quote_deadline, so its payer fixes the deadline before depositing and must leave room for the deposit transactions and the finality wait as well as both bounds. A reissue is a new deposit, so the payer recovers the first one with refundUnreserved once the payment has failed, not before."
+    },
+    "fulfillment_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The time by which the payout to the recipient must be mined on the destination chain. If no payout is mined by then, the escrowed funds become refundable to the sender. The payout does not have to be final by then: `completed` follows once the destination chain judges it final."
+    },
+    "executor": {
+      "description": "Who performs each leg of the payment. Omitted on the wire means settler for every leg. The split object keeps deposit, reserve, and fulfill as separate keys.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["settler", "originator"]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deposit", "reserve", "fulfill"],
+          "properties": {
+            "deposit": {
+              "type": "string",
+              "enum": ["settler", "originator"]
+            },
+            "reserve": {
+              "type": "string",
+              "enum": ["settler", "originator"]
+            },
+            "fulfill": {
+              "type": "string",
+              "enum": ["settler", "originator"]
+            }
+          }
+        }
+      ]
+    },
+    "deposit_nonce": {
+      "type": "string",
+      "description": "The nonce the payer passed to the escrow's directDeposit, as a decimal uint256. Only on an originator-executed deposit (executor.deposit is originator), where it is required: with the source account, chain and escrow it names the deposit the payer funded. Each nonce funds one deposit per account, forever.",
+      "minLength": 1,
+      "maxLength": 78,
+      "pattern": "^[0-9]+$"
+    },
+    "settler_auth_required": {
+      "type": "object",
+      "description": "Policy requirements for settler authentication. Keys are policy names, values indicate if the policy is required.",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "sender_auth": {
+      "$ref": "#/$defs/SenderAuth"
+    },
+    "originator_auth": {
+      "$ref": "#/$defs/VerifiableCredentialAuth",
+      "description": "DEPRECATED: legacy bare-signature carrier for a single issuer-signed VC about the originator. Superseded by the `presentation` field (PaymentRequestEnvelope / PRE), which carries the originator's credentials inside a holder-signed W3C VerifiablePresentation envelope that the requester perimeter re-verifies. Kept populated alongside `presentation` for one rollout cycle; slated for removal in a future version. New producers SHOULD emit `presentation` and treat this field as read-only fallback."
+    },
+    "quote_selector": {
+      "type": "string",
+      "description": "The account that picks the settler and signs the reserve that commits the deposit to the chosen quote. When set, it must be the reserver that the payer's signed authorization names."
+    },
+    "fulfillment_verifier": {
+      "type": "object",
+      "description": "The verification service that confirms the payment was delivered before the escrow releases the source funds, and the account it signs with. Required on every chain. Take the value for the source chain from the payment gateway's GET /v1/defaults (`fulfillment_verifier`).",
+      "required": [
+        "account",
+        "endpoint"
+      ],
+      "properties": {
+        "account": {
+          "type": "string",
+          "description": "The wallet address or public key of the verification service"
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "The API endpoint URL where the verification service can be reached"
+        }
+      }
+    },
+    "escrow_contract_address": {
+      "type": "string",
+      "description": "Escrow contract on the source chain that holds the source funds until proof of fulfillment has been verified. Required on every chain. Take the value for the source chain from the payment gateway's GET /v1/defaults (`escrow_contract`)."
+    },
+    "fulfillment_proxy": {
+      "type": "string",
+      "description": "Contract address on the destination blockchain that will handle the payment delivery. Usually provided by the payment gateway."
+    },
+    "settler_requirements": {
+      "type": "object",
+      "description": "Optional settler filtering requirements. If whitelist is present, only whitelisted settlers may win. If blacklist is present, blacklisted settlers are excluded. Both can be specified; blacklist takes precedence (a settler in both lists is rejected).",
+      "properties": {
+        "whitelist": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 100,
+          "description": "List of settler DIDs permitted to fulfill this request. If present and non-empty, only these settlers may win. Use W3C DID format (e.g., did:pkh:eip155:1:0xABC...).",
+          "items": {
+            "type": "string",
+            "pattern": "^did:[a-z][a-z0-9]*:[a-zA-Z0-9._:%-]+$"
+          }
+        },
+        "blacklist": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 100,
+          "description": "List of settler DIDs excluded from fulfilling this request. If present and non-empty, these settlers are rejected. Use W3C DID format (e.g., did:pkh:eip155:1:0xABC...).",
+          "items": {
+            "type": "string",
+            "pattern": "^did:[a-z][a-z0-9]*:[a-zA-Z0-9._:%-]+$"
+          }
+        }
+      }
+    },
+    "@context": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DEPRECATED: document-level JSON-LD context URLs for the inline VP-style signing envelope (alongside top-level `proof` + `verifiableCredential`). Superseded by the `presentation` field (PaymentRequestEnvelope / PRE), which carries its own self-contained `@context`. Kept for one rollout cycle for back-compat with pre-PRE producers; slated for removal in a future version. Present when the originator wraps the request in a W3C Data Integrity envelope so a downstream verifier can recover the signer identity. Enforcement is operator policy."
+    },
+    "proof": {
+      "$ref": "#/$defs/DataIntegrityProof",
+      "description": "DEPRECATED: document-level W3C Data Integrity proof for the inline VP-style signing envelope (alongside top-level `@context` + `verifiableCredential`). Superseded by the `presentation` field (PaymentRequestEnvelope / PRE), whose holder-signed proof binds challenge=request_hash (content hash of the request) and domain=did:web:<env>.atum.network and is re-verified by the requester perimeter. Kept for one rollout cycle for back-compat; slated for removal in a future version. When present, attests that the document was emitted by the signer identified in proof.verificationMethod. Distinct from sender_auth (which authorizes the on-chain transfer) and originator_auth (the legacy single-VC carrier)."
+    },
+    "presentation": {
+      "$ref": "#/$defs/PaymentRequestEnvelope",
+      "description": "Optional originator-side W3C VerifiablePresentation envelope (PaymentRequestEnvelope) carrying issuer-signed credentials about the originator, holder-signed under proofPurpose 'authentication' with proof.challenge bound to request_hash (content hash of the request) and proof.domain bound to the network-wide did:web:<env>.atum.network. Additive + back-compat: older requests omit it. The payment gateway re-verifies it at its request perimeter before persisting; the holder MUST equal the recovered signer of the inner PaymentRequest proof. Mirror of the settler-side FulfillmentQuoteEnvelope. Distinct from originator_auth (legacy bare-signature VC carrier kept populated alongside this for one rollout cycle) and from the document-level verifiableCredential array."
+    },
+    "verifiableCredential": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/VerifiableCredential"
+      },
+      "description": "DEPRECATED: document-level credentials array for the inline VP-style signing envelope (alongside top-level `@context` + `proof`). Superseded by the `presentation` field (PaymentRequestEnvelope / PRE), which carries its credentials inside `presentation.verifiableCredential` under a holder-signed envelope the requester perimeter re-verifies. Kept for one rollout cycle for back-compat; slated for removal in a future version. Array of W3C Verifiable Credentials for identity attestation (e.g., KnownToAtum). Distinct from the single VC carried inside originator_auth."
+    }
+  },
+  "$defs": {
+    "PaymentRequestEnvelope": {
+      "type": "object",
+      "description": "W3C VerifiablePresentation envelope (PaymentRequestEnvelope v1) carrying issuer-signed credentials about the originator. Inlined here so the PaymentRequest bindings carry the optional `presentation` field self-contained; the canonical source of truth is schemas/declarations/PaymentRequestEnvelope/v1/schema.json (kept in sync). The verifier asserts holder equals the recovered signer of the inner PaymentRequest after independently verifying both proofs.",
+      "required": [
+        "@context",
+        "type",
+        "holder",
+        "verifiableCredential",
+        "proof"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Semver-shaped declaration version (MAJOR.MINOR) of the PaymentRequestEnvelope declaration.",
+          "pattern": "^1\\.[0-9]+$",
+          "examples": [
+            "1.0"
+          ]
+        },
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array. MUST include BOTH the W3C VC v1 context and the PaymentRequestEnvelope v1 context, or JSON-LD expansion drops envelope-specific terms (challenge, domain, holder) during URDNA2015 canonicalization.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "array",
+          "description": "MUST contain 'VerifiablePresentation' per W3C VC Data Model v1.1.",
+          "contains": {
+            "const": "VerifiablePresentation"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "holder": {
+          "type": "string",
+          "description": "did:pkh URI of the originator presenting the credentials. The verifier asserts holder equals the recovered signer of the inner PaymentRequest.",
+          "pattern": "^did:pkh:[a-z][a-z0-9]*:[a-zA-Z0-9._:%-]+$"
+        },
+        "verifiableCredential": {
+          "type": "array",
+          "description": "Array of issuer-signed credentials about the originator. One VC per concern (psp-role / KYC / jurisdiction) per the locked design.",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/VerifiableCredential"
+          }
+        },
+        "proof": {
+          "$ref": "#/$defs/VPDataIntegrityProof",
+          "description": "Holder-signed W3C Data Integrity proof. proofPurpose MUST be 'authentication'; challenge MUST equal request_hash (the content hash of the inner PaymentRequest); domain MUST equal the network-wide did:web:<env>.atum.network."
+        }
+      }
+    },
+    "VPDataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof for a VerifiablePresentation. Extends the base DataIntegrityProof with challenge and domain per W3C VC Data Model 5.6. proofPurpose is constrained to 'authentication': the holder is authenticating themselves as the presenter of the enclosed credentials.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose",
+        "challenge",
+        "domain"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "jws"
+          ],
+          "not": {
+            "required": [
+              "proofValue"
+            ]
+          }
+        },
+        {
+          "required": [
+            "proofValue"
+          ],
+          "not": {
+            "required": [
+              "jws"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. MUST be one of EcdsaSecp256k1RecoverySignature2020 (secp256k1) or Ed25519Signature2020 (ed25519), and MUST equal the inner declaration's proof.type so the holder-binding consistency check anchors both signatures to the same cryptosuite."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies. The verifier also checks freshness against its configured maximum proof age and future-skew window."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar. The recovered identity from this MUST match the holder field."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "const": "authentication",
+          "description": "Always 'authentication' for VerifiablePresentation proofs per W3C VC Data Model §5.6 — the holder is authenticating themselves as the presenter of the enclosed credentials."
+        },
+        "challenge": {
+          "type": "string",
+          "description": "Replay-binding challenge. The verifier requires this to equal request_hash — the content hash of the inner PaymentRequest — recomputed from the received request; mismatch indicates either a stale PRE from a different request or a forged envelope. request_hash includes request_id (the idempotency key) so distinct requests get distinct challenges; binding to the content hash rather than payment_id re-anchors replay protection to a real protocol-level identity.",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "description": "Replay-binding domain. The verifier requires this to equal its configured service identifier — locked to a NETWORK-WIDE value `did:web:<env>.atum.network` (e.g., `did:web:atum.network`). Distinct from FQE's `did:web:settler.<env>.atum.network` so a captured PRE can't be misrouted to FQE-shaped verifiers. Without this, a captured PRE from one environment could be replayed against another by the same originator.",
+          "minLength": 1
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Used by the EcdsaSecp256k1RecoverySignature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase z-base58btc-encoded 64-byte signature. Used by the Ed25519Signature2020 cryptosuite. Exactly one of jws / proofValue must be present, matching the cryptosuite."
+        }
+      }
+    },
+    "DataIntegrityProof": {
+      "type": "object",
+      "description": "W3C Data Integrity proof conforming to the Data Integrity 1.0 specification. Which of jws or proofValue is required depends on the cryptosuite named in type, and that pairing is checked where the proof is verified rather than by this schema, so a document can satisfy the schema and still be refused at verification.",
+      "required": [
+        "type",
+        "created",
+        "verificationMethod",
+        "proofPurpose"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Proof type identifier. ECDSA-secp256k1 (recoverable, EVM-compatible) for did:pkh:eip155:* signers; Ed25519 for did:pkh:solana:* and did:pkh:stellar:* signers."
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the proof was created. Canonicalize the value exactly as it appears in the raw JSON: parsing it into a date-time and re-serializing can change the spelling (Z versus +00:00), and a different spelling canonicalizes to different bytes, so the signature no longer verifies."
+        },
+        "verificationMethod": {
+          "type": "string",
+          "description": "DID URL identifying the verification method, e.g., 'did:pkh:eip155:1:0x...#blockchainAccountId' for ECDSA or 'did:pkh:solana:<chain>:<addr>#SolanaMethod2021' for Ed25519 on Solana, or 'did:pkh:stellar:<network>:<G-account>#blockchainAccountId' for Ed25519 on Stellar."
+        },
+        "proofPurpose": {
+          "type": "string",
+          "description": "Purpose of the proof (e.g., assertionMethod, authentication)."
+        },
+        "jws": {
+          "type": "string",
+          "description": "Detached JWS signature in <base64url(header)>..<base64url(sig)> form, header {alg:ES256K-R, b64:false, crit:[b64]}. Required at runtime for EcdsaSecp256k1RecoverySignature2020."
+        },
+        "proofValue": {
+          "type": "string",
+          "description": "Multibase-encoded raw signature bytes. Required at runtime for Ed25519Signature2020; mutually exclusive with jws in practice."
+        }
+      }
+    },
+    "OwnedAsset": {
+      "type": "object",
+      "description": "Represents a cryptocurrency or token in a specific wallet. This tells the system what asset you're sending/receiving and which wallet to use.",
+      "required": [
+        "asset_identifier",
+        "account"
+      ],
+      "properties": {
+        "asset_identifier": {
+          "type": "string",
+          "description": "A unique identifier for the asset using CAIP-19 format.\nCAIP-19 is a standard way to identify blockchain assets: {chain_id}/{asset_namespace}:{asset_reference}\nExamples:\n- Ethereum USDC: \"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\"\n- Arbitrum USDC: \"eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831\"\n- Solana USDC: \"solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\"\n- Tron USDT: \"tron:mainnet/trc20:TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t\"\n- Stellar SEP-41 token: \"stellar:pubnet/sep41:CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75\" (`stellar:testnet` for the test network, and the reference is the token's C... contract id)",
+          "pattern": "^[a-z0-9]+:[a-zA-Z0-9_-]+/[a-z0-9-]{3,8}:[-.%a-zA-Z0-9]{1,128}(/[-.%a-zA-Z0-9]{1,78})?$"
+        },
+        "account": {
+          "type": "string",
+          "description": "The wallet address that owns this asset. Format depends on the blockchain: Ethereum/EVM: 0x-prefixed hex address (42 characters), Solana: Base58 encoded address, Tron: T-prefixed Base58 address, Stellar: G... account or C... contract strkey",
+          "minLength": 1
+        }
+      }
+    },
+    "SenderAuth": {
+      "type": "object",
+      "description": "Authorization from the asset owner to execute the payment. The exact format depends on the source blockchain's authorization mechanism.",
+      "required": [
+        "message_scheme",
+        "signed_messages"
+      ],
+      "properties": {
+        "verifiable_credential": {
+          "$ref": "#/$defs/VerifiableCredentialAuth",
+          "deprecated": true,
+          "description": "DEPRECATED: inner-document credential carrier. Credentials MUST ride ONLY in the holder-signed PaymentRequestEnvelope (PRE); the inner PaymentRequest carries no credential and its Data Integrity signature EXCLUDES this field (stripped before canonicalization on both producer and verifier). Populated only for one back-compat rollout cycle, then removed."
+        },
+        "message_scheme": {
+          "$ref": "#/$defs/SenderAuthMessageScheme"
+        },
+        "signed_messages": {
+          "type": "array",
+          "description": "Array of signed messages (at least one required)",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/SignedMessage"
+          }
+        }
+      }
+    },
+    "SenderAuthMessageScheme": {
+      "type": "string",
+      "description": "The signature method used for authorizing this payment:\n- `EVM_PERMIT2`: Gasless token approvals for Ethereum/EVM chains\n- `EVM_PERMIT2_ESCROW`: Gasless approvals with escrow support\n- `SOLANA`: Standard Solana transaction signatures\n- `TRON`: Tron transaction signatures\n- `STELLAR`: Stellar transaction signatures",
+      "enum": [
+        "EVM_PERMIT2",
+        "EVM_PERMIT2_ESCROW",
+        "SOLANA",
+        "TRON",
+        "STELLAR"
+      ]
+    },
+    "SignedMessage": {
+      "type": "object",
+      "description": "A message that has been cryptographically signed to prove authorization. The signature proves you control the wallet that's sending funds.",
+      "required": [
+        "message",
+        "message_prehash",
+        "signature"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "The data that was signed, hex-encoded with a 0x prefix on every supported chain. For the deposit (signed_messages[0]) it is the 32-byte hash of message_prehash."
+        },
+        "message_prehash": {
+          "type": "string",
+          "description": "The original data that `message` is the hash of: the typed data on EVM and Tron, the deposit record on Solana. Required: a verifier reads the signed terms, including the destination the deposit commits to, from it."
+        },
+        "signature": {
+          "type": "string",
+          "description": "The cryptographic signature proving you authorized this message. Hex-encoded with a 0x prefix on every supported chain. The signer's own public key is base58 on Solana, but the signature itself is not."
+        },
+        "payload": {
+          "type": "object",
+          "description": "Optional chain-specific payload containing additional signing context (e.g., delegate_signer for Solana). Preserved through the pipeline for downstream consumers.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "VerifiableCredentialAuth": {
+      "type": "object",
+      "description": "Optional identity verification using cryptographic credentials. Required when regulatory compliance or KYC verification is needed for the payment.",
+      "required": [
+        "verifiable_credential",
+        "verification_method_id",
+        "signature"
+      ],
+      "properties": {
+        "verifiable_credential": {
+          "$ref": "#/$defs/VerifiableCredential"
+        },
+        "verification_method_id": {
+          "type": "string",
+          "description": "Reference to verification method from the DID Document"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature matching the verification method type"
+        }
+      }
+    },
+    "VerifiableCredential": {
+      "type": "object",
+      "description": "W3C Verifiable Credential structure conforming to the W3C Verifiable Credentials Data Model v1.1",
+      "required": [
+        "@context",
+        "id",
+        "type",
+        "issuer",
+        "issuanceDate",
+        "credentialSubject",
+        "proof"
+      ],
+      "properties": {
+        "@context": {
+          "type": "array",
+          "description": "JSON-LD context array, must include 'https://www.w3.org/2018/credentials/v1'",
+          "contains": {
+            "const": "https://www.w3.org/2018/credentials/v1"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this credential"
+        },
+        "type": {
+          "type": "array",
+          "description": "Credential types, must include 'VerifiableCredential'",
+          "contains": {
+            "const": "VerifiableCredential"
+          },
+          "items": {
+            "type": "string"
+          }
+        },
+        "issuer": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "description": "DID or issuer object of the credential issuer"
+        },
+        "issuanceDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential was issued"
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the credential expires"
+        },
+        "credentialSubject": {
+          "type": "object",
+          "description": "Claims about the credential subject (structure varies by issuer)"
+        },
+        "credentialStatus": {
+          "type": "object",
+          "description": "Information for credential revocation checking. Not consulted by the verifier today."
+        },
+        "proof": {
+          "type": "object",
+          "description": "Cryptographic proof of credential integrity"
+        }
+      }
+    }
+  }
+}

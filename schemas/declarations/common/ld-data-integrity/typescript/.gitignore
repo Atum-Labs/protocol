@@ -1,0 +1,5 @@
+# These are runtime artifacts produced by `npm run prebuild` / build
+node_modules/
+dist/
+dist-cjs/
+src/contexts/
